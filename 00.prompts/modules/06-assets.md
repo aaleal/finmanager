@@ -12,7 +12,7 @@ Capture immutable, multi-currency financial snapshots across all household asset
 
 ## Data Model
 All monetary fields (`_eur` suffix) are `NUMERIC(10,2)` decimal EUR amounts (e.g. `19.99`), never minor-unit integers; UI displays them pt-PT-formatted (e.g. `19,99€`).
-- **Asset**: `id, entity_id, name, asset_class(CHECKING|SAVINGS|INVESTMENT|REAL_ESTATE|VEHICLE|CRYPTO|FOREX|LIABILITY), currency, iban_masked?, ticker?, description, is_active, linked_account_id?`.
+- **Asset**: `id, entity_id, name, asset_class(CHECKING|SAVINGS|INVESTMENT|REAL_ESTATE|VEHICLE|CRYPTO|FOREX|COLLECTIBLE|LIABILITY), currency, iban_masked?, ticker?, description, is_deleted, linked_account_id?`. `COLLECTIBLE` is a derived, entity-scoped stream supplied by M9; users do not manually create or snapshot it in M6.
 - **AssetSnapshot** (immutable, append-only): `id, asset_id, as_of_date, value_eur, fx_rate_to_eur NUMERIC(10,6), source(MANUAL|DERIVED|LINKED_ACCOUNT_AUTO_SYNC), snapshot_batch_id, created_at`. Every correction is a new row.
 - **CashFlowPeriod** (derived from M2): `id, entity_id, period_start, period_end, income_eur, expense_eur, net_savings_eur, savings_rate NUMERIC(4,3)`. Savings rate = `(income − expense)/income`.
 - **FxRate** (historical, immutable): `id, from_currency, to_currency, rate NUMERIC(10,6), as_of_date, source(MANUAL|PROVIDER|HISTORICAL_ECB)`.
@@ -35,6 +35,7 @@ All monetary fields (`_eur` suffix) are `NUMERIC(10,2)` decimal EUR amounts (e.g
 - **FR-6.11 FIRE / Coast-FIRE Projections.** From net-worth, savings rate, assumed real return (default 5%), compute years to FI (25× spend or target); coast scenario supported.
 - **FR-6.12 Account-to-Asset Linking.** Link `BankAccount` (M2) to `Asset` so snapshots auto-derive; idempotent; no future dating.
 - **FR-6.13 Contribution vs. Market Attribution.** Store `contributed_eur`; `market_gain_eur = value − contributed`; dashboard shows earned vs market growth.
+- **FR-6.14 Collectible Contribution.** Include M9's entity-scoped `COLLECTIBLE` contribution in net-worth aggregation using M9's current in-scope valuation. M6 must not create a duplicate manual `Asset` or `AssetSnapshot` for this stream.
 
 ## Automation Rules
 1. **Scheduled Snapshots** (Celery Beat): daily 02:00 UTC for linked accounts; manual for others; on error → ProcessingJob + alert.
@@ -116,4 +117,4 @@ All monetary fields (`_eur` suffix) are `NUMERIC(10,2)` decimal EUR amounts (e.g
 
 ## Integration Contract
 - **Exposes**: net-worth series (`GET /assets/net-worth`) + cash-flow (`GET /cashflow`) for Dashboards; `Asset`/`AssetSnapshot` as link targets for Banking (M2); liability balances as negative contributors.
-- **Consumes**: `Transaction` cash-flow (M2), `BankAccount` (M2) for auto-sync, `Entity` (household scope), `FxRate`, `Merchant` (creditors), `Document` (appraisal attachments).
+- **Consumes**: `Transaction` cash-flow (M2), `BankAccount` (M2) for auto-sync, `Entity` (household scope), `FxRate`, `Merchant` (creditors), `Document` (appraisal attachments), and M9's entity-scoped `COLLECTIBLE` current-value contribution.
