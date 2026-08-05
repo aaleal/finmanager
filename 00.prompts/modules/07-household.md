@@ -11,10 +11,10 @@ Enable multi-user access to a shared household's financial data while maintainin
 - *As a couple pre-separation*, we share a JOINT entity; post-separation we split assets and re-attribute history.
 
 ## Data Model
-- **User**: `id, email, display_name, password_hash, role(OWNER|MEMBER|VIEWER|SYSTEM), is_active, is_dependent, locale, timezone, created_at, updated_at`.
+- **User**: `id, email, display_name, password_hash, role(OWNER|MEMBER|VIEWER|SYSTEM), is_deleted, is_dependent, locale, timezone, created_at, updated_at`.
 - **Household**: `id, name, created_by, created_at, settings JSONB(default_entity_per_module, invitation_ttl_days, ...)`.
 - **HouseholdMember**: `id, household_id, user_id, role(OWNER|MEMBER|VIEWER), is_dependent, joined_at, left_at (soft-delete), invited_by, invitation_accepted_at`.
-- **Entity**: `id, household_id, type(INDIVIDUAL|JOINT|HOUSEHOLD), name, member_ids[], is_active, created_at, created_by`.
+- **Entity**: `id, household_id, type(INDIVIDUAL|JOINT|HOUSEHOLD), name, member_ids[], is_deleted, created_at, created_by`.
 - **EntityMembership** (explicit M:N): `id, entity_id, household_member_id, added_at, added_by`.
 - **InvitePending**: `id, household_id, email, role, token, expires_at, created_by, created_at`.
 - **Session**: `id, user_id, household_id, created_at, expires_at, ip_address, user_agent, last_accessed_at, entity_id (persisted filter)`.

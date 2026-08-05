@@ -12,7 +12,7 @@ Track all vehicle lifecycle costs (fuel, maintenance, insurance, taxes, inspecti
 
 ## Data Model
 All monetary fields (`_eur` suffix) are `NUMERIC(10,2)` decimal EUR amounts (e.g. `19.99`), never minor-unit integers; UI displays them pt-PT-formatted (e.g. `19,99€`).
-- **Vehicle**: `id, entity_id, name, make, model, plate_masked, fuel_type(PETROL_95|PETROL_98|DIESEL|LPG|ELECTRIC), odometer_km, purchase_date, purchase_price_eur, resale_value_snapshot_id?, is_active, tags[]`.
+- **Vehicle**: `id, entity_id, name, make, model, plate_masked, fuel_type(PETROL_95|PETROL_98|DIESEL|LPG|ELECTRIC), odometer_km, purchase_date, purchase_price_eur, resale_value_snapshot_id?, is_deleted, tags[]`.
 - **VehicleExpense** (base): `id, vehicle_id, expense_type(FUEL|MAINTENANCE|INSURANCE|TAX|REPAIR|OTHER), date, amount_eur, odometer_km, description, document_id, transaction_id?, payer_split JSONB, tags[], confidence, decision_reasons`.
 - **FuelEvent** (efficiency analytics): `id, vehicle_id, date, odometer_km, fuel_type, liters NUMERIC(8,3), price_per_liter_eur, total_cost_eur, station_merchant_id, is_full_fill BOOLEAN, source_expense_id, confidence`. *L/100km computed only between consecutive full fills; partial fills recorded but excluded.*
 - **MaintenanceSchedule**: `id, vehicle_id, service_type(OIL|FILTER|TIRES|BRAKES|INSPECTION|OTHER), interval_km, interval_months, next_due_km, next_due_date, notes, reminder_sent_at`.

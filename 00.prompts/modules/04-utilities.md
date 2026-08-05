@@ -12,7 +12,7 @@ Track utility billing periods, physical consumption, and costs across electricit
 
 ## Data Model
 All monetary fields (`_eur` suffix) are `NUMERIC(10,2)` decimal EUR amounts (e.g. `19.99`), never minor-unit integers; UI displays them pt-PT-formatted (e.g. `19,99€`).
-**UtilityMeter**: `id, entity_id, utility_type(ELECTRICITY|GAS|WATER), provider_merchant_id, unit(kWh|m3), address_id?, contracted_power_kw?` (electricity), `tariff_plan_id?, tariff_type(TIME_OF_USE|FLAT|TIERED), start_date, end_date, is_active, notes`.
+**UtilityMeter**: `id, entity_id, utility_type(ELECTRICITY|GAS|WATER), provider_merchant_id, unit(kWh|m3), address_id?, contracted_power_kw?` (electricity), `tariff_plan_id?, tariff_type(TIME_OF_USE|FLAT|TIERED), start_date, end_date, is_deleted, notes`.
 
 **UtilityBill** (distinct from Reading): `id, meter_id, billing_period_start, billing_period_end, is_estimated, actual_read_date?, estimated_read_date?, consumption NUMERIC(14,4), unit, total_cost_eur, fixed_cost_eur ("termo fixo"), variable_cost_eur ("termo variável"), iva_eur, credit_eur (self-consumption/injections), document_id, transaction_id?, processing_status, confidence, decision_reasons, tou_breakdown JSONB{vazio_kwh, cheias_kwh, ponta_kwh, vazio_cost_eur, cheias_cost_eur, ponta_cost_eur}`.
 

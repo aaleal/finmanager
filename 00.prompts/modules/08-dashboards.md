@@ -25,7 +25,7 @@ Read-only analytics artifacts (never part of ledger state). Monetary fields (`_e
 
 **Household Overview Dashboard**: net-worth trend (line, YTD highlight) · cash-flow (inflow/outflow stacked bar, current + rolling 12mo) · top categories (horizontal bar, sortable) · savings rate % (card + trend arrow) · budget status snapshot (% consumed, top 3 at-risk).
 
-**Per-Module Drilldowns** (unified navigation): Supermarket (L1/L2/L3 breakdown, €/kg evolution, Fs excluded, merchant comparison) · Banking (ledger grid, recurring charges + change alerts, low-confidence backlog) · Health (claims kanban, out-of-pocket trend, reimbursement rate, overdue claims) · Utilities (consumption per meter normalized, cost anomalies) · Vehicles (L/100km, cost-per-km, per-member split, maintenance) · Assets (allocation donut, per-asset trend, liability paydown).
+**Per-Module Drilldowns** (unified navigation): Supermarket (L1/L2/L3 breakdown, €/kg evolution, Fs excluded, merchant comparison) · Banking (ledger grid, recurring charges + change alerts, low-confidence backlog) · Health (claims kanban, out-of-pocket trend, reimbursement rate, overdue claims) · Utilities (consumption per meter normalized, cost anomalies) · Vehicles (L/100km, cost-per-km, per-member split, maintenance) · Assets (allocation donut, per-asset trend, liability paydown) · LEGO collection (current value, unrealized ROI, theme and completeness distributions, valuation history).
 
 **Four Required Correlation Views**:
 1. **Supermarket Spend ↔ Bank Groceries Category** (scatter + trendline): X = Σ ReceiptItems (non-Fs) by category, Y = bank `Groceries` transactions; highlights matches/mismatches.
@@ -127,7 +127,7 @@ Target <800ms p95 over 10 years:
 - WCAG AA; mobile-responsive, no horizontal scroll.
 
 ## Integration Contract
-- **Consumes**: canonical ledger (`Transaction`, M2), receipts (`ReceiptItem`, M1), claims (M3), utility bills (M4), vehicle expenses (M5), assets/snapshots (M6); all module `Alert`, `ReviewTask`, `AuditLog`.
+- **Consumes**: canonical ledger (`Transaction`, M2), receipts (`ReceiptItem`, M1), claims (M3), utility bills (M4), vehicle expenses (M5), assets/snapshots (M6), and collection current-value/ROI series (M9); all module `Alert`, `ReviewTask`, `AuditLog`.
 - **Exposes**: nothing to other modules (read-only); no ledger entities created; chart data derived deterministically; saved views are user config.
 - **Materialized Tables** (internal): `monthly_spend_by_category`, `monthly_income`, `net_worth_monthly`, `category_forecast_cache`, `correlation_pairs` — write-only from Celery, read-only by dashboard API.
 - **Invalidation Contract**: on any module `ReviewTask` confirmation, emit `AnalyticsInvalidationEvent(metric, entity)` → selective cache invalidation in Analytics Engine.
