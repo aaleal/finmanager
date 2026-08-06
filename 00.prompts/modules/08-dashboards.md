@@ -21,11 +21,11 @@ Read-only analytics artifacts (never part of ledger state). Monetary fields (`_e
 - **CorrelationView** (computed): `id, entity_id, metric_x, metric_y, periods[], correlation_coefficient, trend, last_computed_at`.
 
 ## Dashboards & Views
-**Global Filter Bar (sticky, shared)**: entity selector (personal/joint/household) · date range · tag multi-select · category drill. All charts re-render reactively.
+**Global Filter Bar (sticky, shared)**: entity selector (any single entity, or "todas") · date range · tag multi-select · category drill. All charts re-render reactively.
 
 **Household Overview Dashboard**: net-worth trend (line, YTD highlight) · cash-flow (inflow/outflow stacked bar, current + rolling 12mo) · top categories (horizontal bar, sortable) · savings rate % (card + trend arrow) · budget status snapshot (% consumed, top 3 at-risk).
 
-**Per-Module Drilldowns** (unified navigation): Supermarket (L1/L2/L3 breakdown, €/kg evolution, Fs excluded, merchant comparison) · Banking (ledger grid, recurring charges + change alerts, low-confidence backlog) · Health (claims kanban, out-of-pocket trend, reimbursement rate, overdue claims) · Utilities (consumption per meter normalized, cost anomalies) · Vehicles (L/100km, cost-per-km, per-member split, maintenance) · Assets (allocation donut, per-asset trend, liability paydown) · LEGO collection (current value, unrealized ROI, theme and completeness distributions, valuation history).
+**Per-Module Drilldowns** (unified navigation): Supermarket (L1/L2/L3 breakdown, €/kg evolution, Fs excluded, merchant comparison) · Banking (ledger grid, recurring charges + change alerts, low-confidence backlog) · Health (claims kanban, out-of-pocket trend, reimbursement rate, overdue claims) · Utilities (consumption per meter normalized, cost anomalies) · Vehicles (L/100km, cost-per-km, per-member split, maintenance) · Assets (allocation donut, per-asset trend, liability paydown) · LEGO collection (total cost, current value, unrealized ROI, breakdown by theme — reported inside M9 only, never rolled into net worth).
 
 **Four Required Correlation Views**:
 1. **Supermarket Spend ↔ Bank Groceries Category** (scatter + trendline): X = Σ ReceiptItems (non-Fs) by category, Y = bank `Groceries` transactions; highlights matches/mismatches.

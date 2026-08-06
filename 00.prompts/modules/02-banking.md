@@ -7,7 +7,7 @@ Import bank statements from Portuguese institutions (Millennium BCP, CGD, Santan
 - *As a user*, I import a CSV export from my Portuguese bank; the system auto-detects the column format, maps fields, and saves the import profile for next time—no remapping needed.
 - *As a reviewer*, I confirm high-confidence receipt↔transaction matches and fix miscategorized rows in a unified queue.
 - *As an analyst*, I query spend by 2-tier category, by tag, and per entity; internal transfers don't pollute income/expense totals.
-- *As a household member*, I see only my personal + joint/household transactions; others are hidden by RBAC.
+- *As a household member*, I switch the entity filter to see just my own, my partner's, or our joint transactions — all of them are readable, the filter is for focus, not privacy.
 - *As a maintainer*, I define categorization rules (e.g., "EDP → Electricity", regex patterns) and manage recurring charges.
 
 ## Data Model
@@ -117,7 +117,7 @@ The household's current `Extratos_YYYY` sheets (~5,000 rows across 2024–2026) 
 | `Date` | `Transaction.booked_date` | The accounting/analysis date (drives period rollups). |
 | `DateOriginal` | `Transaction.value_date` | Original movement date; may be a **different year** than `Date` (cross-year re-accounting) — keep both, never collapse. |
 | `Date_Format`, `Year`, `Month`, `Date_ID`, `Date_text` | *derived* | Do **not** store; compute (`YYYYMMDD`, `YYYY_MM`, month name) in queries/views. |
-| `Identity` (`Andre`, `Daniela`, `Andre_Daniela`, `Carolina`) | `Entity` | `Andre_Daniela` → a **JOINT** entity; `Carolina` → a dependent's INDIVIDUAL entity (no login). Confirms the M7 attribution model. |
+| `Identity` (`Andre`, `Daniela`, `Andre_Daniela`, `Carolina`) | `Entity` | `Andre_Daniela` → a two-member entity (the couple); `Carolina` → a dependent's single-member entity (no login). Confirms the M7 attribution model. |
 | `Source` (`AB`, `CR`, `REVO`, `MAN`) | `BankAccount.short_code` / `institution` | `MAN` → `institution=MANUAL` (hand-entered, no statement). |
 | `Description` | `Transaction.description_raw` (+ normalized `description_norm`) | |
 | `Amount` | `Transaction.amount_eur` | Signed; negative = OUT/expense, positive = IN. |
