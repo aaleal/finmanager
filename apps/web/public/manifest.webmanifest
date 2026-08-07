@@ -1,0 +1,19 @@
+{
+  "name": "FinManager",
+  "short_name": "FinManager",
+  "description": "Gestão financeira doméstica, privada e automática.",
+  "lang": "pt-PT",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

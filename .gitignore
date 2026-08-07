@@ -1,0 +1,34 @@
+# ---- Secrets & local config -------------------------------------------------
+.env
+.env.local
+*.pem
+
+# ---- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+
+# ---- Node -------------------------------------------------------------------
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Intermediate artefact of `make types-gen`; the generated src/api/schema.d.ts
+# IS committed so `make check` works without a running API.
+apps/web/openapi.json
+
+# ---- Runtime data (docker named volumes are outside the tree, this is a guard)
+storage/
+*.log
+
+# ---- Editors ----------------------------------------------------------------
+.DS_Store
+.idea/
+*.swp

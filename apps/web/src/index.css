@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98.5%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 222 63% 32%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 214 32% 95%;
+    --secondary-foreground: 222 47% 20%;
+
+    --muted: 214 32% 95%;
+    --muted-foreground: 215 20% 45%;
+
+    --accent: 199 89% 95%;
+    --accent-foreground: 200 98% 24%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 62% 32%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 25% 89%;
+    --input: 214 25% 87%;
+    --ring: 222 63% 42%;
+
+    --sidebar: 222 47% 12%;
+    --sidebar-foreground: 214 32% 88%;
+    --sidebar-accent: 222 45% 20%;
+    --sidebar-border: 222 40% 20%;
+
+    --radius: 0.7rem;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 44% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 44% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 213 94% 68%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 222 32% 18%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 222 32% 17%;
+    --muted-foreground: 215 20% 62%;
+
+    --accent: 200 60% 18%;
+    --accent-foreground: 199 89% 80%;
+
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 55% 45%;
+    --success-foreground: 222 47% 11%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 47% 11%;
+
+    --border: 222 30% 20%;
+    --input: 222 30% 22%;
+    --ring: 213 94% 60%;
+
+    --sidebar: 222 50% 6%;
+    --sidebar-foreground: 214 32% 82%;
+    --sidebar-accent: 222 40% 15%;
+    --sidebar-border: 222 35% 15%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      'cv02' 1,
+      'cv03' 1,
+      'cv04' 1,
+      'ss01' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Focus rings are keyboard-only but always clearly visible. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .numeric {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .surface {
+    @apply rounded-xl border border-border bg-card shadow-soft;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/50 to-transparent content-[''];
+  }
+  .dark .skeleton::after {
+    @apply via-white/10;
+  }
+}

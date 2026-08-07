@@ -1,0 +1,33 @@
+# Serves the built SPA and proxies the API. TLS is deliberately off: the target is a
+# NAS reached over LAN/VPN, usually behind the NAS's own reverse proxy.
+# See docs/decisions/0006-caddy-serves-the-spa.md
+{
+	auto_https off
+	admin off
+}
+
+:8080 {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+		-Server
+	}
+
+	# API and signed attachment routes stay on the backend.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Single-page app: hashed assets cache hard, index.html never does.
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

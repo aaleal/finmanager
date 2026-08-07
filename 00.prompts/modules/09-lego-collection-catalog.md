@@ -326,6 +326,17 @@ Over in-collection copies only:
 - [ ] Seed: a few example sets (e.g. 10307 Eiffel Tower, 75192 Millennium Falcon) with cost, current value, storage location and one image each.
 - [ ] Tests, limited to what is genuinely load-bearing: ROI/appreciation math including the gift and no-value cases, ownership-transition guards, and storage capacity math.
 
+## Open Questions / Decisions (recorded during implementation)
+
+| # | Question | Decision | ADR |
+|---|---|---|---|
+| 1 | How to honour the optional purchase link (FR-9.5) before M2 exists? | Ship the contract, defer the constraint: `acquisition_transaction_id` is a nullable UUID column with no FK; `GET /transactions/suggest` answers `ledger_available: false`; the shared picker is built and explains itself. The FK lands with M2. | [0005](../../docs/decisions/0005-defer-transaction-fk.md) |
+| 2 | Where does `current_value_eur` history live, given there is no valuation table? | In `AuditLog`, which already snapshots `before`/`after` on every mutation. Staleness is surfaced (`value_is_stale`, `value_age_days`, amber badge) rather than hidden; no time-series chart is drawn. | [0008](../../docs/decisions/0008-lego-value-history-from-audit-log.md) |
+| 3 | How is `(entity_id, set_number)` uniqueness enforced given soft delete and MOCs? | A **partial unique index** on `(entity_id, set_number) WHERE set_number IS NOT NULL AND is_deleted = false`, so soft-deleted rows and custom builds never collide. | — |
+| 4 | Which entity owns a new copy when the selector is on «todas»? | Refused, never guessed — the add dialog asks for the entity inline. | [0007](../../docs/decisions/0007-entity-is-not-a-security-boundary.md) |
+| 5 | Brickset default state? | Off. The toggle and API key live in `Setting`; the provider degrades to an explanatory message and the identical manual form. The key is never echoed back to the browser. | — |
+| 6 | Which model does a duplicate `set_number` resolve to? | `POST /lego/models` answers `409` **with `model_id`**, so the UI can offer «adicionar outra cópia» instead of creating a duplicate. `POST /lego/instances` find-or-creates silently. | — |
+
 ## Integration Contract
 - **Exposes:** nothing to other modules. The collection's value is reported inside M9 only; it deliberately does **not** roll into M6 net worth. Dashboards (M8) may deep-link to the module.
 - **Consumes:** `Entity` (attribution), `Transaction` (M2, optional purchase link), `Document` (locally stored images), `Setting` (Brickset API key, stale-value threshold), `AuditLog` (mutations).
