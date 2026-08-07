@@ -69,8 +69,9 @@ All of the above use UUID v7 primary keys, `is_deleted` soft-delete (never hard-
 - **Single source of truth.** One normalized relational model. Don't store what you can compute deterministically (except immutable historical snapshots).
 - **Portuguese-first, English code.** All code, schema columns, and enum/identifier names are **English**. Domain vocabulary — especially the category taxonomy — carries **pt-PT display names** exactly as the household presented them. UI ships **pt-PT as default locale** and is i18n-ready (no hard-coded strings). Store categories as `(code_en, display_name_pt)`.
 - **Container-first, always.** The entire stack — backend, frontend, database, Redis, Celery workers, migrations, linters, tests, package managers — runs exclusively inside Docker containers defined in `docker-compose.yml`. **Never install a runtime, package, or tool directly on the host** (no host `pip install`/`npm install`/`python`/`psql`/`alembic` run outside a container). Every command in this brief, every `Makefile` target, and every CI step is expressed as `docker compose exec/run ...` or a container-wrapped `make` target. The only things allowed on the host are Docker/Docker Compose and the repository source tree.
+- **podman**. `podman` and `podman-compose` is your to go container runtime unless higher requirements are needed.
 
-**Locked stack (do not substitute):** React 18 + TypeScript + Vite + TailwindCSS + shadcn/ui + TanStack Query/Table + react-hook-form + zod + Recharts + React Router on the front; Python 3.12 + FastAPI + SQLAlchemy 2.0 + Alembic + Pydantic v2 + Celery + Redis + PostgreSQL 16 behind Caddy, all via Docker Compose. Everything else — file layout, helper design, internal APIs — is yours to design well.
+**Proposed stack:** React 18 + TypeScript + Vite + TailwindCSS + shadcn/ui + TanStack Query/Table + react-hook-form + zod + Recharts + React Router on the front; Python 3.12+ + FastAPI + SQLAlchemy 2.0 + Alembic + Pydantic v2 + Celery + Redis + PostgreSQL 16 behind Caddy, all via Docker Compose. Everything else — file layout, helper design, internal APIs — is yours to design well.
 
 ---
 

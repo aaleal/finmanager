@@ -1,0 +1,42 @@
+[project]
+name = "finmanager-api"
+version = "0.1.0"
+description = "FinManager — self-hosted household finance platform (API)"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N", "C4", "RUF"]
+# B008: FastAPI's Depends() in defaults is the framework idiom.
+# N811/N818: `PgUUID` alias and the short HTTP-shaped error names are deliberate.
+# RUF001: pt-PT display strings legitimately use › and other typographic characters.
+ignore = ["B008", "N811", "N818", "RUF001", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*" = ["E501"]
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = []
+ignore_missing_imports = true
+disallow_untyped_defs = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+no_implicit_optional = true
+exclude = "alembic/"
+
+[[tool.mypy.overrides]]
+module = "app.seed.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "integration: touches the database or Redis",
+]

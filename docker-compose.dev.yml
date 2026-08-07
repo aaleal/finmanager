@@ -1,0 +1,56 @@
+# Development overlay: hot reload for both apps + a DB GUI.
+#   make dev      -> docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  api:
+    build:
+      context: ./apps/api
+      target: dev
+    image: finmanager-api-dev
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./apps/api:/app
+      - storage-data:/var/lib/finmanager/storage
+    ports:
+      - "${API_PORT:-8000}:8000"
+    command: ["/app/docker-entrypoint.sh", "api-dev"]
+
+  worker:
+    build:
+      context: ./apps/api
+      target: dev
+    image: finmanager-api-dev
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./apps/api:/app
+      - storage-data:/var/lib/finmanager/storage
+    command: ["/app/docker-entrypoint.sh", "worker-dev"]
+
+  web:
+    build:
+      context: ./apps/web
+      target: dev
+    image: finmanager-web-dev
+    volumes:
+      - ./apps/web:/app
+      - web-node-modules:/app/node_modules
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "8080"]
+
+  adminer:
+    image: adminer:4-standalone
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: dracula
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      - db
+
+volumes:
+  web-node-modules:

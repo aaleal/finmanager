@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# FinManager task runner — a `make`-free alternative with identical targets.
+#
+#   ./fm up | dev | down | reset | logs [service] | check | seed | migrate | ...
+#
+# Every command runs inside a container. The only host requirements are Docker (or
+# Podman) and this repository.
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE=(docker-compose)
+elif command -v podman-compose >/dev/null 2>&1; then
+  COMPOSE=(podman-compose)
+else
+  echo "Neither Docker Compose nor podman-compose was found on PATH." >&2
+  exit 1
+fi
+
+DEV=("${COMPOSE[@]}" -f docker-compose.yml -f docker-compose.dev.yml)
+RUN_API=("${DEV[@]}" run --rm --no-deps api)
+RUN_WEB=("${DEV[@]}" run --rm --no-deps web)
+
+ensure_env() {
+  [[ -f .env ]] || { cp .env.example .env; echo "Created .env from .env.example"; }
+}
+
+# One-shot containers must use --no-deps: without it, compose re-reconciles db/redis
+# against the *other* overlay's service definitions and tries to recreate containers
+# that are already running. Start the dependencies explicitly instead.
+ensure_db() {
+  "${COMPOSE[@]}" up -d db redis >/dev/null 2>&1 || true
+}
+
+usage() {
+  cat <<'EOF'
+FinManager task runner
+
+  Lifecycle
+    up            Build and start the production-like stack on :8080
+    dev           Start the dev stack with hot reload (web 8080, api 8000, adminer 8081)
+    down          Stop the stack, keep the data
+    reset         Stop the stack and DESTROY all volumes
+    logs [svc]    Follow logs (all services, or one)
+    ps            Container status
+
+  Database
+    migrate            Apply Alembic migrations
+    revision "msg"     Autogenerate a migration
+    downgrade          Roll back one migration
+    seed               Load the deterministic Portuguese demo data
+    shell-db           psql inside the database container
+    shell-api          bash inside the API container
+
+  Quality gate
+    check         lint + types + tests, both apps
+    lint | format | types | test | test-api | test-web
+
+  Contracts
+    types-gen     Regenerate the frontend API types from the live OpenAPI schema
+EOF
+}
+
+case "${1:-help}" in
+  up)
+    ensure_env
+    # No migrate step here: docker-entrypoint.sh runs `alembic upgrade head` before
+    # uvicorn starts, so plain `docker compose up -d` is equally sufficient.
+    "${COMPOSE[@]}" up --build -d
+    echo "FinManager is up on http://localhost:${WEB_PORT:-8080}"
+    ;;
+  dev)
+    ensure_env
+    "${DEV[@]}" up --build -d
+    echo "web http://localhost:8080 | api http://localhost:8000/api/docs | adminer http://localhost:8081"
+    ;;
+  down)      "${DEV[@]}" down ;;
+  reset)     "${DEV[@]}" down -v ;;
+  logs)      "${DEV[@]}" logs -f "${2:-}" ;;
+  ps)        "${DEV[@]}" ps ;;
+
+  migrate)   ensure_db; "${RUN_API[@]}" alembic upgrade head ;;
+  revision)  ensure_db; "${RUN_API[@]}" alembic revision --autogenerate -m "${2:?message required}" ;;
+  downgrade) ensure_db; "${RUN_API[@]}" alembic downgrade -1 ;;
+  seed)      ensure_db; "${RUN_API[@]}" python -m app.seed ;;
+  shell-db)  "${DEV[@]}" exec db psql -U "${POSTGRES_USER:-finmanager}" -d "${POSTGRES_DB:-finmanager}" ;;
+  shell-api) "${DEV[@]}" exec api bash ;;
+
+  lint)
+    "${RUN_API[@]}" ruff check --output-format concise app tests
+    "${RUN_API[@]}" ruff format --check app tests
+    "${RUN_WEB[@]}" npm run lint
+    ;;
+  format)
+    "${RUN_API[@]}" ruff format app tests
+    "${RUN_API[@]}" ruff check --fix app tests
+    "${RUN_WEB[@]}" npm run format
+    ;;
+  types)
+    "${RUN_API[@]}" mypy app
+    "${RUN_WEB[@]}" npm run typecheck
+    ;;
+  test-api)  ensure_db; "${RUN_API[@]}" pytest -q ;;
+  test-web)  "${RUN_WEB[@]}" npm run test ;;
+  test)      "$0" test-api && "$0" test-web ;;
+  check)     "$0" lint && "$0" types && "$0" test ;;
+
+  types-gen)
+    mkdir -p apps/web/src/api
+    "${RUN_API[@]}" python -m app.openapi_export > apps/web/openapi.json
+    "${RUN_WEB[@]}" npx --yes openapi-typescript /app/openapi.json -o /app/src/api/schema.d.ts
+    ;;
+
+  help|--help|-h) usage ;;
+  *) echo "Unknown command: $1" >&2; echo; usage; exit 1 ;;
+esac
