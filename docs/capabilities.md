@@ -78,6 +78,9 @@ lives here, where it can be corrected when code moves.
 | `LegoSetModel`, `LegoSetInstance`, `StorageLocation` | `apps/api/app/models/lego.py` | Phase 1 |
 | Collection overview, catalog grid, detail sheet, storage sheet | `apps/web/src/features/lego/` | Phase 1 |
 | Brickset provider behind a `MetadataProvider` protocol, opt-in via `Setting` | `apps/api/app/services/lego_provider.py` | Phase 1 |
+| Filtered summary, tri-state discovery filters, area-level storage filter, field+direction sort | `apps/api/app/services/lego_service.py` | Phase 1 (M9.1) |
+| Derived RRP appreciation/ROI, cumulative acquisition timeline | `apps/api/app/services/lego_service.py` | Phase 1 (M9.1) |
+| `GET /lego/export.xlsx` workbook export (copies, sets, storage) | `apps/api/app/services/lego_export.py` | Phase 1 (M9.1) |
 
 ---
 
