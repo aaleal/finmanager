@@ -153,6 +153,20 @@ Treat these as the definition of done and prefer expressing them as executable t
 
 Advance through all phases in one continuous effort. Do not stop after a phase to seek approval — verify the rubric, keep the contracts in sync, and start the next phase.
 
+### 5a. The reuse protocol — run this at the start of *every* module, in whatever order it is built
+
+The delivery order above is the recommended sequence, not a guarantee. A module may be built first, last, or out of order, and every `modules/NN-*.md` file is written to be **order-independent**: it declares what it *consumes* in its Integration Contract and never assumes what already exists. Four rules make that work.
+
+1. **Discover before you design.** Before writing a line, take the module's Integration Contract, and for each entity it consumes, check whether it already exists in the tree. Read the code, not your memory of it. Anything already present is used as-is; anything missing is built **to the §1a definition**, never as a module-local variant. Two modules defining their own `Merchant` is the single most expensive mistake available here.
+
+2. **Extend, never fork.** If a router, service, model or component already covers a shared concern, extend it. A second merchant endpoint, a second review queue, a second money formatter or a second document pipeline is a defect, not progress — regardless of which module arrives first.
+
+3. **Promote shared components on sight.** When a module needs a component that clearly serves others — a picker, a review surface, a reconciliation widget — build it in the shared layer immediately, even if only one module uses it today. The module spec that first describes such a component says so explicitly; honour that, and do not bury it inside the module's own folder.
+
+4. **Record what you shipped.** Every phase appends to **`docs/capabilities.md`**: one row per shipped capability with *what it is*, *where it lives*, and *which module shipped it*. That file — not any module spec — is the answer to "what already exists?". Keep it current in the same change that ships the feature. It is what lets a later module skip rebuilding, and it stays correct no matter what order the phases ran in.
+
+Corollary: **module specs must not encode build order or file paths.** No "built fourth", no "already seeded in Phase 0", no `app/services/foo.py` references. Those go stale the moment the order changes or the code moves. Dependencies belong in the Integration Contract; locations belong in `docs/capabilities.md`.
+
 ---
 
 ## 6. Documentation & decision records (the project's wiki)
@@ -160,6 +174,7 @@ Advance through all phases in one continuous effort. Do not stop after a phase t
 - **Root `README.md`** must always be current and cover: what FinManager is, prerequisites (Docker + Docker Compose — nothing else), **how to start the stack** (`docker compose up` / relevant `make` targets), how to seed demo data, how to run `make check`, how to tail logs / open a debugger per service, how to reach each service (app URL, API docs, Caddy, etc.), and how to stop/reset the stack.
 - **`docs/` wiki**, kept current alongside the code (update it in the same change that ships the feature, not as a follow-up):
   - `docs/architecture.md` — service topology, container map, request flow.
+  - `docs/capabilities.md` — the running inventory described in §5a: what exists, where it lives, which module shipped it. Append-only in practice; corrected when something moves. Every phase updates it.
   - `docs/decisions/` — one short ADR-style file per non-obvious decision (`NNNN-title.md`: context, decision, consequences), append-only, never rewritten after the fact. This **is** the "record it and continue" mechanism referenced throughout this brief and in each module's *Open Questions/Decisions* section — the module file states *what* was decided, the ADR states *why*.
   - `docs/database.md` — how to open a shell/GUI against the containerized Postgres (e.g. `docker compose exec db psql ...` or a containerized Adminer/pgAdmin service), the schema map, and how migrations are organized.
   - `docs/debugging.md` — how to tail/follow logs per container, attach a debugger, inspect Celery/Redis queues, and read `ProcessingJob`/`AuditLog` rows for a failed operation.

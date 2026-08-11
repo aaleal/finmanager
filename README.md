@@ -115,6 +115,7 @@ docs/         architecture, database, debugging, testing + ADRs
 ## Documentation
 
 - [`docs/architecture.md`](docs/architecture.md) — service topology, request flow, auth.
+- [`docs/capabilities.md`](docs/capabilities.md) — what already exists and where. **Read this before starting any module.**
 - [`docs/database.md`](docs/database.md) — schema map, migrations, how to open a shell.
 - [`docs/debugging.md`](docs/debugging.md) — logs, debuggers, Celery/Redis, audit trails.
 - [`docs/testing.md`](docs/testing.md) — what is tested and why.
