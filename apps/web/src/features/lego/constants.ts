@@ -33,17 +33,32 @@ export const CONDITION_VARIANTS: Record<Condition, 'success' | 'secondary' | 'wa
   DAMAGED: 'destructive',
 };
 
-export const SORT_OPTIONS = [
-  { value: 'created_desc', label: 'Adicionado (recente)' },
-  { value: 'created_asc', label: 'Adicionado (antigo)' },
-  { value: 'name_asc', label: 'Nome (A–Z)' },
-  { value: 'name_desc', label: 'Nome (Z–A)' },
-  { value: 'value_desc', label: 'Valor atual (maior)' },
-  { value: 'value_asc', label: 'Valor atual (menor)' },
-  { value: 'cost_desc', label: 'Custo (maior)' },
-  { value: 'cost_asc', label: 'Custo (menor)' },
-  { value: 'pieces_desc', label: 'Peças (mais)' },
-  { value: 'year_desc', label: 'Ano (recente)' },
+/**
+ * Condition is an ordinal quality scale, so colour carries meaning there.
+ * Build state is a neutral fact — sealed is not "better" than built — so it stays
+ * on a single neutral tint (M9.1). The label always says what the colour means.
+ */
+export const BUILD_STATE_VARIANT = 'outline' as const;
+
+export const SORT_FIELDS = [
+  { value: 'created', label: 'Adicionado' },
+  { value: 'name', label: 'Nome' },
+  { value: 'pieces', label: 'Peças' },
+  { value: 'year', label: 'Ano' },
+  { value: 'cost', label: 'Custo' },
+  { value: 'value', label: 'Valor' },
+];
+
+export const COMPLETENESS_OPTIONS = [
+  { value: 'all', label: 'Completos e incompletos' },
+  { value: 'complete', label: 'Só completos' },
+  { value: 'incomplete', label: 'Só incompletos' },
+];
+
+export const RETIREMENT_OPTIONS = [
+  { value: 'all', label: 'Retirados e à venda' },
+  { value: 'retired', label: 'Só retirados' },
+  { value: 'available', label: 'Só ainda à venda' },
 ];
 
 /**

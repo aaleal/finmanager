@@ -13,3 +13,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0006](0006-caddy-serves-the-spa.md) | The web container *is* Caddy |
 | [0007](0007-entity-is-not-a-security-boundary.md) | Entity is attribution, not permission |
 | [0008](0008-lego-value-history-from-audit-log.md) | No valuation-history table for LEGO |
+| [0009](0009-lego-evolution-is-an-acquisition-curve.md) | The LEGO evolution chart is an acquisition curve, not a price history |
+| [0010](0010-lego-cost-roi-and-rrp-roi.md) | Two readings of value: cost ROI and RRP ROI, never merged |

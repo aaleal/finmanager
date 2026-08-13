@@ -10,9 +10,12 @@ in.
 This is the **crown-jewel ingestion module**. The receipt review screen is the
 flow the entire automation-first thesis is judged on: data arrives messy, the
 system parses, matches and scores it, **auto-accepts what it is confident
-about**, and routes only the uncertain remainder to the shared Review Queue. The
-target is **≥80% of receipts auto-accepted with zero user edits** on the seed
-sample.
+about**, and routes only the uncertain remainder to the shared Review Queue.
+
+**There is no accuracy target.** Every line and every receipt carries a visible
+confidence, and a status screen shows exactly what is waiting for a human. The
+auto-accept rate is *reported* so it can be watched improving — it is never a
+gate to pass. See Decision #41.
 
 Unlike M9, this module cannot be flat. It carries six tables because each
 answers a question a field cannot: what the invoice claimed (`Receipt`) versus
@@ -42,6 +45,47 @@ file. This module assumes nothing about build order.
 
 ---
 
+## Build This in Three Passes
+
+**This module is too large for one build pass and must not be attempted as one.**
+Six tables, nineteen functional requirements, ten screens, a Celery pipeline,
+four merchant parsers, OCR, a classifier and a confidence engine — for
+comparison, all of M9 was three tables and four screens.
+
+The **document is not split**; the *work* is. Each pass reads this whole file
+plus the orchestrator brief and is told which slice to build. Every slice ends
+demoable, migrates cleanly, and leaves `./fm check` green.
+
+| Slice | Builds | Tables | FRs | Screens | Exit criterion |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **M1a — Ingest & Review** | The spine: upload → parse → score → review → confirm | `Receipt`, `ReceiptItem`, `MerchantParserProfile` | 1.1, 1.2, 1.6, 1.7, 1.8, 1.15, 1.16 | UX-1.1, 1.2, 1.3 | A Continente PDF and a Lidl PDF upload, parse, reconcile to their printed totals, and confirm. Lines are raw text + prices; no products yet |
+| **M1b — Products & Categories** | The brain: resolution, learning, taxonomy, and the import that fills them | `MasterProduct`, `ProductAlias` | 1.3, 1.9, 1.11, 1.12, 1.13, 1.17, 1.18, 1.19 | UX-1.4, 1.5, 1.6, 1.7 | The 2025 import yields ~1,564 products; a re-parse of the fixtures now resolves products and categories, and a correction sticks |
+| **M1c — Money over time** | The payoff: price trends, Fs, loyalty, ledger links | `ProductPriceHistory` | 1.4, 1.5, 1.10, 1.14 + the Fs rules | UX-1.8, 1.9, 1.10 | €/kg trends render across merchants, shrinkflation fires on a seeded case, and an Fs article changes `notional_total_eur` without touching `total_eur` |
+
+**Why this order.** M1a is the crown jewel and the only slice worth demoing
+alone. M1b must follow it because product resolution needs real parsed lines to
+resolve. M1c must follow M1b because a price history keyed by product cannot
+exist before products do. The legacy import sits in M1b, not last, because it is
+the only thing that turns an empty catalogue into a useful one (Decision #39).
+
+---
+
+## Invariants — break these and the data is silently wrong
+
+Everything else in this file is detail. These nine are not.
+
+1. **Money is `NUMERIC(10,2)` decimal EUR.** Never float, never minor units. Display via the shared pt-PT util only.
+2. **`paid_price_eur` is always what was actually paid** — `0.00` on an Fs article, negative on a refund. It is never a notional or list value.
+3. **Adding an Fs article changes no printed figure.** `total_eur`, `computed_total_eur`, `is_reconciled` and the `item_count` check must be byte-identical before and after.
+4. **Only `pvp − promo − invoice_allocated` reconciles.** Summing per-item promos and forgetting the invoice-level credit is the classic bug in this domain.
+5. **A category lives on `MasterProduct` and nowhere else** (Decision #34). A line inherits it by resolving; an unresolved line has none, and that is the truth.
+6. **`description_norm` is a matching key and is never displayed.** `description_raw` is verbatim audit trail. The user sees `canonical_name`.
+7. **Duplicates are prevented, not detected**: `UNIQUE (entity_id, atcud_code)` plus SHA-256 idempotency (Decision #35).
+8. **`ProductPriceHistory` is append-only.** A correction writes a new row; the past is never rewritten.
+9. **Every stage has a local engine that works offline and unsubscribed** (Decision #13). A remote engine is optional and per-stage.
+
+---
+
 ## Actors
 
 ### Primary Actor
@@ -67,100 +111,30 @@ This module is automation-first, so one non-human actor does most of the work:
 
 ## User Stories
 
-### US01. Effortless Capture
-As a user, I want to photograph or drop in a receipt and have the merchant,
-date, line items, weights, prices and discounts extracted for me, so I never
-retype an invoice.
+Traceability only — the behaviour is specified in the Functional Requirements,
+and each row names the FRs that satisfy it.
 
-### US02. Review Only the Uncertain
-As a user, I want to see only the fields the system was unsure about — flagged
-clearly and side by side with the original image — so I can confirm a whole
-receipt in seconds instead of checking every line.
-
-### US03. Explainable Decisions
-As a user, I want to ask "porquê?" of any value the system filled in and see the
-reasons and scores behind it, so I can trust it or correct it on an informed
-basis.
-
-### US04. Corrections That Stick
-As a user, I want a product I re-matched by hand to be remembered for that
-merchant, so the same description resolves itself next time and the system gets
-better the more I use it. When I type a product name I want autocomplete over
-what I already own, so I never create a near-duplicate by accident.
-
-### US05. Meaningful Categorization
-As a user, I want every item placed in the household's own pt-PT category tree,
-auto-suggested and always overridable through an autocomplete picker, so my
-spending analysis matches how I actually think about groceries.
-
-### US06. The Fs Split
-As a user, I want to add to a receipt the articles that were not on it — tagging
-them Fs and recording what each was worth — so I can see what the shop actually
-cost me, what it would have cost had I paid for everything, and filter any view
-to Fs articles, non-Fs articles, or all of them.
-
-### US07. Price per Kilo Over Time
-As a user, I want to see how the price per kilo of a product has moved across
-merchants and seasons, in list price and in what I actually paid, so I know when
-something genuinely got more expensive.
-
-### US08. Shrinkflation Alerts
-As a user, I want to be told when a product I buy regularly got lighter while
-the price held or rose, so I notice the increase the packaging is hiding.
-
-### US09. Never Count a Receipt Twice
-As a user, I want the system to spot a receipt I already uploaded and ask before
-merging, so a double upload never inflates my spending.
-
-### US10. Loyalty Savings
-As a user, I want the cartão discount tracked and spread correctly across the
-items it applied to, kept apart from per-item promotions, so I can see what
-loyalty actually saves me.
-
-### US11. Dietary and Allergen Visibility
-As a user, I want to filter what I bought by dietary attributes and allergens,
-so I can monitor specialized spending and avoid what we cannot eat.
-
-### US12. Tie a Receipt to the Bank
-As a user, I want a receipt matched to the statement line that paid for it —
-automatically when it is obvious, by picker when it is not — so my groceries
-reconcile against my account.
-
-### US13. Bring the Spreadsheet Across
-As a user, I want my years of `SUPERMERCADOS_YYYY` rows imported without
-duplication and re-runnable if it goes wrong, so I keep my history.
-
-### US14. Queue a Pile of Invoices
-As a user, I want to drop several invoices at once into a parsing queue and walk
-away, then come back to see which parsed cleanly, which need me and which failed
-— and retry the failures without re-uploading.
-
-### US15. Parsers That Know the Merchant
-As a user, I want Continente receipts read by a parser built for Continente's
-layout and Pingo Doce's by its own, falling back to a generic parser for
-anything unrecognised, so accuracy improves per merchant instead of one brittle
-parser serving all.
-
-### US16. Works Without a Subscription
-As a user, I want the whole pipeline to work on my own NAS with no paid service
-attached, and to be able to plug a better engine in later without rebuilding
-anything, so I am never blocked today and never boxed in tomorrow.
-
-### US17. Two Levels of Detail
-As a user, I want to browse either one row per invoice or one row per purchased
-article across every invoice, and from any article jump straight to the original
-invoice image, so I can answer both "what did I spend in March" and "every time
-I ever bought this coffee".
-
-### US18. Confirmed Classifications
-As a user, I want to see which categories the system guessed and which I have
-actually confirmed, so I can work through the unconfirmed ones and trust the
-rest.
-
-### US19. My Own Category Tree
-As a user, I want to rename, move, merge and retire categories as my thinking
-changes, and understand what that does to the data I already have, so the
-taxonomy stays mine rather than something I inherited once and can never fix.
+| # | As a user I want… | FRs |
+| :--- | :--- | :--- |
+| US01 | to photograph or drop in a receipt and have merchant, date, lines, weights, prices and discounts extracted, so I never retype an invoice | 1.1, 1.6 |
+| US02 | to see only the fields the system was unsure about, side by side with the original, so I confirm a receipt in seconds | 1.1, 1.2 |
+| US03 | to ask "porquê?" of any filled-in value and see the reasons and scores, so I can trust it or correct it informed | 1.1, 1.2 |
+| US04 | a product I re-matched by hand remembered for that merchant, and autocomplete over what I already own so I never create a near-duplicate | 1.8 |
+| US05 | every item placed in my own pt-PT category tree, auto-suggested and always overridable | 1.3 |
+| US06 | to add the articles that were *not* on the invoice, tag them Fs and record their worth — then filter any view to Fs, non-Fs, or all | 1.2, 1.5 |
+| US07 | to see how a product's price per kilo moved across merchants and seasons, in list price and in what I paid | 1.4, 1.12 |
+| US08 | to be told when a product I buy regularly got lighter while the price held or rose | 1.4 |
+| US09 | a receipt I already uploaded recognised and **refused outright**, so a double upload cannot inflate my spending | 1.9 |
+| US10 | the cartão discount tracked and spread correctly across the items it applied to, apart from per-item promos | 1.10 |
+| US11 | to filter what I bought by dietary attributes and allergens | 1.5 |
+| US12 | a receipt matched to the statement line that paid for it — automatically when obvious, by picker when not | 1.14 |
+| US13 | my years of `SUPERMARKET_YYYY` rows imported without duplication and re-runnable if it goes wrong | 1.19 |
+| US14 | to drop several invoices at once, walk away, and come back to see which parsed, which need me and which failed — retrying without re-uploading | 1.16 |
+| US15 | Continente receipts read by a Continente parser and Lidl's by its own, falling back to a generic one | 1.15 |
+| US16 | the whole pipeline to work on my own NAS with no paid service, and to plug a better engine in later without rebuilding | 1.1, 1.15 |
+| US17 | to browse one row per invoice **or** one row per article across every invoice, jumping from any article to the original image | 1.18 |
+| US18 | to see which categories the system guessed and which I confirmed, so I can work through the rest | 1.3 |
+| US19 | to rename, move, merge and retire categories as my thinking changes, and understand what that does to existing data | 1.17 |
 
 ---
 
@@ -185,7 +159,7 @@ would have cost — and `ReceiptItem.is_fs` marks it.
 through the same product autocomplete as any other line, so once it resolves to
 a `MasterProduct` it inherits that product's category, weights and last known
 price automatically. What it cannot have is anything the *document* would have
-supplied: `line_no`, `merchant_section`, `iva_class_code`.
+supplied: `line_no`, `merchant_section`, `iva_class_raw`.
 
 | Rule | Consequence |
 | :--- | :--- |
@@ -275,7 +249,7 @@ UPLOADED ──▶ PARSING ──┬──▶ AUTO_ACCEPTED ──▶ CONFIRMED 
 ```
 
 **Constraints & Rules:**
-- `AUTO_ACCEPTED` is reached with no human input when `confidence ≥ confidence.auto_accept`. **This is the state the ≥80% rubric measures.**
+- `AUTO_ACCEPTED` is reached with no human input when `confidence ≥ confidence.auto_accept`. The threshold is a `Setting`, so the household decides how much nagging it wants.
 - `NEEDS_REVIEW` creates exactly one `ReviewTask` (`module = "receipts"`, `subject_type = "Receipt"`).
 - `VOID` replaces deletion once a receipt is confirmed; `void_reason` is required.
 - Re-uploading a file whose SHA-256 already exists for this entity never creates a second receipt.
@@ -305,17 +279,13 @@ UPLOADED ──▶ PARSING ──┬──▶ AUTO_ACCEPTED ──▶ CONFIRMED 
 | `is_bulk_weighed` | `Boolean` | Priced at the checkout scale (`default: false`) |
 | `unit_price_pvp_eur` | `NUMERIC(10,2)` | List/gross price before any discount; on an Fs item, its **notional value** |
 | `promo_discount_eur` | `NUMERIC(10,2)` | Per-item promotion only (`default: 0.00`) |
-| `promo_type` | `Enum?` | `ABSOLUTE` \| `PERCENTAGE` \| `BOGO` \| `LOYALTY_POINTS` |
+| `promo_type` | `Enum?` | `ABSOLUTE` \| `PERCENTAGE` \| `BOGO` |
 | `invoice_allocated_discount_eur` | `NUMERIC(10,2)` | Invoice/loyalty discount **prorated** onto this item |
 | `paid_price_eur` | `NUMERIC(10,2)` | Net spend after all discounts; **always `0.00` on an Fs item** |
-| `iva_class_code` | `String(2)?` | The class letter **as printed** (`A`, `C`, `E`, `I`); `NULL` for an Fs item |
-| `iva_rate` | `Enum` | `0` \| `6` \| `13` \| `23` — resolved from `iva_class_code` via the merchant's map |
-| `iva_inferred` | `Boolean` | `true` only when no class letter was printed |
+| `iva_class_raw` | `String(4)?` | The IVA token **exactly as printed** (`A`, `C`, `6%`) — captured, never interpreted (Decision #38) |
 | `is_fs` | `Boolean` | **Fs item** — added by hand, never on the invoice (`default: false`) |
 | `notional_value_source` | `Enum?` | `PRICE_HISTORY` \| `MANUAL` — where an Fs item's value came from |
 | `product_flag` | `Enum?` | `REFUND` \| `DEPOSIT_RETURN` \| `SEASONAL` \| `OTHER` — all read off the document |
-| `dietary_tags` | `JSONB` | `ORGANIC` \| `VEGAN` \| `GLUTEN_FREE` \| … |
-| `allergen_flags` | `JSONB` | Allergens carried from the master product |
 | `tags` | `UUID[]` | Core `Tag` ids |
 | `notes` | `Text?` | Free-text notes (legacy `Notas`) |
 | `legacy_row_ref` | `Integer?` | Spreadsheet row id, traceability only — **not** the PK |
@@ -337,7 +307,7 @@ UPLOADED ──▶ PARSING ──┬──▶ AUTO_ACCEPTED ──▶ CONFIRMED 
 - The most common bug in this domain is summing per-item promos and missing the invoice-level credit. Only `pvp − promo − invoice_allocated` reconciles.
 - **Three names, three jobs.** `description_raw` is verbatim and never modified — it is the audit trail against the paper. `description_norm` is a matching key and is **never displayed**. The name shown to the user is `MasterProduct.canonical_name` once resolved, falling back to `description_raw` while unresolved.
 - `category_status` lives on the product: `AUTO` until a human confirms the suggestion (`VALIDATED`) or assigns directly (`MANUAL`). `MANUAL` counts as validated for every filter and KPI.
-- `iva_eur` is **not stored** — it is derived (see Computed & Derived Fields).
+- `iva_eur` is **not modelled at all** — see Decision #38.
 - Refunds carry `quantity < 0` and are excluded from the paid total; the refund count is derived, not stored.
 - Deposits (*tara*) use `product_flag = DEPOSIT_RETURN` and are never categorized as groceries.
 
@@ -431,15 +401,15 @@ per-merchant confidence.
 | `weight_kg` | `NUMERIC(14,4)?` | Weight used for the €/kg figures |
 | `list_price_eur` | `NUMERIC(10,2)` | Snapshot of the list price; the notional value on an Fs row |
 | `paid_price_eur` | `NUMERIC(10,2)` | Snapshot of what was paid; **also the notional value on an Fs row**, never `0.00` |
-| `price_per_kg_pvp_eur` | `NUMERIC(10,2)?` | Snapshot, list price per kg |
-| `price_per_kg_paid_eur` | `NUMERIC(10,2)?` | Snapshot, paid price per kg |
-| `shrinkflation_indicator` | `Boolean` | Weight fell while price held or rose |
 | `source_receipt_item_id` | `UUID` | Provenance |
 | `created_at` | `Timestamp` | Audit timestamp |
 
-**Append-only and immutable.** This is the one place €/kg is *persisted*,
-because it is a historical snapshot: correcting a receipt item later writes a
-**new** row and never rewrites the past.
+**Append-only and immutable.** Correcting a receipt item later writes a **new**
+row and never rewrites the past. €/kg is **not** stored here: price and weight
+sit on the same row, so the division cannot drift and storing it would only add
+columns to keep in step. `shrinkflation_indicator` is likewise computed over the
+12-month window at query time, not frozen onto a row that cannot know its own
+future.
 
 ---
 
@@ -453,7 +423,7 @@ because it is a historical snapshot: correcting a receipt item later writes a
 | `parser_key` | `String` | Registered parser implementation, e.g. `continente_v1` |
 | `document_kinds` | `JSONB` | Which inputs it handles: `PDF_DIGITAL` \| `IMAGE_SCAN` |
 | `detection_patterns` | `JSONB` | Regexes / anchor strings that identify this merchant's layout |
-| `field_hints` | `JSONB` | Layout hints — at minimum `iva_class_map`, `line_value_is_net`, section-heading and savings-line patterns, date format, decimal separator |
+| `field_hints` | `JSONB` | Layout hints — at minimum `line_value_is_net`, section-heading and savings-line patterns, the column the value sits in, date format and decimal separator |
 | `priority` | `Integer` | Tie-break when several profiles match (higher wins) |
 | `success_rate` | `NUMERIC(4,3)?` | Rolling share of receipts this profile auto-accepted |
 | `is_active` | `Boolean` | Disable without deleting (`default: true`) |
@@ -525,8 +495,7 @@ QTD  UNI DESCRICAO           IVA    VALOR
 
 | What the receipts prove | Consequence |
 | :--- | :--- |
-| **The same IVA letter means different rates at different merchants.** Continente `A`=6 %, `C`=23 %; Lidl `A`=23 %, `B`=6 %, `C`=13 %, `F`=0 %; Pingo Doce `C`=6 %, `E`=23 %, `I`=0 % | A shared map would silently swap 6 % and 23 % between Continente and Lidl. `iva_class_map` **must** be per profile (Decision #26) |
-| **Piquete prints the rate itself (`6%`), not a letter** | `iva_class_code` holds either form; the map is identity when a rate is printed |
+| **The same IVA token appears in three shapes and two meanings.** Continente `A`=6 %, Lidl `A`=23 %; Lidl `F`=0 %; Piquete prints `6%` outright | Reason enough not to model it. The token is captured verbatim and interpreted by nobody (Decision #38) |
 | **Lidl uses `F` as an IVA class for 0 %**, and every merchant numbers documents `FS …` (*fatura simplificada*) | Two collisions with the household's Fs flag. Never pattern-match on `F`/`FS` (Decision #36) |
 | **All four merchants group lines under headings** — `Mercearia Salgada`, `FRUTAS E VEGETAIS`, `--TUBERCULOS--` | `merchant_section` is a universal signal, not a Continente quirk (Decision #27) |
 | **€/kg is printed for weighed goods** — `Preco: 1,99/KG`, `1,19 EUR/kg` | Captured, never derived from a guessed weight; it is what pre-fills manual entry |
@@ -534,12 +503,40 @@ QTD  UNI DESCRICAO           IVA    VALOR
 | **No EAN, no article code, anywhere** | `ProductAlias` is the load-bearing match mechanism (Decision #23) |
 | **Discount semantics are opposite.** Continente: `SUBTOTAL` already net of `POUPANCA`, only the cartão subtracted (`40,56 − 4,00 = 36,56`). Pingo Doce: `TOTAL` gross, `POUPANÇA` subtracted (`15,70 − 0,50 = 15,20`). Lidl and Piquete print no discounts at all | `field_hints.line_value_is_net` per profile (Decision #28) |
 | **Two NIFs on one receipt** — Lidl prints `NIF:503340855` (its own) and `NIF...: 226443361` (the buyer's); Continente does the same | First digit decides: `5` = company, `2` = person (Decision #29) |
-| **The IVA summary table always foots to the total** — Lidl `4,44+2,54+0,32+0,20 = 7,50`; Piquete `4,63+0,28 = 4,91` | A second, independent arithmetic anchor on every merchant |
+| **The IVA summary table always foots to the total** — Lidl `4,44+2,54+0,32+0,20 = 7,50`; Piquete `4,63+0,28 = 4,91` | A spare arithmetic anchor, available if line-sum reconciliation ever proves too weak |
 | **Size lives inside the description** — `500G`, `1KG`, `397G`, `45GR` | Weight extraction is description parsing |
 | **Loyalty appears on one merchant of four** — Continente only; Lidl and Piquete print none | Loyalty is a few nullable fields on `Receipt`, not a table (Decision #37) |
 | **Card numbers are pre-masked** — `XXXXXXXX3394X`, `****7104/53` | Confirms Decision #4: nothing sensitive ever reaches us |
 | **ATCUD is printed as text on all eleven** — `ATCUD: J6K7G7ZS-091423` | It is the fiscal document identity, and therefore the duplicate key (Decision #35) |
 | **No `F` marker for a household freebie appears anywhere** | Expected: Fs articles are not on the invoice at all (Decision #31) |
+
+---
+
+### Extraction Strategy — read this before writing a parser
+
+The layouts above were transcribed with `pdftotext -layout` and, for the
+photograph, a vision model. **Neither is what will run in production, and the
+transcriptions in this file must not be treated as a benchmark.** Three rules
+follow.
+
+**Parse positions, not flat text.** The merchant differences are *positional* —
+Continente puts the IVA token first, Lidl puts it last, Piquete puts quantity
+first — so a parser built on string-splitting `-layout` output breaks the moment
+the extractor's spacing changes. Use `pdfplumber` word boxes (`x0`, `x1`,
+`top`), cluster words into lines by `top`, then assign fields by x-range. That
+survives an extractor upgrade; column-counted whitespace does not.
+
+**Expect photographs to be far worse than digital PDFs.** `pytesseract` on a
+curved thermal *talão*, skewed, with a thumb across the payment block, will read
+`0,302` as `0.3O2` and lose diacritics — routinely. The ten PDF fixtures and the
+one photograph are **not the same problem** and must not be judged alike: report
+the auto-accept rate for digital PDFs and photographs **separately**, and expect
+image receipts to land in review far more often.
+
+**Pin the extraction, not the parse.** Commit the extracted word boxes for every
+fixture as golden files. A parser change then shows up as a diff in parsed
+output alone, and an extractor upgrade as a diff in the golden files — so the
+two failure modes can never masquerade as each other.
 
 ---
 
@@ -586,7 +583,6 @@ Evaluated on read; nothing is persisted except the immutable
 - `price_per_kg_promo_eur` = `(unit_price_pvp_eur − promo_discount_eur) / weight_kg` — after the individual promo only
 - `price_per_kg_final_eur` = `paid_price_eur / weight_kg` — after the prorated invoice discount too
 - All three are **`NULL` when `weight_kg` is `NULL`**, with a stated reason — never defaulted to zero
-- `iva_eur` = `paid_price_eur × iva_rate / (100 + iva_rate)`
 - `subtotal_eur` (per receipt) = `total_eur + total_discount_eur` — the pre-discount figure. Note the **direction**: subtotal is *larger* than the total, because the discount has not been taken off yet
 - `computed_total_eur` (per receipt) = `Σ paid_price_eur` over **every** item — Fs rows contribute `0.00` and refunds contribute negative, exactly as the receipt printed them
 - `notional_value_eur` (per item) = `is_fs ? unit_price_pvp_eur × quantity : paid_price_eur`
@@ -621,15 +617,15 @@ Evaluated on read; nothing is persisted except the immutable
 - **FR-1.8 Fuzzy Product Normalization.** Resolve merchant descriptions to a `MasterProduct` via **normalize-then-match**: strip accents, casing, units and pack affixes → `rapidfuzz` token-set ratio → learned `ProductAlias`. Confirmed corrections append to the alias table.
 - **FR-1.9 Duplicate Prevention.** The **ATCUD is the fiscal document identity**, so a duplicate is prevented rather than detected: `(entity_id, atcud_code)` is unique, and re-uploading the same document SHA-256 is idempotent. Either collision returns the receipt already held instead of creating a second. Only when a receipt carries **no** ATCUD — an unreadable photo, a hand-written slip, a legacy import row — does a soft check on merchant + date + total warn the user before saving.
 - **FR-1.10 Multi-Payment & Loyalty.** Parse composite payments (cash + card + loyalty). Record the scheme, masked card, euros accrued and euros spent **on the `Receipt`**, and prorate the cartão discount into `invoice_allocated_discount_eur` per item, kept strictly separate from per-item promos. Fs articles never receive an allocation — they were not on the invoice being discounted.
-- **FR-1.11 IVA Class Mapping & Validation.** Read the IVA class **as printed on each line** — a letter at Continente, Pingo Doce and Lidl, a literal percentage at Piquete — and resolve it through the profile's `field_hints.iva_class_map`. **The map is per merchant and the letters conflict**: `A` is 6 % at Continente but 23 % at Lidl. Only when nothing is printed may the rate be inferred, setting `iva_inferred = true`. Validate the per-class sums against the **printed IVA summary table**, which foots to the total on every fixture.
-- **FR-1.12 Deposits & Refunds.** Model bottle deposits (*tara*) and packaging refunds as `product_flag = DEPOSIT_RETURN`; refunds carry negative quantities and are counted by derivation, never by a stored counter.
-- **FR-1.13 Bulk Weigh & Unit Ambiguity.** Distinguish listed weight (label) from observed weight (register scale); handle items priced only at checkout. Where the receipt prints €/kg outright, capture it. A missing weight suppresses €/kg with a stated reason rather than guessing one.
-- **FR-1.14 Unit Standardization.** Normalize every quantity into `(quantity_canonical, unit_canonical ∈ KG|L|UN)` so cross-unit and cross-merchant comparison is well defined. Mass → kg, volume → L, count → un; never convert between the three families.
-- **FR-1.15 Reconciliation to the Ledger.** Propose `Link(RECEIPT_TRANSACTION)` edges to M2 transactions within a configurable date window and amount tolerance, scored and explained. Above the cutoff the link is auto-created as `CONFIRMED`; otherwise it becomes a `ReviewTask`. Manual linking reuses the shared transaction picker.
-- **FR-1.16 Merchant Parser Profiles.** Maintain a registry of parsers keyed by merchant plus **one generic fallback**. Detection runs **before** extraction: identify the merchant from the document, select the highest-priority matching active profile, then parse with it. An unmatched document falls through to the generic profile — never to an error. Profiles are CRUD-able, can be disabled without deletion, and expose their observed `success_rate`.
-- **FR-1.17 Parsing Queue & Batch Ingestion.** Accept many invoices in one upload. Each becomes its own `ProcessingJob` and `Receipt`, processed independently so one bad scan never blocks the batch. Expose a queue view over job state (`QUEUED`/`RUNNING`/`SUCCEEDED`/`FAILED`/`RETRYING`) with per-job progress, the failure reason, and **retry from the stored document** — never a re-upload.
-- **FR-1.18 Category Administration.** Create, rename, reparent, merge and retire categories in the `GROCERY` domain, with the impact rules in Category Governance enforced and audited. Retire is blocked while rows reference the node; merge is the supported way out.
-- **FR-1.19 Line-Level Explorer.** Browse every purchased article across all invoices as one flat, filterable, paginated grid — the shape the household already thinks in — with a one-click jump from any line to the original invoice image and to the product's full purchase history.
+- **FR-1.11 Deposits & Refunds.** Model bottle deposits (*tara*) and packaging refunds as `product_flag = DEPOSIT_RETURN`; refunds carry negative quantities and are counted by derivation, never by a stored counter.
+- **FR-1.12 Bulk Weigh & Unit Ambiguity.** Distinguish listed weight (label) from observed weight (register scale); handle items priced only at checkout. Where the receipt prints €/kg outright, capture it. A missing weight suppresses €/kg with a stated reason rather than guessing one.
+- **FR-1.13 Unit Standardization.** Normalize every quantity into `(quantity_canonical, unit_canonical ∈ KG|L|UN)` so cross-unit and cross-merchant comparison is well defined. Mass → kg, volume → L, count → un; never convert between the three families. Real receipts spell the same unit several ways (`KG` and `KIL` on one Piquete talão), so normalization happens at parse time.
+- **FR-1.14 Reconciliation to the Ledger.** Propose `Link(RECEIPT_TRANSACTION)` edges to M2 transactions within a configurable date window and amount tolerance, scored and explained. Above the cutoff the link is auto-created as `CONFIRMED`; otherwise it becomes a `ReviewTask`. Manual linking reuses the shared transaction picker.
+- **FR-1.15 Merchant Parser Profiles.** Maintain a registry of parsers keyed by merchant plus **one generic fallback**. Detection runs **before** extraction: identify the merchant from the document, select the highest-priority matching active profile, then parse with it. An unmatched document falls through to the generic profile — never to an error. Profiles are CRUD-able, can be disabled without deletion, and expose their observed `success_rate`.
+- **FR-1.16 Parsing Queue & Batch Ingestion.** Accept many invoices in one upload. Each becomes its own `ProcessingJob` and `Receipt`, processed independently so one bad scan never blocks the batch. Expose a queue view over job state (`QUEUED`/`RUNNING`/`SUCCEEDED`/`FAILED`/`RETRYING`) with per-job progress, the failure reason, and **retry from the stored document** — never a re-upload.
+- **FR-1.17 Category Administration.** Create, rename, reparent, merge and retire categories in the `GROCERY` domain, with the impact rules in Category Governance enforced and audited. Retire is blocked while rows reference the node; merge is the supported way out.
+- **FR-1.18 Line-Level Explorer.** Browse every purchased article across all invoices as one flat, filterable, paginated grid — the shape the household already thinks in — with a one-click jump from any line to the original invoice image and to the product's full purchase history.
+- **FR-1.19 Legacy Spreadsheet Import.** Import the `SUPERMARKET_YYYY` sheets per the Source-of-Truth Mapping, wrapped in an `ImportBatch` and **re-runnable without duplication**. Fs rows carry a ~1 s timestamp nudge that must be **undone before grouping** — snap each onto the nearest non-Fs timestamp within 2 s, then group by `(Supermercado, timestamp)`. **Never group by `Preço Fatura`**: it is a `SUMIF` over `Full_Date`, so on a nudged Fs row it sums only itself. `PromoGlob` is recomputed deterministically, non-grocery merchants are skipped and counted, and every distinct description becomes a `MasterProduct` + `ProductAlias`. **The sheet is validated, not trusted**: each imported receipt is scored and non-reconciling groups go to `NEEDS_REVIEW`. This is also what solves cold start (Decision #39), so it is not an epilogue but the thing that makes matching and categorization work at all.
 
 ---
 
@@ -638,7 +634,7 @@ Evaluated on read; nothing is persisted except the immutable
 - **Merchant resolution:** runs **first**, because it selects the parser. Priority is **printed NIF → alias → fuzzy name**. A receipt may carry **two** NIFs — the merchant's and the household's — and the Portuguese numbering plan tells them apart deterministically: **1, 2, 3 are natural persons; 5, 6, 8, 9 are organisations.** Take the organisational NIF, and prefer the header block when both are organisational. Checksum-validate, then look up `Merchant.nif`. Fall back to alias/name fuzzy match — auto-accept ≥ 0.78, review band 0.70–0.78, manual below. A NIF that validates but matches **no** merchant, or a *different* merchant than the name suggests, emits `merchant_nif_mismatch` and sends the receipt to review; it is never silently overridden.
 - **Parser selection:** highest-`priority` active profile whose `detection_patterns` match and whose `document_kinds` include this input; otherwise the generic profile. The chosen profile is recorded on `Receipt.parser_profile_id` and shown in the UI.
 - **Product resolution priority:** `ProductAlias` exact match on `description_norm` → normalized fuzzy ≥ 0.78 (review band 0.70–0.78) → new-product prompt. **There is no exact key** — real receipts print neither an EAN nor an article code, only a truncated description (Decision #23). `ProductAlias` is therefore not an optimisation but the load-bearing mechanism of the whole module.
-- **Fs rule (CRITICAL).** An Fs item is **added by hand and never parsed**, so it takes no part in extraction, confidence scoring or the ≥80 % auto-accept measure. There is exactly **one** arithmetic check, `Σ paid_price_eur ≈ total_eur` within tolerance, and Fs rows enter it contributing `0.00`. **Adding an Fs item to a receipt — even a `CONFIRMED` one — must leave `total_eur`, `computed_total_eur` and `is_reconciled` untouched**; a test asserts precisely this. An Fs item requires a `notional_value_eur > 0` with a recorded source, otherwise it is meaningless.
+- **Fs rule (CRITICAL).** An Fs article is **added by hand and never parsed**, so it takes no part in extraction or confidence scoring. There is exactly **one** arithmetic check, `Σ paid_price_eur ≈ total_eur` within tolerance, and Fs rows enter it contributing `0.00`. **Adding an Fs article to a receipt — even a `CONFIRMED` one — must leave `total_eur`, `computed_total_eur` and `is_reconciled` untouched**; a test asserts precisely this. An Fs article requires a `notional_value_eur > 0` with a recorded source, otherwise it is meaningless.
 - **Arithmetic tolerance** is a `Setting` (`receipts.arithmetic_tolerance_eur`), default **€0.02** per the brief. A €0.05 allowance may be granted only for a merchant known to round, and that allowance is itself a decision reason.
 - **Loyalty allocation:** prorate the cartão discount into `invoice_allocated_discount_eur` per item, skipping Fs rows.
 - **Shrinkflation:** over a rolling **12-month** window with **≥3 prior observations** of the same `(master_product_id, merchant_id)`, alert when `margin_signal ≤ −0.05` — the pack shrank faster than the price fell. `margin_signal` is `NUMERIC(6,4)`: a score, not money, but decimal for reproducibility. Fs observations count towards the window unless the caller passes `fs = exclude`.
@@ -726,7 +722,13 @@ confirm.
   - Optimistic updates for single-item edits only — never for aggregates.
 - **UX-1.3 Receipts List (level 1 — one row per invoice).** Filterable by merchant, date range, tag, category, `fs` (`only` \| `exclude` \| `all`) and status; summary cards for total spend, Fs value and item count; sorting, pagination and a density toggle.
 - **UX-1.4 Item Explorer (level 2 — one row per purchased article).** The flat view the household already thinks in: every line across every invoice, filterable by product, category, merchant, date, `fs` (`only` \| `exclude` \| `all`) and flag. Columns mirror the legacy sheet (date · merchant · product · category · qty · weight · PVP · promo · paid · €/kg). Each row links to the source invoice — opening the review pane focused on that line — and to the product's purchase history. CSV export.
-- **UX-1.5 Category Backlog.** The list of **products** whose `category_status` is still `AUTO`, worked through once per product rather than once per line.
+- **UX-1.5 Estado (status dashboard).** The module's front door — one screen answering "what needs me?", each figure a link into the filtered list that resolves it:
+  - **Faturas por processar** — `ProcessingJob` in `QUEUED`/`RUNNING`, plus `FAILED` ones needing a retry.
+  - **Faturas por validar** — receipts in `NEEDS_REVIEW`, split by what triggered it.
+  - **Linhas por resolver** — items with no `master_product_id`, the count that blocks categorization.
+  - **Produtos por categorizar** — products whose `category_status` is still `AUTO`.
+  - **Produtos a fundir** — near-duplicate `canonical_name` candidates, so the catalogue does not silently fork.
+  - **Taxa de auto-aceitação observada** — shown as a trend, labelled explicitly as *observed, not targeted*.
 - **UX-1.6 Master Product Manager.** CRUD over canonical name, brand, **category**, `sold_by_weight`, **pack variants (label + weight per pack size)**, per-merchant aliases with confidence, dietary/allergen checkboxes, seasonal flags, and a merge-duplicates action. Each product shows its last known price and every receipt line it has ever appeared on.
 - **UX-1.7 Category Administration.** Tree editor for the `GROCERY` domain: rename, drag-to-reparent, merge and retire. Every destructive operation shows **how many rows it will touch before it runs**, and retire is refused while the node is in use with merge offered as the alternative.
 - **UX-1.8 Merchant Parser Profiles.** List of profiles with merchant, document kinds, priority, active toggle and observed `success_rate`; edit `field_hints`; a "test against this receipt" action that re-parses a stored document with a chosen profile and diffs the result.
@@ -744,6 +746,7 @@ rules above are preserved. Routes are namespaced `/receipts` under `/api`.
 - `GET /receipts/queue` — job state, progress, chosen parser profile and failure reason per queued invoice.
 - `POST /receipts/{receiptId}/reparse` — re-run from the stored document, optionally forcing a `parser_profile_id`. Never requires re-upload.
 - `GET /receipts` — filters: merchant, date range, tag, category, `fs`, status, entity.
+- `GET /receipts/status` — the counts behind UX-1.5: to process, to validate, lines unresolved, products uncategorized, merge candidates, observed auto-accept rate.
 - `GET /receipts/{receiptId}` — items, confidence breakdown, decision reasons and links.
 - `PATCH /receipts/{receiptId}` · `PATCH /receipts/{receiptId}/items/{itemId}` — recompute totals and rescore.
 - `POST /receipts/{receiptId}/items` — append an item that was not on the invoice (`is_fs = true`), with its notional value and source.
@@ -787,7 +790,7 @@ GROCERY`.
 ---
 
 ## Analytics & KPIs
-- **Ingestion quality: share of receipts reaching `AUTO_ACCEPTED` with zero edits** — the headline rubric number.
+- **Ingestion quality, reported not targeted:** observed auto-accept rate, share of lines resolved, share of products categorized — each as a trend over time so progress is visible without a threshold to game.
 - €/kg evolution (list and paid) per product and merchant, including seasonal variance.
 - Shrinkflation: products whose weight or unit count fell against the trailing 12 months.
 - Loyalty savings: cumulative discount per receipt, per scheme and masked card number.
@@ -822,7 +825,7 @@ BUFFERS)`, never assumed.
 - **Deposits (*tara*).** Never categorized as groceries; reconciled when the refund is credited.
 - **Payment ambiguity.** "DINHEIRO + CARTÃO" without a printed split prompts the user rather than assuming an allocation.
 - **Missing ATCUD or NIF.** Flags for review with a tax-compliance warning; never blocks ingestion. A NIF that validates but matches no known merchant raises `merchant_nif_mismatch` rather than guessing.
-- **IVA cross-check.** A per-item IVA sum differing from the invoice total by more than ±€0.01 sets `NEEDS_REVIEW`.
+- **IVA.** Not modelled (Decision #38). The printed token is kept in `iva_class_raw` and interpreted by nothing.
 - **Idempotent re-import.** The same document SHA-256 within the same entity never creates a second receipt.
 - **Entity attribution.** A receipt belongs to exactly one entity. With the selector on «todas» the write is **refused, not guessed**; the upload dialog asks for the entity inline.
 - **Deletion.** Confirmed receipts are **voided with a reason**, never deleted. Soft delete applies before confirmation.
@@ -844,12 +847,14 @@ BUFFERS)`, never assumed.
 ---
 
 ## Definition of Done
-- [ ] FR-1.1 – FR-1.19 implemented; `docker compose up` still yields a working stack from clean.
-- [ ] **≥80% of receipts on the seed sample reach `AUTO_ACCEPTED` with zero user edits**, measured against the **eleven real fixtures** in `seed/supermarket/invoices/` — proven by an executable check, not by eye.
-- [ ] All four merchant profiles parse their own fixtures correctly, including the **opposite discount semantics** (Continente `Σ lines − cartão = total`, Pingo Doce `Σ lines − poupança = total`) and the **conflicting IVA maps** (`A` = 6 % at Continente, 23 % at Lidl).
+- [ ] FR-1.1 – FR-1.19 implemented **across the three delivery slices**, each leaving `./fm check` green and a working stack from clean.
+- [ ] **Every line and every receipt shows a confidence**, and the UX-1.5 status screen reports what is waiting: faturas por processar, por validar, linhas por resolver, produtos por categorizar e a fundir. Each figure links to the list that resolves it.
+- [ ] The observed auto-accept rate is displayed as a trend and **labelled as observed, not targeted** (Decision #41).
+- [ ] All four merchant profiles parse their own fixtures correctly, including the **opposite discount semantics** (Continente `Σ lines − cartão = total`, Pingo Doce `Σ lines − poupança = total`) and the positional differences (IVA token first at Continente, last at Lidl, quantity first at Piquete).
+- [ ] Extracted word boxes are committed as **golden files** for all eleven fixtures, so an extractor upgrade and a parser regression are distinguishable.
 - [ ] The Piquete photograph parses end to end through OCR, proving the image path works on a skewed, partly obscured *talão*.
 - [ ] A product's **last known price** pre-fills manual entry — pack price for packaged goods, €/kg for `sold_by_weight` ones.
-- [ ] The printed **IVA class** drives the rate for every line, through a **per-merchant** map; the per-class sums foot to the printed IVA summary table on every fixture.
+- [ ] The `iva_class_raw` token is captured verbatim where printed, and nothing downstream reads it.
 - [ ] Merchant NIF is taken from the header block — a fixture carrying **both** merchant and buyer NIFs resolves to the merchant.
 - [ ] `merchant_section` is captured for every line and measurably improves classification of unseen products.
 - [ ] **The full pipeline completes with egress blocked, at default settings** — proving the module needs no subscription. The provider seam is exercised by a fake remote engine in tests, proving a stage can be swapped without touching the pipeline.
@@ -873,7 +878,11 @@ BUFFERS)`, never assumed.
 - [ ] IVA inference reconciles with invoice totals within ±€0.01.
 - [ ] ATCUD fiscal QR read and structurally validated; its NIF, date, total and VAT breakdown used as the reconciliation reference when present; a missing or malformed QR flags for review without blocking.
 - [ ] Receipt↔transaction `Link` suggestions created above the cutoff, reviewed below it; manual linking uses the shared transaction picker.
-- [ ] Legacy Excel import runs inside an `ImportBatch`, is re-runnable without duplication, and recomputes `PromoGlob` deterministically.
+- [ ] **The 2025 legacy import runs end to end**: Fs timestamps are snapped back, 2,429 rows group into **288 receipts** by `(Supermercado, timestamp)`, ≥274 reconcile within €0.02, the rest land in `NEEDS_REVIEW` with reasons, non-grocery merchants are skipped and counted, and ~1,564 products with aliases exist afterwards. Re-running duplicates nothing.
+- [ ] **No more than 6 all-Fs groups survive** — a regression above that means the snap window or the grouping key has broken and Fs articles are being torn from their invoices.
+- [ ] The two Pingo Doce €1,19 rows of 25/01, five hours apart, import as **two receipts, not one**.
+- [ ] The 425 `F`/`f` rows import as Fs articles with `paid_price_eur = 0.00`, leaving every `total_eur` untouched.
+- [ ] Merchant find-or-create folds `Mercadona`/`mercadona` into one merchant across all 18 legacy spellings.
 - [ ] Dashboard queries measured under 800 ms p95 on the 10-year seed with `EXPLAIN (ANALYZE, BUFFERS)`.
 - [ ] Seed: realistic Portuguese receipts including appended Fs articles, a loyalty discount, a refund and a deposit return.
 - [ ] `make check` green; `docs/` and the root `README.md` updated in the same change.
@@ -900,76 +909,132 @@ Definition of Done. Each test file states which rubric bullet it protects.
 | 1 | How are duplicates handled? | **Prevented, not detected.** See Decision #35 — the ATCUD is a unique fiscal identifier, so a uniqueness constraint replaces the whole fuzzy-matching apparatus |
 | 2 | Items sold by count rather than weight? | `unit = UN`; compute price-per-unit and leave €/kg `NULL` with an explicit reason. Never fabricate a weight |
 | 3 | Is Fs per item or per receipt? | Per item, and always added by hand. There is no receipt-level toggle — an Fs article is a row the user appends, not a flag flipped on a printed line |
-| 4 | Is there a `LoyaltyCard` table with an encrypted card number? | **No — removed.** The merchant already prints the loyalty number pre-masked on the till receipt (`XXXXXXXX3394X`, `****7104/53`); the pipeline never sees, and therefore never needs to encrypt, a full number. `Receipt.loyalty_card_masked` stores exactly what was printed. "Which cards have I used" is a `GROUP BY loyalty_scheme, loyalty_card_masked`, not a CRUD entity |
-| 5 | How many corrections before an alias is trusted? | Learn on the **first** confirmed correction — `confidence` starts low and rises with `correction_count`. Waiting for five corrections discards exactly the signal that gets us to 80% auto-accept; confidence, not a counter, gates auto-apply |
+| 4 | A `LoyaltyCard` table with an encrypted number? | **No.** Merchants print the number already masked (`XXXXXXXX3394X`), so nothing sensitive ever arrives. `Receipt.loyalty_card_masked` holds what was printed; "which cards have I used" is a `GROUP BY` |
+| 5 | How many corrections before an alias is trusted? | Learn on the **first** confirmed correction — `confidence` starts low and rises with `correction_count`. Waiting for five corrections discards exactly the signal that makes matching improve; confidence, not a counter, gates auto-apply |
 | 6 | Hand-written receipts? | Accepted, always routed to manual review — never auto-accepted |
 | 7 | Multi-merchant / mall receipts? | Out of scope for v1. One `Receipt` = one payment transaction at one merchant |
 | 8 | Does `ReceiptItem` carry its own `entity_id`? | Yes, denormalized from the parent. Redundant, but it keeps every analytics query single-table and matches the pattern every other module uses. The receipt stays the source of truth on re-attribution |
 | 9 | What is the arithmetic tolerance? | €0.02 by default (brief §3), stored in `Setting` so a rounding-prone merchant can be widened without a deploy. **This file previously said €0.05 — that conflict is resolved in favour of the brief** |
 | 10 | Where does the receipt↔transaction link live? | The shared `Link` table with `link_type = RECEIPT_TRANSACTION`. M1 never defines a ledger row |
-| 11 | Is €/kg stored or derived? | **Derived** on `ReceiptItem` (deterministic from price and weight — the brief forbids storing what you can compute) and **persisted** on `ProductPriceHistory`, which is an immutable historical snapshot. Promote to a Postgres generated column only if sorting by €/kg becomes hot |
+| 11 | Is €/kg stored or derived? | **Derived everywhere**, including on `ProductPriceHistory` — price and weight sit on the same immutable row, so the quotient cannot drift. Promote to a generated column only if sorting by €/kg becomes hot |
 | 12 | Are the printed totals redundant with the item sums? | No. The printed values are independent extracted facts; the item sums are what we parsed. Reconciling the two **is** the arithmetic confidence signal, so both must be stored |
-| 13 | May processing use a remote provider? | **Not by default, but the door stays open.** Every stage must have a local engine that works offline and unsubscribed — that is what makes the module usable today, with no subscription in hand. A remote engine may be registered alongside it and enabled per stage from `Setting`; without a credential the stage silently stays local. This is an enforced **default**, not an architectural ban: if a remote engine would materially raise the auto-accept rate, build the adapter, measure both against the same fixtures, and record the comparison |
-| 14 | One parser for everything, or one per merchant? | **One per merchant, plus a generic fallback.** Layouts differ far more than they resemble each other, and a single parser regresses on merchant A whenever it is tuned for merchant B. Merchant detection therefore runs *before* extraction. A merchant with no profile is never blocked — it falls through to the generic parser with lower confidence |
+| 13 | May processing use a remote provider? | **Not by default, but the door stays open.** Every stage must have a local engine that works offline and unsubscribed. A remote one may be registered alongside and enabled per stage from `Setting`; without a credential the stage silently stays local. This is a **default, not a ban** — if a remote engine would materially improve results, build the adapter and measure both against the same fixtures |
+| 14 | One parser for everything, or one per merchant? | **One per merchant, plus a generic fallback.** Layouts differ more than they resemble each other, and a single parser regresses on merchant A whenever tuned for B. Merchant detection therefore runs *before* extraction; an unknown merchant falls through to the generic parser with lower confidence |
 | 15 | Is a product the same across pack sizes? | **Yes** — that is what makes €/kg comparable, and it is the household's own mental model. What varies between sizes is the **weight**, so `pack_variants` holds `{label, weight_kg, barcode?}` per size. This replaces four fields with one |
-| 16 | What happens to existing data when the category tree changes? | Rename costs nothing (rows reference ids). Reparent recomputes the **maintained ancestors** on affected rows in one audited transaction, so history is re-expressed under the new tree. Merge reassigns then soft-deletes. Retire is blocked while in use. The alternative — snapshotting the full triple per row — was rejected because it lets history drift from the live tree and silently mixes two taxonomies in one report |
+| 16 | What happens to existing data when the category tree changes? | Rename costs nothing (rows reference ids). Reparent recomputes **maintained ancestors** in one audited transaction, so history is re-expressed under the new tree. Merge reassigns then soft-deletes; retire is blocked while in use. Snapshotting the full triple per row was rejected — it lets history drift and mixes two taxonomies in one report |
 | 17 | How do we know a category was actually checked? | `MasterProduct.category_status` is `AUTO` until a human confirms it (`VALIDATED`) or assigns it directly (`MANUAL`). Because it sits on the product, the unchecked list is finite and shrinks as the catalogue matures, rather than growing with every shop |
 | 18 | Where does category administration live — Core or M1? | The `Category` **entity** is Core §1a. The administration UI and the impact rules are M1's, scoped to `domain = GROCERY`, because M1 is the module that lives or dies by that tree. Other domains manage their own branches when they arrive |
-| 19 | Does `Receipt` store the merchant's NIF? | **No — removed.** `Merchant.nif` already exists in Core, checksum-validated. The printed NIF's job is to *identify* the merchant during parsing — it is the strongest resolution key there is — and once `merchant_id` is set the NIF is reachable through it. Storing it again would create two sources of truth for one fact. A printed NIF that disagrees with the matched merchant is a **matching problem**, surfaced as a decision reason and sent to review, not a divergent value to persist on every receipt. The raw text remains in `raw_ocr_payload` for forensics |
-| 20 | Is `subtotal_eur` stored? | **No — derived**, as `total_eur + total_discount_eur`. Two of the three printed figures determine the third, and `total_eur` (what was paid) plus `total_discount_eur` (which drives the proration ratio) are the two that carry independent weight. Storing the third buys a weak checksum that the far stronger item-level reconciliation already provides |
-| 21 | Are `is_return` and `refund_item_count` needed? | **No — both removed and derived.** `refund_item_count` is `COUNT(quantity < 0)` and `is_return` is "every item is negative". Neither is printed on a receipt, so neither is an independent fact worth storing. Refunds still work exactly as before through negative quantities and `product_flag = REFUND`; nothing is lost but two columns that could drift out of step with the rows they summarise |
-| 22 | Do Fs articles belong in `tags[]`? | **No.** `is_fs` is structural — it says the article was never on the invoice and is valued notionally; `tags[]` are open user labels with no effect on arithmetic. The household's own taxonomy file already draws this line, calling its context flags *"distintas da flag de exclusão Fs"*. An article can be `Fs` **and** tagged `#férias`; the two never substitute for each other |
-| 23 | Does a receipt line carry a barcode or article code? | **Neither — confirmed against eleven real fixtures from four merchants.** A Portuguese *talão* prints only an IVA class, a truncated description and a value. No EAN, no SKU. Both were removed. The consequence is structural: `ProductAlias` and normalized fuzzy matching are the **only** way an item ever resolves, which makes them the load-bearing mechanism of the module rather than a nicety. `barcode` survives solely as an optional slot in `pack_variants` for the deferred scan-to-find flow |
+| 19 | Does `Receipt` store the merchant's NIF? | **No.** `Merchant.nif` already exists in Core, checksum-validated; the printed NIF's job is to *identify* the merchant during parsing. Storing it again creates two truths for one fact. A disagreement is a **matching problem** — surfaced as a decision reason and sent to review, not persisted. The raw text stays in `raw_ocr_payload` |
+| 20 | Is `subtotal_eur` stored? | **No — derived** as `total_eur + total_discount_eur`. Two of the three printed figures determine the third |
+| 21 | Are `is_return` and `refund_item_count` stored? | **No — derived.** Neither is printed, so neither is an independent fact. Refunds work through negative quantities |
+| 22 | Do Fs articles belong in `tags[]`? | **No.** `is_fs` is structural — it says the article was never on the invoice and is valued notionally; `tags[]` are open labels with no effect on arithmetic. An article can be `Fs` **and** tagged `#férias` |
+| 23 | Does a receipt line carry a barcode or article code? | **Neither — confirmed across eleven fixtures from four merchants.** A *talão* prints an IVA token, a truncated description and a value. So `ProductAlias` and normalized fuzzy matching are the **only** way a line ever resolves — load-bearing, not an optimisation. `barcode` survives only as an optional slot in `pack_variants` for the deferred scan flow |
 | 24 | What is the fiscal QR actually worth? | Far more than validation. It encodes the issuer NIF, document date, gross total and VAT breakdown, making it the **highest-confidence anchor in the module**. The ATCUD is also printed as plain text (`ATCUD:JFP767JJ-035904`), so a QR that will not decode still yields the reference |
 | 25 | How is size determined without a code? | By parsing the description, which is where the till puts it (`POLPA TOMATE GULOSO **500G**`, `SAL GROSSO CONTINENTE **1KG**`). `pack_variants` supplies the candidate weights and the parsed token picks between them |
-| 26 | Is the IVA rate inferred? | **No — it is printed per line**, as a class letter whose meaning is merchant-specific: Continente `(A)`=6 % / `(C)`=23 %; Pingo Doce `C`=6 % / `E`=23 % / `I`=0 %. Inference is the fallback, not the rule, and sets `iva_inferred`. This removes a whole category of guesswork the spec previously assumed |
-| 27 | Do receipts help with categorization? | **Yes, at no extra cost.** Both merchants group lines under their own headings (`Mercearia Salgada`, `FRUTAS E VEGETAIS`). Stored as `merchant_section` and fed to the classifier, this is a strong prior on a brand-new product — material for the ≥80 % target |
-| 28 | Do all merchants treat discounts the same way? | **No, and they are opposite.** Continente's `SUBTOTAL` is already net of `POUPANCA`, with only the cartão subtracted (`40,56 − 4,00 = 36,56`); Pingo Doce's `TOTAL` is gross and `POUPANÇA` *is* subtracted (`15,70 − 0,50 = 15,20`). A single parser would silently overstate one household's spending. `field_hints.line_value_is_net` per profile — the sharpest justification for FR-1.16 |
+| 26 | Is the IVA rate inferred? | **Superseded by #38 — IVA is not modelled at all** |
+| 27 | Do receipts help with categorization? | **Yes, at no extra cost.** All four merchants group lines under their own headings (`Mercearia Salgada`, `FRUTAS E VEGETAIS`, `--TUBERCULOS--`). Stored as `merchant_section` and fed to the classifier, this is a strong prior on a brand-new product |
+| 28 | Do all merchants treat discounts the same way? | **No, and they are opposite.** Continente's `SUBTOTAL` is already net of `POUPANCA`, only the cartão subtracted (`40,56 − 4,00 = 36,56`); Pingo Doce's `TOTAL` is gross and `POUPANÇA` *is* subtracted (`15,70 − 0,50 = 15,20`). One parser would silently overstate one household's spending. `field_hints.line_value_is_net` per profile |
 | 29 | Which NIF is the merchant's? | The **organisational** one, decided by its first digit: `1`/`2`/`3` are natural persons, `5`/`6`/`8`/`9` are organisations. Continente prints its own `NIF: PT501591109` *and* the household's `NIF:PT209362367`; the leading `5` versus `2` separates them with no positional guessing. Header position is the tie-break when both are organisational |
 | 30 | Points or euros? | **Euros.** `ACUMULOU NO SEU CARTAO 4,06€` and `Combustível ganho na compra: 0 EUR`. `Receipt.loyalty_accrued_eur` and `loyalty_discount_eur` record them; there are no points. Continente's separate *selos* collectible scheme is out of scope |
-| 31 | What exactly is an Fs item? | **An article that was never on the invoice**, appended to it by hand. Not a printed line reclassified — a row the household adds, classified like any paid product and carrying a notional value. This is why nothing about it is parsed, why it has no `line_no`, `merchant_section` or `iva_class_code`, and why it is excluded from the printed `item_count` check. It is also why adding one can never disturb a reconciliation that already passed: `paid_price_eur` is `0.00` and the printed totals are untouched. `notional_total_eur = total_eur + fs_value_eur` answers "what would this shop have cost had I paid for everything", and `fs_share_pct` measures Fs value **against what was paid** — €10 of Fs on a €10 invoice is `100 %`, not `50 %` |
-| 32 | Is `is_fs` part of `product_flag`? | **No, it was split out.** Every `product_flag` value is read off the document; an Fs article has no document origin at all. Keeping `F` inside that enum conflated "what the receipt said" with "what the household added afterwards" — and forced a false exclusivity, since an appended article can still be a `SEASONAL` or `OTHER` line. A boolean beside the enum removes both problems |
-| 33 | Do Fs estimates pollute price history? | **No — they are trusted and included.** An earlier draft excluded them from `ProductPriceHistory` on the grounds that a household estimate is not a merchant observation. That was over-cautious: the estimate is taken as correct, and the household would rather *choose* per query than have the decision made for it. So Fs rows are written like any other, carry `is_fs` onto the snapshot, and every price view respects the `fs` filter. The one guard that remains is arithmetic, not editorial: an Fs snapshot stores the notional value in **both** price columns, because writing the literal `paid_price_eur = 0.00` would pull every paid-price trend for that product toward zero |
-| 34 | Does the category belong on `ReceiptItem` or on `MasterProduct`? | **On the product — moved, and five columns disappeared from the hottest table.** The file already stated the rule that settles it: *"two items with different categories are, by rule, different master products."* If that holds, a per-line category is a denormalization that can only ever drift from it. Three further consequences all point the same way: reparent now rewrites thousands of product rows instead of millions of line rows; a category is confirmed **once per product** rather than once per line, so the review backlog shrinks instead of growing with every shop; and an Fs article inherits its category for free by resolving to a product. Category spend costs one indexed join to a small table. A line that has not resolved to a product simply has no category yet — which is the truth, and is exactly what `is_complete` already reports |
-| 35 | Is `ReceiptDuplicateLog` needed? | **No — removed, table and all.** The ATCUD is a legally unique document identifier, so a duplicate is not something to detect with fuzzy scoring but something to **make impossible**: `(entity_id, atcud_code)` unique, plus the existing SHA-256 idempotency. That deletes a table, a similarity threshold, a review screen, two endpoints, and the requirement to ship labelled duplicate pairs in the seed. The only case the constraint cannot cover is a receipt with no readable ATCUD, and that gets a soft merchant + date + total warning — a prompt, not a workflow |
+| 31 | What exactly is an Fs article? | **An article that was never on the invoice**, appended by hand — not a printed line reclassified. Hence no `line_no`, `merchant_section` or `iva_class_raw`, exclusion from the printed `item_count` check, and the guarantee that adding one disturbs no reconciliation: `paid_price_eur` is `0.00`. `notional_total_eur = total_eur + fs_value_eur`; `fs_share_pct` measures Fs **against what was paid** — €10 of Fs on a €10 invoice is `100 %`, not `50 %` |
+| 32 | Is `is_fs` part of `product_flag`? | **No, separate.** Every `product_flag` value is read off the document; an Fs article has no document origin at all, and an appended article can still be `SEASONAL` |
+| 33 | Do Fs estimates pollute price history? | **No — trusted and included**, carrying `is_fs` onto the snapshot so every price view can filter. The one guard is arithmetic: an Fs snapshot stores the notional value in **both** price columns, because a literal `0.00` would pull paid-price trends toward zero |
+| 34 | Category on `ReceiptItem` or `MasterProduct`? | **On the product.** The module's own rule settles it — *"two items with different categories are different master products"* — so a per-line category could only drift from it. Consequences: reparent rewrites thousands of product rows not millions of line rows; a category is confirmed **once per product**, so the backlog shrinks instead of growing with every shop; and an Fs article inherits its category by resolving. Category spend costs one indexed join |
+| 35 | A `ReceiptDuplicateLog` table? | **No.** The ATCUD is a legally unique document id, so duplicates are made **impossible** by `UNIQUE (entity_id, atcud_code)` plus SHA-256 idempotency — not detected by fuzzy scoring. A receipt with no readable ATCUD gets a soft merchant + date + total warning |
 | 36 | Is `F` safe to pattern-match? | **No — it is overloaded three ways.** Lidl uses `F` as an **IVA class letter for 0 %** (`Deposito 0.10 0,10 F`); every merchant numbers documents `FS …` for *fatura simplificada*; and the household calls its added articles "Fs". Only the third is ours, and it is never printed. A parser that greps for `F` would tag deposits as freebies |
-| 37 | Is `LoyaltyAllocation` a table? | **No — four nullable fields on `Receipt`.** It was strictly one row per receipt, which is a column set wearing a table's clothes, and `applied_to_item_ids` merely restated what `invoice_allocated_discount_eur` already records per item. Only one merchant of the four prints a loyalty scheme at all. The limit is honest: this shape holds **one monetary scheme per receipt**, so if a second ever needs tracking on the same document it becomes a table again |
+| 37 | Is `LoyaltyAllocation` a table? | **No — four nullable fields on `Receipt`.** It was strictly one row per receipt, and only one merchant of four prints a scheme at all. The limit is honest: this holds **one monetary scheme per receipt**; a second would make it a table again |
+| 38 | Is IVA modelled? | **No — the largest simplification available.** Nothing consumed it: no KPI, no deduction, no filing. It cost a per-merchant map because **the same letter means different rates** (`A` is 6 % at Continente, 23 % at Lidl), a token that is a letter at three merchants and a percentage at the fourth, a collision with the Fs vocabulary, and an inference rule — all to buy a check that `Σ lines ≈ total` already performs. `iva_class_raw` keeps the printed token, so a backfill could recover it |
+| 39 | What happens when the catalogue is empty? | **Nothing resolves, and that is correct.** A cold first pass sends everything to review. The fix is data, not thresholds: the legacy import seeds ~1,564 products and their aliases, which is why it sits in slice M1b rather than at the end |
+| 40 | Are this file's transcriptions a parsing benchmark? | **No.** They came from `pdftotext -layout` and a vision model; production uses `pdfplumber` word boxes and `pytesseract`, and the photograph will parse far worse. See Extraction Strategy |
+| 41 | Is there an ≥80 % auto-accept target? | **No — dropped.** It was invented before anything was measured and was quietly corrosive: the cheapest way to hit it is to lower `confidence.auto_accept`, raising the number while lowering quality. It also needed an elaborate ritual to mean anything — second pass, PDFs only, post-import — a sign the metric served itself. Replaced by **confidence on every line and receipt** plus the UX-1.5 status screen. The rate is still shown, **observed, never targeted** |
 
 ---
 
 ## Source-of-Truth Mapping (legacy Excel → model)
 
-The household's `SUPERMERCADOS_YYYY` sheets (1 row = 1 purchased article; ~1,275
-rows in 2026) are the migration source. The sheet is **flat**: it has no
-`Receipt` parent and derives the invoice total with `SUMIF` on `Full_Date`. On
-import, **group rows by `Full_Date` + store into a `Receipt`**, then map each
-row to a `ReceiptItem`.
+The household's `SUPERMARKET_YYYY` sheets are the migration source; the real
+[2025 file](../seed/supermarket/SUPERMARKET_2025.xlsx) holds **2,429 rows across
+288 receipts and 18 distinct merchant spellings**. The sheet is **flat**: it has
+no `Receipt` parent and derives the invoice total with `SUMIF`. Everything below
+was measured against that file, not assumed.
+
+> ⚠️ **Undo the Fs timestamp nudge first, then group by the timestamp itself.**
+> Fs rows were recorded about **a second after** the invoice they belong to — an
+> artefact of how the sheet was filled in, not a fact about the purchase.
+> Measured: **401 of 425 Fs rows sit at exactly +1 s** from the nearest earlier
+> non-Fs row of the same shop and day; 17 sit at +0 s.
+>
+> That one second did real damage, because the sheet's `Preço Fatura` is a
+> `SUMIF` over `Full_Date`: a nudged Fs row **summed only itself**, so its
+> "invoice total" is its own price — true of 59 rows outright. Grouping on that
+> column therefore invents a separate one-line invoice for the Fs article, which
+> is the exact opposite of the association Decision #31 exists to preserve.
+>
+> **The rule:** for each Fs row, snap its timestamp back onto the nearest non-Fs
+> timestamp within **2 seconds** on the same shop and day; then group by
+> `(Supermercado, timestamp)`. Snapping beats blanket −1 s because 17 rows were
+> never nudged. No date-only key, no gap heuristic, no `Preço Fatura` in the key.
+
+| Grouping rule | Receipts | Groups that are **only** Fs | Reconciling |
+| :--- | ---: | ---: | ---: |
+| `(shop, day, Preço Fatura)` | 431 | **150** — the bug | 427, inflated by 150 trivial self-matches |
+| Blanket −1 s on every Fs row | 295 | 13 | 274 |
+| **Snap ≤ 2 s, then `(shop, timestamp)`** | **288** | **6** | **274** |
+
+288 receipts over 2,429 rows is ~8.4 articles per shop, which is what a grocery
+receipt actually looks like; the 431 figure was ~5.6 and was wrong. **274
+reconcile within €0.02; the other 14 go to review.** The 6 surviving all-Fs
+groups are Fs articles with no invoice to attach to — import them as receipts
+with `total_eur = 0.00` and flag them, rather than inventing a parent.
+
+**The import validates rather than trusts.** The sheet was maintained by hand
+over years and is wrong in places, so every imported receipt is scored like a
+parsed one: it gets a `confidence` and `decision_reasons`, and a group that does
+not reconcile lands in `NEEDS_REVIEW` instead of being written as fact. At
+minimum the importer checks that `Σ Price_Final` over non-Fs rows matches the
+invoice total, that `Price_Final ≈ Price − PromoInd − PromoGlob`, that dates and
+merchants are plausible, and that every Fs row found an anchor — reporting each
+exception rather than silently repairing it.
+
+**Merchant names need normalizing before find-or-create.** `Mercadona` and
+`mercadona` are the same shop; `Fruta`, `Fruta Chines`, `Super Fruta King` and
+`Loja chines` are near-collisions. Match case-insensitively on a trimmed name.
+
+**Non-grocery merchants are skipped for now.** IKEA, Leroy, Wells, Normal,
+Action and El Corte Inglés are ~5 % of rows and fall outside this module's
+scope. The importer **excludes them and reports the count**, so the decision
+stays visible and reversible — widening the scope later is a re-run, not a
+migration.
+
+**Fs is not an edge case: 425 rows, 17.5 % of the sheet** (`F` 419, lowercase
+`f` 6 — match case-insensitively). `Preço Fatura` on those rows already excludes
+their value, which independently confirms the model in Decision #31.
 
 | Legacy column | Model target | Notes |
 | :--- | :--- | :--- |
-| `Full_Date` (`Date` + `Hora`) | `Receipt.purchased_at` + `purchase_date`, and the grouping key | Rows sharing a `Full_Date` form one `Receipt`. Keep the Lisbon calendar date |
-| `Date_ID` | *derived* | `YYYYMMDD`; compute, never store |
-| `Supermercado` | `Receipt.merchant_id` | Find-or-create the merchant from the distinct values (Continente, Pingo Doce, Lidl, Piquete da Fruta, …) |
-| `Descrição` | `ReceiptItem.description_raw` → `description_norm` | Feeds fuzzy → `MasterProduct` resolution |
+| `Full_Date` (`Date` + `Hora`) — **Fs rows snapped back ≤ 2 s** | the **grouping key**, with `Supermercado` → one `Receipt`; and `Receipt.purchased_at` + `purchase_date` | Verified: 288 groups, 274 reconciling. Keep the Lisbon calendar date |
+| `Date_ID` | *nothing* | Day granularity only; using it as a key merges two visits with the same total — e.g. two Pingo Doce €1,19 rows on 25/01 that are 5 h apart |
+| `Supermercado` | `Receipt.merchant_id` | Find-or-create on a **trimmed, case-folded** name across all 18 spellings |
+| `Descrição` | `ReceiptItem.description_raw` → `description_norm` | 1,654 distinct raw, **1,564 once trimmed and case-folded** — 747 rows carry stray whitespace. Those 1,564 become the initial `MasterProduct` catalogue and its aliases |
 | `Price` | `unit_price_pvp_eur` | Gross list price before discounts |
-| `PromoInd` | `promo_discount_eur` | Per-item promo (32.8% filled) |
-| `PromoGlob` | `invoice_allocated_discount_eur` | Populated on only ~9% of legacy rows — **recompute deterministically** from the receipt-level ratio for every row |
+| `PromoInd` | `promo_discount_eur` | Per-item promo (17.6 % filled) |
+| `PromoGlob` | `invoice_allocated_discount_eur` | Only 8 % filled — **recompute deterministically** from the receipt-level ratio for every row |
 | `Price_Final` | `paid_price_eur` | Primary net-spend metric; verify against the recomputed value and report drift |
-| `Categoria` / `_2` / `_3` | `MasterProduct.category_l1_id` / `l2` / `l3` | Legacy is very incomplete (41% / 37% / 21%) and per-row; on import the category lands on the **product** the row resolves to. This gap *is* the auto-categorization backlog |
-| `Peso` | `weight_observed_kg` | Real scale weight (43.8% filled) |
-| `Peso (proposta)` | `weight_listed_kg` ← `MasterProduct.pack_variants` | The legacy `VLOOKUP`-by-description is exactly the curated-weight learning (93% filled) |
+| `Categoria` / `_2` / `_3` | `MasterProduct.category_l1_id` / `l2` / `l3` | Fill is **100 % / 81.6 % / 52.9 %** — far better than an earlier draft claimed. But it is per-row and **not trustworthy**: one fixture row files a cider under `Talho › Vaca › Almondegas`. Import as an `AUTO` suggestion on the product, never as `VALIDATED` |
+| `Peso` | `weight_observed_kg` | Real scale weight (69.7 % filled) |
+| `Peso (proposta)` | `weight_listed_kg` ← `MasterProduct.pack_variants` | The legacy `VLOOKUP`-by-description is exactly the curated-weight learning |
 | `Preco/Kg/real` | *derived* `price_per_kg_pvp_eur` | Legacy name is a misnomer: it is `Price / Peso`, i.e. the **list** price per kg |
 | `Preco/Kg/promo` | *derived* `price_per_kg_promo_eur` | `(Price − PromoInd) / Peso` |
-| `Flags` (`F`) | `is_fs = true` | These rows were never on an invoice — they import as appended Fs articles with the sheet's price as `unit_price_pvp_eur`, `notional_value_source = MANUAL` and `paid_price_eur = 0.00`. The legacy `SUMIF(Flags,"F")` total becomes the derived `fs_value_eur` |
-| `Preço Fatura` (`SUMIF` per `Full_Date`) | `Receipt.total_eur` | Becomes an explicit parent field, not a per-row formula |
-| `Notas` | `ReceiptItem.notes` | Empty today; preserve the field |
-| `Status` | `Receipt.status` / item `confidence` | Empty today; drives the Review Queue going forward |
+| `Flags` (`F`/`f`) | `is_fs = true` | 425 rows. Never on an invoice — they import as appended Fs articles with the sheet's price as `unit_price_pvp_eur`, `notional_value_source = MANUAL` and `paid_price_eur = 0.00` |
+| `Preço Fatura` | `Receipt.total_eur`, **taken from the non-Fs rows only** | A `SUMIF` over `Full_Date`, so on a nudged Fs row it sums only that row — self-referential and meaningless (59 rows equal their own `Price_Final`). Never use it as a grouping key |
+| `Notas` / `Status` | `ReceiptItem.notes` | **Both hold sparse free text** (2.1 % and 2.4 %), not a status enum — `Status` contains entries like *"Devolvido"* and *"Compras pais dani"*. Import both into `notes`; `Receipt.status` is ours, not theirs |
 | `ID` | `ReceiptItem.legacy_row_ref` | **Not** the primary key — PKs are UUID v7. Kept solely for traceability back to the spreadsheet |
 
-**Caveats carried over:** categories are mostly blank — do not assume
-completeness; `Peso` and €/kg exist for only part of the rows; `PromoGlob` was
-computed on ~9% of rows, so the import must recompute it consistently. The
-import is idempotent: re-running it updates rather than duplicates.
+**Caveats carried over:** L2/L3 categories are partly blank and partly wrong —
+import them as suggestions, never as confirmed; `Peso` and €/kg exist for about
+two thirds of rows; `PromoGlob` was computed on 8 % of rows, so the import must
+recompute it consistently. The import is idempotent: re-running it updates
+rather than duplicates.
 
 ---
 

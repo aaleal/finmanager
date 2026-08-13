@@ -75,7 +75,7 @@ def test_sold_copy_leaves_every_kpi_but_stays_browsable(
     assert after.departed_sale_total_eur == Decimal("750.00")
 
     # Still visible in history.
-    items, total = lego_service.list_instances(
+    items, total, _ = lego_service.list_instances(
         db, entity_ids=[entity.id], active_entity_id=entity.id, ownership_status="SOLD"
     )
     assert total == 1 and items[0].sale_price_eur == Decimal("750.00")

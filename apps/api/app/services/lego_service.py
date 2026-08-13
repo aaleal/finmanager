@@ -21,6 +21,8 @@ from app.core.money import ZERO, appreciation_eur, roi_pct
 from app.core.security import signed_document_url
 from app.models.lego import LegoSetInstance, LegoSetModel, StorageLocation
 from app.schemas.lego import (
+    CollectionSummary,
+    CompletenessFilter,
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
     LegoSetInstanceUpdate,
@@ -28,10 +30,12 @@ from app.schemas.lego import (
     LegoSetModelOut,
     LegoSetModelUpdate,
     OverviewOut,
+    RetirementFilter,
     StorageLocationCreate,
     StorageLocationOut,
     StorageLocationUpdate,
     ThemeBreakdown,
+    TimelinePoint,
 )
 from app.services import documents, settings_service
 
@@ -56,6 +60,8 @@ def _model_out(
         value_is_stale=stale,
         value_age_days=age_days,
         owned_copies_count=owned_copies_count,
+        rrp_appreciation_eur=appreciation_eur(model.rrp_eur, model.current_value_eur),
+        rrp_roi_pct=roi_pct(model.rrp_eur, model.current_value_eur),
     )
 
 
@@ -91,7 +97,7 @@ def _instance_out(
 def _instances_out(
     db: DbSession, instances: list[LegoSetInstance], *, stale_days: int
 ) -> list[LegoSetInstanceOut]:
-    counts = _copy_counts(db, [i.lego_set_model_id for i in instances])
+    counts = copy_counts(db, [i.lego_set_model_id for i in instances])
     return [
         _instance_out(
             instance, stale_days=stale_days, copies_count=counts.get(instance.lego_set_model_id, 0)
@@ -130,7 +136,7 @@ def _scope(
 
 
 # --- Set models --------------------------------------------------------------
-def _copy_counts(db: DbSession, model_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+def copy_counts(db: DbSession, model_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
     if not model_ids:
         return {}
     rows = db.execute(
@@ -186,7 +192,7 @@ def list_models(
     rows = list(
         db.scalars(stmt.order_by(LegoSetModel.name).limit(limit).offset(offset)).unique().all()
     )
-    counts = _copy_counts(db, [r.id for r in rows])
+    counts = copy_counts(db, [r.id for r in rows])
     return (
         [
             _model_out(r, stale_days=stale_days, owned_copies_count=counts.get(r.id, 0))
@@ -205,7 +211,7 @@ def get_model(db: DbSession, model_id: uuid.UUID) -> LegoSetModel:
 
 def model_out(db: DbSession, model: LegoSetModel) -> LegoSetModelOut:
     stale_days = settings_service.stale_value_days(db)
-    counts = _copy_counts(db, [model.id])
+    counts = copy_counts(db, [model.id])
     return _model_out(model, stale_days=stale_days, owned_copies_count=counts.get(model.id, 0))
 
 
@@ -379,6 +385,33 @@ def _instance_query() -> Select[Any]:
     )
 
 
+# One sortable field per column the grid offers; direction is chosen separately
+# so the UI needs a short list plus an asc/desc toggle rather than two entries per
+# field.
+SORT_FIELDS: dict[str, Any] = {
+    "created": LegoSetInstance.created_at,
+    "name": LegoSetModel.name,
+    "pieces": LegoSetModel.piece_count,
+    "year": LegoSetModel.release_year,
+    "cost": LegoSetInstance.acquisition_cost_eur,
+    "value": LegoSetModel.current_value_eur,
+}
+
+
+def _order_by(sort: str, direction: str) -> Any:
+    """Resolve ``sort``/``direction`` into an ORDER BY clause.
+
+    Legacy combined values (``value_desc``) are still understood so bookmarked
+    URLs keep working.
+    """
+    field, _, suffix = sort.partition("_")
+    if suffix in ("asc", "desc"):
+        direction = suffix
+    column = SORT_FIELDS.get(field, LegoSetInstance.created_at)
+    # NULLs are absent data, never "the smallest" — they belong at the bottom.
+    return column.desc().nullslast() if direction == "desc" else column.asc().nullslast()
+
+
 def list_instances(
     db: DbSession,
     *,
@@ -387,16 +420,18 @@ def list_instances(
     search: str | None = None,
     theme: str | None = None,
     storage_location_id: uuid.UUID | None = None,
+    storage_area: str | None = None,
     build_state: str | None = None,
     condition: str | None = None,
     ownership_status: str | None = "IN_COLLECTION",
-    incomplete_only: bool = False,
-    retired_only: bool = False,
+    completeness: CompletenessFilter = "all",
+    retirement: RetirementFilter = "all",
     model_id: uuid.UUID | None = None,
-    sort: str = "created_desc",
+    sort: str = "created",
+    direction: str = "desc",
     limit: int = 50,
     offset: int = 0,
-) -> tuple[list[LegoSetInstanceOut], int]:
+) -> tuple[list[LegoSetInstanceOut], int, CollectionSummary]:
     stale_days = settings_service.stale_value_days(db)
     stmt = (
         _instance_query()
@@ -425,38 +460,67 @@ def list_instances(
         stmt = stmt.where(LegoSetModel.theme == theme)
     if storage_location_id:
         stmt = stmt.where(LegoSetInstance.storage_location_id == storage_location_id)
+    if storage_area:
+        # "Everything in the garage" — the table stays flat; only the filter is
+        # hierarchical (M9.1).
+        stmt = stmt.where(
+            LegoSetInstance.storage_location_id.in_(
+                select(StorageLocation.id).where(
+                    StorageLocation.area == storage_area,
+                    StorageLocation.is_deleted.is_(False),
+                )
+            )
+        )
     if build_state:
         stmt = stmt.where(LegoSetInstance.build_state == build_state)
     if condition:
         stmt = stmt.where(LegoSetInstance.condition == condition)
-    if incomplete_only:
-        stmt = stmt.where(
-            and_(
-                LegoSetInstance.missing_parts.is_not(None),
-                func.trim(LegoSetInstance.missing_parts) != "",
-            )
-        )
-    if retired_only:
+
+    has_missing_parts = and_(
+        LegoSetInstance.missing_parts.is_not(None),
+        func.trim(LegoSetInstance.missing_parts) != "",
+    )
+    if completeness == "incomplete":
+        stmt = stmt.where(has_missing_parts)
+    elif completeness == "complete":
+        stmt = stmt.where(~has_missing_parts)
+
+    if retirement == "retired":
         stmt = stmt.where(LegoSetModel.retired_year.is_not(None))
+    elif retirement == "available":
+        stmt = stmt.where(LegoSetModel.retired_year.is_(None))
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    summary = _collection_summary(db, stmt, total)
 
-    order_options: dict[str, Any] = {
-        "created_desc": LegoSetInstance.created_at.desc(),
-        "created_asc": LegoSetInstance.created_at.asc(),
-        "name_asc": LegoSetModel.name.asc(),
-        "name_desc": LegoSetModel.name.desc(),
-        "cost_desc": LegoSetInstance.acquisition_cost_eur.desc(),
-        "cost_asc": LegoSetInstance.acquisition_cost_eur.asc(),
-        "value_desc": LegoSetModel.current_value_eur.desc().nullslast(),
-        "value_asc": LegoSetModel.current_value_eur.asc().nullsfirst(),
-        "pieces_desc": LegoSetModel.piece_count.desc().nullslast(),
-        "year_desc": LegoSetModel.release_year.desc().nullslast(),
-    }
-    order = order_options.get(sort, LegoSetInstance.created_at.desc())
+    rows = list(
+        db.scalars(stmt.order_by(_order_by(sort, direction)).limit(limit).offset(offset))
+        .unique()
+        .all()
+    )
+    return _instances_out(db, rows, stale_days=stale_days), total, summary
 
-    rows = list(db.scalars(stmt.order_by(order).limit(limit).offset(offset)).unique().all())
-    return _instances_out(db, rows, stale_days=stale_days), total
+
+def _collection_summary(db: DbSession, stmt: Select[Any], total: int) -> CollectionSummary:
+    """Totals across every copy matching the filters, not just the current page."""
+    matched = stmt.subquery()
+    row = db.execute(
+        select(
+            func.count(func.distinct(matched.c.lego_set_model_id)),
+            func.coalesce(func.sum(matched.c.acquisition_cost_eur), 0),
+            func.coalesce(func.sum(LegoSetModel.current_value_eur), 0),
+            func.coalesce(func.sum(LegoSetModel.piece_count), 0),
+        )
+        .select_from(matched)
+        .join(LegoSetModel, LegoSetModel.id == matched.c.lego_set_model_id)
+    ).one()
+    return CollectionSummary(
+        copies=total,
+        unique_sets=row[0],
+        total_cost_eur=Decimal(row[1]),
+        total_value_eur=Decimal(row[2]),
+        total_pieces=int(row[3]),
+    )
 
 
 def get_instance(db: DbSession, instance_id: uuid.UUID) -> LegoSetInstance:
@@ -756,6 +820,48 @@ def delete_storage_location(
 
 
 # --- Overview ----------------------------------------------------------------
+def _timeline(copies: list[LegoSetInstance]) -> tuple[list[TimelinePoint], int]:
+    """Cumulative acquisition curve, by month of ``acquisition_date``.
+
+    Copies and cost are genuine history. ``value_eur`` is **today's** market value
+    of everything owned up to that month — the module keeps a single hand-set value
+    per set and no snapshot table (ADR-0008), so a real price history cannot exist.
+    Copies without an acquisition date are counted apart and never guessed into a
+    bucket.
+    """
+    buckets: dict[str, dict[str, Any]] = {}
+    undated = 0
+
+    for copy in copies:
+        if copy.acquisition_date is None:
+            undated += 1
+            continue
+        month = copy.acquisition_date.strftime("%Y-%m")
+        bucket = buckets.setdefault(month, {"copies": 0, "cost": ZERO, "value": ZERO})
+        bucket["copies"] += 1
+        bucket["cost"] += copy.acquisition_cost_eur
+        bucket["value"] += copy.model.current_value_eur or ZERO
+
+    points: list[TimelinePoint] = []
+    running_copies = 0
+    running_cost = ZERO
+    running_value = ZERO
+    for month in sorted(buckets):
+        bucket = buckets[month]
+        running_copies += bucket["copies"]
+        running_cost += bucket["cost"]
+        running_value += bucket["value"]
+        points.append(
+            TimelinePoint(
+                month=month,
+                copies=running_copies,
+                cost_eur=running_cost,
+                value_eur=running_value,
+            )
+        )
+    return points, undated
+
+
 def overview(
     db: DbSession, *, entity_ids: list[uuid.UUID], active_entity_id: uuid.UUID | None
 ) -> OverviewOut:
@@ -809,6 +915,7 @@ def overview(
 
     gain = total_value - valued_cost
     overall_roi = roi_pct(valued_cost, total_value) if valued_cost > ZERO else None
+    timeline, copies_without_date = _timeline(copies)
 
     ranked = sorted(
         (c for c in copies if c.model.current_value_eur is not None),
@@ -880,6 +987,8 @@ def overview(
             key=lambda t: t.value_eur,
             reverse=True,
         ),
+        timeline=timeline,
+        copies_without_date=copies_without_date,
         top_gainers=top_gainers,
         top_losers=top_losers,
         locations_full=sum(1 for loc in locations if loc.is_full),

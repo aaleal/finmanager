@@ -83,6 +83,14 @@ const EMPTY: FormValues = {
   notes: '',
 };
 
+/** The set an extra copy is being registered against, when there is one. */
+export interface ExistingModel {
+  id: string;
+  name: string;
+  setNumber: string | null;
+  entityId: string;
+}
+
 function toNumber(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -122,20 +130,67 @@ function Collapsible({
   );
 }
 
+/** Entity picker carrying the same colour dot as the global selector (M9.1). */
+export function EntityField({
+  value,
+  onChange,
+  hint,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  hint?: string;
+}) {
+  const { entities } = useSession();
+  const writable = entities.filter((entity) => !entity.is_readonly);
+  return (
+    <Field label="Entidade" hint={hint}>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Escolher entidade…" />
+        </SelectTrigger>
+        <SelectContent>
+          {writable.map((entity) => (
+            <SelectItem key={entity.id} value={entity.id}>
+              <span className="flex items-center gap-2">
+                <span
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: entity.color ?? '#94a3b8' }}
+                  aria-hidden
+                />
+                {entity.name}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
+/**
+ * One dialog for both «adicionar conjunto» and «adicionar outra cópia».
+ *
+ * A second copy is the same act as the first, so it gets the same form — including
+ * the bank-statement link, box/instructions and missing parts, which the old
+ * shortcut dialog silently dropped (M9.1). Passing `existingModel` only locks the
+ * catalog identity; everything about the copy stays identical.
+ */
 export function AddSetDialog({
   open,
   onOpenChange,
   storageLocations,
+  existingModel = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   storageLocations: StorageLocation[];
+  existingModel?: ExistingModel | null;
 }) {
   const form = useForm<FormValues>({ defaultValues: EMPTY });
   const lookup = useLookup();
   const createInstance = useCreateInstance();
-  const { entities, activeEntityId } = useSession();
-  const [entityId, setEntityId] = React.useState(activeEntityId ?? '');
+  const { activeEntityId } = useSession();
+  const [entityId, setEntityId] = React.useState(existingModel?.entityId ?? activeEntityId ?? '');
   const [lookupResult, setLookupResult] = React.useState<LookupResult | null>(null);
   const [duplicateModelId, setDuplicateModelId] = React.useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -143,7 +198,6 @@ export function AddSetDialog({
 
   const isCustom = form.watch('is_custom');
   const setNumber = form.watch('set_number');
-  const writableEntities = entities.filter((entity) => !entity.is_readonly);
 
   React.useEffect(() => {
     if (!open) {
@@ -151,9 +205,9 @@ export function AddSetDialog({
       setLookupResult(null);
       setDuplicateModelId(null);
       setTransaction(null);
-      setEntityId(activeEntityId ?? '');
     }
-  }, [open, form, activeEntityId]);
+    setEntityId(existingModel?.entityId ?? activeEntityId ?? '');
+  }, [open, form, activeEntityId, existingModel]);
 
   async function runLookup() {
     if (!setNumber.trim()) return;
@@ -194,7 +248,12 @@ export function AddSetDialog({
       has_instructions: values.has_instructions,
       missing_parts: values.missing_parts || null,
       notes: values.notes || null,
-      new_set: {
+    };
+
+    if (existingModel) {
+      payload.lego_set_model_id = existingModel.id;
+    } else {
+      payload.new_set = {
         set_number: values.is_custom ? null : values.set_number.trim().toUpperCase(),
         is_custom: values.is_custom,
         name: values.name.trim(),
@@ -208,8 +267,8 @@ export function AddSetDialog({
         current_value_eur: toMoney(values.current_value_eur),
         short_description: values.short_description || null,
         image_url: values.image_url || null,
-      },
-    };
+      };
+    }
 
     try {
       await createInstance.mutateAsync(payload);
@@ -229,154 +288,153 @@ export function AddSetDialog({
         <DialogContent size="lg">
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-col">
             <DialogHeader>
-              <DialogTitle>Adicionar conjunto</DialogTitle>
+              <DialogTitle>
+                {existingModel ? 'Adicionar outra cópia' : 'Adicionar conjunto'}
+              </DialogTitle>
               <DialogDescription>
-                Comece pelo número do conjunto. O mínimo necessário é o conjunto e o custo — tudo
-                o resto é opcional.
+                {existingModel
+                  ? `${existingModel.setNumber ?? 'MOC'} · ${existingModel.name}. Cada cópia tem o seu próprio custo, local e ligação ao extrato.`
+                  : 'Comece pelo número do conjunto. O mínimo necessário é o conjunto e o custo — tudo o resto é opcional.'}
               </DialogDescription>
             </DialogHeader>
 
             <DialogBody className="space-y-5">
               {/* --- Attribution ---------------------------------------------- */}
-              {!activeEntityId ? (
-                <Field
-                  label="Entidade"
+              {!activeEntityId && !existingModel ? (
+                <EntityField
+                  value={entityId}
+                  onChange={setEntityId}
                   hint="A quem pertence esta cópia. Nunca é adivinhado quando está a ver «todas»."
-                >
-                  <Select value={entityId} onValueChange={setEntityId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolher entidade…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {writableEntities.map((entity) => (
-                        <SelectItem key={entity.id} value={entity.id}>
-                          {entity.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
+                />
               ) : null}
 
               {/* --- Identity ------------------------------------------------ */}
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-end gap-3">
-                  <Field label="Número do conjunto" className="min-w-[10rem] flex-1">
-                    <Input
-                      placeholder="10307"
-                      disabled={isCustom}
-                      autoFocus
-                      {...form.register('set_number')}
-                    />
-                  </Field>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={runLookup}
-                    loading={lookup.isPending}
-                    disabled={isCustom || !setNumber.trim()}
-                  >
-                    <Search />
-                    Procurar
-                  </Button>
-                </div>
+              {existingModel ? null : (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <Field label="Número do conjunto" className="min-w-[10rem] flex-1">
+                        <Input
+                          placeholder="10307"
+                          disabled={isCustom}
+                          autoFocus
+                          {...form.register('set_number')}
+                        />
+                      </Field>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={runLookup}
+                        loading={lookup.isPending}
+                        disabled={isCustom || !setNumber.trim()}
+                      >
+                        <Search />
+                        Procurar
+                      </Button>
+                    </div>
 
-                <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-                  <Checkbox
-                    checked={isCustom}
-                    onCheckedChange={(checked) => {
-                      form.setValue('is_custom', checked === true);
-                      if (checked === true) form.setValue('set_number', '');
-                    }}
-                  />
-                  Não tem número / é um MOC
-                </label>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+                      <Checkbox
+                        checked={isCustom}
+                        onCheckedChange={(checked) => {
+                          form.setValue('is_custom', checked === true);
+                          if (checked === true) form.setValue('set_number', '');
+                        }}
+                      />
+                      Não tem número / é um MOC
+                    </label>
 
-                {lookupResult ? (
-                  <div
-                    className={cn(
-                      'flex items-start gap-3 rounded-lg border px-3 py-2 text-sm',
-                      lookupResult.found
-                        ? 'border-success/30 bg-success/8 text-success'
-                        : 'border-warning/30 bg-warning/8 text-warning',
-                    )}
-                  >
-                    <Sparkles className="mt-0.5 size-4 shrink-0" />
-                    <p>
-                      {lookupResult.found
-                        ? `Dados obtidos do Brickset para ${lookupResult.set_number}. Pode editar tudo.`
-                        : lookupResult.message}
-                    </p>
+                    {lookupResult ? (
+                      <div
+                        className={cn(
+                          'flex items-start gap-3 rounded-lg border px-3 py-2 text-sm',
+                          lookupResult.found
+                            ? 'border-success/30 bg-success/8 text-success'
+                            : 'border-warning/30 bg-warning/8 text-warning',
+                        )}
+                      >
+                        <Sparkles className="mt-0.5 size-4 shrink-0" />
+                        <p>
+                          {lookupResult.found
+                            ? `Dados obtidos do Brickset para ${lookupResult.set_number}. Pode editar tudo.`
+                            : lookupResult.message}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {duplicateModelId ? (
+                      <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+                        Já tem este conjunto. Feche esta janela e use{' '}
+                        <strong>«adicionar outra cópia»</strong> na ficha do conjunto.
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
 
-                {duplicateModelId ? (
-                  <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
-                    Já tem este conjunto. Feche esta janela e use{' '}
-                    <strong>«adicionar outra cópia»</strong> na ficha do conjunto.
+                  <Separator />
+
+                  {/* --- Set metadata ---------------------------------------- */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Nome" className="sm:col-span-2">
+                      <Input
+                        placeholder="Torre Eiffel"
+                        {...form.register('name', { required: true })}
+                      />
+                    </Field>
+                    <Field label="Tema">
+                      <Input placeholder="Icons" {...form.register('theme')} />
+                    </Field>
+                    <Field label="Subtema">
+                      <Input placeholder="Landmarks" {...form.register('subtheme')} />
+                    </Field>
                   </div>
-                ) : null}
-              </div>
 
-              <Separator />
+                  <Collapsible title="Detalhes do conjunto">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Ano de lançamento">
+                        <Input type="number" {...form.register('release_year')} />
+                      </Field>
+                      <Field label="Ano de retirada" hint="Deixe vazio se ainda está à venda.">
+                        <Input type="number" {...form.register('retired_year')} />
+                      </Field>
+                      <Field label="Peças">
+                        <Input type="number" {...form.register('piece_count')} />
+                      </Field>
+                      <Field label="Minifiguras">
+                        <Input type="number" {...form.register('minifig_count')} />
+                      </Field>
+                      <Field label="PVP original (€)">
+                        <Input
+                          inputMode="decimal"
+                          placeholder="629,99"
+                          {...form.register('rrp_eur')}
+                        />
+                      </Field>
+                      <Field
+                        label="Valor de mercado atual (€)"
+                        hint="Mantido à mão. Fica marcado como desatualizado com o tempo."
+                      >
+                        <Input
+                          inputMode="decimal"
+                          placeholder="689,00"
+                          {...form.register('current_value_eur')}
+                        />
+                      </Field>
+                      <Field label="Descrição" className="sm:col-span-2">
+                        <Textarea rows={2} {...form.register('short_description')} />
+                      </Field>
+                      <Field
+                        label="Imagem (endereço)"
+                        className="sm:col-span-2"
+                        hint="A imagem é transferida uma vez e guardada no NAS — nunca é usada por ligação direta."
+                      >
+                        <Input placeholder="https://…" {...form.register('image_url')} />
+                      </Field>
+                    </div>
+                  </Collapsible>
 
-              {/* --- Set metadata -------------------------------------------- */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Nome" className="sm:col-span-2">
-                  <Input
-                    placeholder="Torre Eiffel"
-                    {...form.register('name', { required: true })}
-                  />
-                </Field>
-                <Field label="Tema">
-                  <Input placeholder="Icons" {...form.register('theme')} />
-                </Field>
-                <Field label="Subtema">
-                  <Input placeholder="Landmarks" {...form.register('subtheme')} />
-                </Field>
-              </div>
-
-              <Collapsible title="Detalhes do conjunto">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Ano de lançamento">
-                    <Input type="number" {...form.register('release_year')} />
-                  </Field>
-                  <Field label="Ano de retirada" hint="Deixe vazio se ainda está à venda.">
-                    <Input type="number" {...form.register('retired_year')} />
-                  </Field>
-                  <Field label="Peças">
-                    <Input type="number" {...form.register('piece_count')} />
-                  </Field>
-                  <Field label="Minifiguras">
-                    <Input type="number" {...form.register('minifig_count')} />
-                  </Field>
-                  <Field label="PVP original (€)">
-                    <Input inputMode="decimal" placeholder="629,99" {...form.register('rrp_eur')} />
-                  </Field>
-                  <Field
-                    label="Valor de mercado atual (€)"
-                    hint="Mantido à mão. Fica marcado como desatualizado com o tempo."
-                  >
-                    <Input
-                      inputMode="decimal"
-                      placeholder="689,00"
-                      {...form.register('current_value_eur')}
-                    />
-                  </Field>
-                  <Field label="Descrição" className="sm:col-span-2">
-                    <Textarea rows={2} {...form.register('short_description')} />
-                  </Field>
-                  <Field
-                    label="Imagem (endereço)"
-                    className="sm:col-span-2"
-                    hint="A imagem é transferida uma vez e guardada no NAS — nunca é usada por ligação direta."
-                  >
-                    <Input placeholder="https://…" {...form.register('image_url')} />
-                  </Field>
-                </div>
-              </Collapsible>
-
-              <Separator />
+                  <Separator />
+                </>
+              )}
 
               {/* --- The copy ------------------------------------------------- */}
               <div className="grid gap-4 sm:grid-cols-2">
@@ -384,6 +442,7 @@ export function AddSetDialog({
                   <Input
                     inputMode="decimal"
                     placeholder="599,99"
+                    autoFocus={Boolean(existingModel)}
                     {...form.register('acquisition_cost_eur')}
                   />
                 </Field>
@@ -520,7 +579,12 @@ export function AddSetDialog({
                       <X />
                     </Button>
                   ) : null}
-                  <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPickerOpen(true)}
+                  >
                     <Link2 />
                     Escolher
                   </Button>
@@ -551,154 +615,6 @@ export function AddSetDialog({
         onSelect={setTransaction}
       />
     </>
-  );
-}
-
-export function AddCopyDialog({
-  open,
-  onOpenChange,
-  modelId,
-  modelName,
-  entityId,
-  storageLocations,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  modelId: string;
-  modelName: string;
-  entityId: string;
-  storageLocations: StorageLocation[];
-}) {
-  const createInstance = useCreateInstance();
-  const form = useForm<Pick<FormValues, 'acquisition_cost_eur' | 'acquisition_date' | 'acquisition_source' | 'storage_location_id' | 'build_state' | 'condition' | 'notes'>>({
-    defaultValues: {
-      acquisition_cost_eur: '',
-      acquisition_date: '',
-      acquisition_source: '',
-      storage_location_id: '',
-      build_state: '',
-      condition: '',
-      notes: '',
-    },
-  });
-
-  React.useEffect(() => {
-    if (!open) form.reset();
-  }, [open, form]);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="sm">
-        <form
-          onSubmit={form.handleSubmit(async (values) => {
-            await createInstance.mutateAsync({
-              lego_set_model_id: modelId,
-              entity_id: entityId,
-              acquisition_cost_eur: toMoney(values.acquisition_cost_eur) ?? '0.00',
-              acquisition_date: values.acquisition_date || null,
-              acquisition_source: values.acquisition_source || null,
-              storage_location_id: values.storage_location_id || null,
-              build_state: values.build_state || null,
-              condition: values.condition || null,
-              notes: values.notes || null,
-            });
-            onOpenChange(false);
-          })}
-        >
-          <DialogHeader>
-            <DialogTitle>Adicionar outra cópia</DialogTitle>
-            <DialogDescription>{modelName}</DialogDescription>
-          </DialogHeader>
-          <DialogBody className="grid gap-4 sm:grid-cols-2">
-            <Field label="Custo (€)">
-              <Input inputMode="decimal" {...form.register('acquisition_cost_eur')} />
-            </Field>
-            <Field label="Data">
-              <Input type="date" {...form.register('acquisition_date')} />
-            </Field>
-            <Field label="Origem">
-              <Select
-                value={form.watch('acquisition_source')}
-                onValueChange={(value) => form.setValue('acquisition_source', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(SOURCE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Local">
-              <Select
-                value={form.watch('storage_location_id')}
-                onValueChange={(value) => form.setValue('storage_location_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {storageLocations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Estado">
-              <Select
-                value={form.watch('build_state')}
-                onValueChange={(value) => form.setValue('build_state', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(BUILD_STATE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Condição">
-              <Select
-                value={form.watch('condition')}
-                onValueChange={(value) => form.setValue('condition', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CONDITION_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Notas" className="sm:col-span-2">
-              <Textarea rows={2} {...form.register('notes')} />
-            </Field>
-          </DialogBody>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={createInstance.isPending}>
-              Adicionar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 

@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
 import {
   useDeleteInstance,
+  useDeleteModel,
   useModelInstances,
   useSetInstancePhoto,
   useUpdateInstance,
@@ -51,7 +52,7 @@ import {
   SOURCE_LABELS,
   externalLinks,
 } from './constants';
-import { AddCopyDialog } from './add-set-dialog';
+import { AddSetDialog } from './add-set-dialog';
 
 function money(value: string) {
   const normalized = value.trim().replace(',', '.');
@@ -417,6 +418,54 @@ function EditCopyForm({
   );
 }
 
+/**
+ * Which of the model's copies is being edited.
+ *
+ * Reaching the sheet from the grouped view always lands on the first copy, so
+ * without this the second copy of a set is unreachable (M9.1).
+ */
+function CopySwitcher({
+  copies,
+  current,
+  onSelect,
+}: {
+  copies: LegoSetInstance[];
+  current: LegoSetInstance;
+  onSelect: (instance: LegoSetInstance) => void;
+}) {
+  if (copies.length <= 1) return null;
+
+  function label(copy: LegoSetInstance, index: number) {
+    return [
+      `Cópia ${index + 1}`,
+      copy.storage_label,
+      copy.acquisition_date ? date(copy.acquisition_date) : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  return (
+    <Field label="Cópia a editar" hint={`Este conjunto tem ${copies.length} cópias.`}>
+      <Select value={current.id} onValueChange={(id) => {
+        const next = copies.find((copy) => copy.id === id);
+        if (next) onSelect(next);
+      }}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {copies.map((copy, index) => (
+            <SelectItem key={copy.id} value={copy.id}>
+              {label(copy, index)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
 function PhotoControl({ instance }: { instance: LegoSetInstance }) {
   const setPhoto = useSetInstancePhoto();
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -454,19 +503,25 @@ export function CopyDetailSheet({
   instance,
   storageLocations,
   onOpenChange,
+  onSelectInstance,
 }: {
   instance: LegoSetInstance | null;
   storageLocations: StorageLocation[];
   onOpenChange: (open: boolean) => void;
+  onSelectInstance: (instance: LegoSetInstance) => void;
 }) {
   const { canWrite } = useSession();
   const [addCopyOpen, setAddCopyOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [alsoDeleteModel, setAlsoDeleteModel] = React.useState(false);
   const deleteInstance = useDeleteInstance();
+  const deleteModel = useDeleteModel();
   const siblings = useModelInstances(instance?.lego_set_model_id ?? null);
+  const copies = siblings.data ?? [];
 
   const model = instance?.set_model ?? null;
   const image = instance?.photo_url ?? model?.image_url ?? null;
+  const isLastCopy = copies.length <= 1;
 
   return (
     <>
@@ -614,6 +669,20 @@ export function CopyDetailSheet({
                         <DetailRow label="Peças">{num(model.piece_count)}</DetailRow>
                         <DetailRow label="Minifiguras">{num(model.minifig_count)}</DetailRow>
                         <DetailRow label="PVP original">{eur(model.rrp_eur)}</DetailRow>
+                        <DetailRow label="Valorização vs PVP">
+                          <span
+                            className={cn(
+                              'numeric',
+                              model.rrp_appreciation_eur &&
+                                (Number(model.rrp_appreciation_eur) >= 0
+                                  ? 'text-success'
+                                  : 'text-destructive'),
+                            )}
+                          >
+                            {signedEur(model.rrp_appreciation_eur)}
+                          </span>
+                        </DetailRow>
+                        <DetailRow label="ROI vs PVP">{percent(model.rrp_roi_pct)}</DetailRow>
                       </dl>
                       {model.short_description ? (
                         <p className="text-sm text-muted-foreground">{model.short_description}</p>
@@ -636,6 +705,11 @@ export function CopyDetailSheet({
 
                   {canWrite ? (
                     <TabsContent value="edit" className="space-y-6">
+                      <CopySwitcher
+                        copies={copies}
+                        current={instance}
+                        onSelect={onSelectInstance}
+                      />
                       <EditCopyForm instance={instance} storageLocations={storageLocations} />
                       <Separator />
                       <OwnershipControls instance={instance} />
@@ -645,7 +719,10 @@ export function CopyDetailSheet({
                       <Button
                         variant="outline"
                         className="text-destructive"
-                        onClick={() => setConfirmDelete(true)}
+                        onClick={() => {
+                          setAlsoDeleteModel(false);
+                          setConfirmDelete(true);
+                        }}
                       >
                         <Trash2 />
                         Eliminar esta cópia
@@ -661,38 +738,48 @@ export function CopyDetailSheet({
                       </Button>
                     ) : null}
                     <ul className="divide-y divide-border rounded-lg border border-border">
-                      {(siblings.data ?? []).map((sibling) => (
-                        <li
-                          key={sibling.id}
-                          className={cn(
-                            'flex items-center justify-between gap-3 px-4 py-3 text-sm',
-                            sibling.id === instance.id && 'bg-muted/50',
-                          )}
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">
-                              {sibling.storage_label ?? 'Sem local'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {[
-                                sibling.build_state ? BUILD_STATE_LABELS[sibling.build_state] : null,
-                                sibling.condition ? CONDITION_LABELS[sibling.condition] : null,
-                                date(sibling.acquisition_date),
-                              ]
-                                .filter(Boolean)
-                                .join(' · ')}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {sibling.ownership_status !== 'IN_COLLECTION' ? (
-                              <Badge variant="muted">
-                                {OWNERSHIP_LABELS[sibling.ownership_status]}
-                              </Badge>
-                            ) : null}
-                            <span className="numeric font-medium">
-                              {eur(sibling.acquisition_cost_eur)}
-                            </span>
-                          </div>
+                      {copies.map((sibling) => (
+                        <li key={sibling.id}>
+                          <button
+                            type="button"
+                            onClick={() => onSelectInstance(sibling)}
+                            className={cn(
+                              'flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-muted/60',
+                              sibling.id === instance.id && 'bg-muted/50',
+                            )}
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">
+                                {sibling.storage_label ?? 'Sem local'}
+                                {sibling.id === instance.id ? (
+                                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                    (em edição)
+                                  </span>
+                                ) : null}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {[
+                                  sibling.build_state
+                                    ? BUILD_STATE_LABELS[sibling.build_state]
+                                    : null,
+                                  sibling.condition ? CONDITION_LABELS[sibling.condition] : null,
+                                  date(sibling.acquisition_date),
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              {sibling.ownership_status !== 'IN_COLLECTION' ? (
+                                <Badge variant="muted">
+                                  {OWNERSHIP_LABELS[sibling.ownership_status]}
+                                </Badge>
+                              ) : null}
+                              <span className="numeric font-medium">
+                                {eur(sibling.acquisition_cost_eur)}
+                              </span>
+                            </div>
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -705,13 +792,16 @@ export function CopyDetailSheet({
       </Dialog>
 
       {instance ? (
-        <AddCopyDialog
+        <AddSetDialog
           open={addCopyOpen}
           onOpenChange={setAddCopyOpen}
-          modelId={instance.lego_set_model_id}
-          modelName={instance.set_model?.name ?? ''}
-          entityId={instance.entity_id}
           storageLocations={storageLocations}
+          existingModel={{
+            id: instance.lego_set_model_id,
+            name: instance.set_model?.name ?? '',
+            setNumber: instance.set_model?.set_number ?? null,
+            entityId: instance.entity_id,
+          }}
         />
       ) : null}
 
@@ -732,6 +822,21 @@ export function CopyDetailSheet({
               <strong className="text-foreground">Eliminar definitivamente</strong> remove a linha
               da base de dados. Use apenas para enganos.
             </p>
+            {isLastCopy ? (
+              <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-foreground">
+                <Checkbox
+                  className="mt-0.5"
+                  checked={alsoDeleteModel}
+                  onCheckedChange={(checked) => setAlsoDeleteModel(checked === true)}
+                />
+                <span>
+                  Eliminar também o conjunto do catálogo
+                  <span className="block text-xs text-muted-foreground">
+                    Esta é a última cópia. Sem isto, o conjunto fica no catálogo sem cópias.
+                  </span>
+                </span>
+              </label>
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
@@ -743,6 +848,9 @@ export function CopyDetailSheet({
               onClick={async () => {
                 if (!instance) return;
                 await deleteInstance.mutateAsync({ id: instance.id });
+                if (alsoDeleteModel) {
+                  await deleteModel.mutateAsync({ id: instance.lego_set_model_id });
+                }
                 setConfirmDelete(false);
                 onOpenChange(false);
               }}
@@ -751,10 +859,13 @@ export function CopyDetailSheet({
             </Button>
             <Button
               variant="destructive"
-              loading={deleteInstance.isPending}
+              loading={deleteInstance.isPending || deleteModel.isPending}
               onClick={async () => {
                 if (!instance) return;
                 await deleteInstance.mutateAsync({ id: instance.id, hard: true });
+                if (alsoDeleteModel) {
+                  await deleteModel.mutateAsync({ id: instance.lego_set_model_id, hard: true });
+                }
                 setConfirmDelete(false);
                 onOpenChange(false);
               }}

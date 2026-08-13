@@ -1,6 +1,19 @@
 import * as React from 'react';
-import { Blocks, Filter, Package, Search, SlidersHorizontal, X } from 'lucide-react';
-import type { LegoSetInstance, Page, StorageLocation } from '@/lib/types';
+import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  Blocks,
+  Filter,
+  Package,
+  Search,
+  X,
+} from 'lucide-react';
+import type {
+  CollectionSummary,
+  LegoInstancePage,
+  LegoSetInstance,
+  StorageLocation,
+} from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -8,24 +21,31 @@ import { Checkbox } from '@/components/ui/primitives';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
-import { date, eur, num, percent, signedEur } from '@/lib/format';
+import { eur, num, percent, signedEur } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   BUILD_STATE_LABELS,
+  BUILD_STATE_VARIANT,
+  COMPLETENESS_OPTIONS,
   CONDITION_LABELS,
   CONDITION_VARIANTS,
   OWNERSHIP_LABELS,
-  SORT_OPTIONS,
+  RETIREMENT_OPTIONS,
+  SORT_FIELDS,
 } from './constants';
 import type { InstanceFilters } from './api';
 
 const ALL = '__all__';
+/** Prefix that tells a whole-area choice apart from a single container. */
+const AREA_PREFIX = 'area:';
 
 function Thumb({ instance }: { instance: LegoSetInstance }) {
   const image = instance.photo_url ?? instance.set_model?.image_url ?? null;
@@ -43,13 +63,33 @@ function Thumb({ instance }: { instance: LegoSetInstance }) {
 }
 
 function RoiCell({ instance }: { instance: LegoSetInstance }) {
+  const model = instance.set_model;
+
+  // A gift has no cost basis, so cost-ROI is undefined by design. Rather than a
+  // dead dash, fall back to the set's value against its original RRP — labelled,
+  // so the two readings are never confused (M9.1).
   if (instance.roi_pct === null) {
+    if (model?.rrp_roi_pct != null) {
+      const up = Number(model.rrp_roi_pct) >= 0;
+      return (
+        <span
+          className="numeric inline-flex items-center gap-1"
+          title="Sem base de custo (prenda). Mostrado face ao PVP original."
+        >
+          <span className={cn('font-medium', up ? 'text-success' : 'text-destructive')}>
+            {percent(model.rrp_roi_pct)}
+          </span>
+          <Badge variant="muted">PVP</Badge>
+        </span>
+      );
+    }
     return (
       <span className="text-muted-foreground" title="Prenda ou conjunto sem valor definido">
         —
       </span>
     );
   }
+
   const positive = Number(instance.roi_pct) >= 0;
   return (
     <span className={cn('numeric font-medium', positive ? 'text-success' : 'text-destructive')}>
@@ -58,6 +98,50 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
         {signedEur(instance.appreciation_eur)}
       </span>
     </span>
+  );
+}
+
+/** Release year and, when the set has left the shelves, the year it retired. */
+function YearsCell({ instance }: { instance: LegoSetInstance }) {
+  const model = instance.set_model;
+  if (!model?.release_year && !model?.retired_year) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  return (
+    <span className="numeric whitespace-nowrap">
+      {model.release_year ?? '—'}
+      {model.retired_year ? (
+        <span className="text-muted-foreground"> › {model.retired_year}</span>
+      ) : null}
+    </span>
+  );
+}
+
+function SetCell({ instance }: { instance: LegoSetInstance }) {
+  const model = instance.set_model;
+  return (
+    <div className="flex items-center gap-3">
+      <Thumb instance={instance} />
+      <div className="min-w-0">
+        <p className="flex items-center gap-1.5 truncate font-medium">
+          <span className="truncate">{model?.name}</span>
+          {!instance.is_complete ? (
+            <Badge variant="destructive" title={instance.missing_parts ?? 'Incompleto'}>
+              incompleto
+            </Badge>
+          ) : null}
+          {model?.is_retired ? (
+            <Badge variant="warning" title={`Retirado em ${model.retired_year}`}>
+              retirado
+            </Badge>
+          ) : null}
+        </p>
+        <p className="numeric truncate text-xs text-muted-foreground">
+          {model?.set_number ?? 'MOC'}
+          {model?.piece_count ? ` · ${num(model.piece_count)} peças` : ''}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -70,29 +154,24 @@ function GroupedRow({
 }) {
   const first = group.items[0];
   const model = first.set_model;
-  const totalCost = group.items.reduce(
-    (sum, item) => sum + Number(item.acquisition_cost_eur),
-    0,
-  );
+  const totalCost = group.items.reduce((sum, item) => sum + Number(item.acquisition_cost_eur), 0);
   const totalValue = model?.current_value_eur
     ? Number(model.current_value_eur) * group.items.length
     : null;
 
   return (
-    <TableRow className="cursor-pointer" onClick={() => onSelect(first)}>
+    <TableRow
+      className={cn('cursor-pointer', model?.is_retired && 'bg-warning/[0.06]')}
+      onClick={() => onSelect(first)}
+    >
       <TableCell>
-        <div className="flex items-center gap-3">
-          <Thumb instance={first} />
-          <div className="min-w-0">
-            <p className="truncate font-medium">{model?.name}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {model?.set_number ?? 'MOC'} · {model?.theme ?? 'Sem tema'}
-            </p>
-          </div>
-        </div>
+        <SetCell instance={first} />
       </TableCell>
       <TableCell>
         <Badge variant="outline">{group.items.length} cópias</Badge>
+      </TableCell>
+      <TableCell>
+        <YearsCell instance={first} />
       </TableCell>
       <TableCell className="numeric">{eur(totalCost)}</TableCell>
       <TableCell className="numeric">{eur(totalValue)}</TableCell>
@@ -114,6 +193,27 @@ function GroupedRow({
   );
 }
 
+function SummaryStrip({ summary }: { summary: CollectionSummary }) {
+  const items = [
+    { label: 'cópias', value: num(summary.copies) },
+    { label: 'conjuntos', value: num(summary.unique_sets) },
+    { label: 'peças', value: num(summary.total_pieces) },
+    { label: 'custo', value: eur(summary.total_cost_eur) },
+    { label: 'valor atual', value: eur(summary.total_value_eur) },
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm">
+      {items.map((item) => (
+        <span key={item.label} className="flex items-baseline gap-1.5">
+          <span className="numeric font-semibold">{item.value}</span>
+          <span className="text-xs text-muted-foreground">{item.label}</span>
+        </span>
+      ))}
+      <span className="ml-auto text-xs text-muted-foreground">totais dos filtros aplicados</span>
+    </div>
+  );
+}
+
 export function CollectionGrid({
   data,
   isLoading,
@@ -125,7 +225,7 @@ export function CollectionGrid({
   onToggleGrouped,
   onSelect,
 }: {
-  data: Page<LegoSetInstance> | undefined;
+  data: LegoInstancePage | undefined;
   isLoading: boolean;
   filters: InstanceFilters & { [key: string]: string | undefined };
   setFilters: (patch: Record<string, string | undefined>) => void;
@@ -150,14 +250,40 @@ export function CollectionGrid({
   const activeFilterCount = [
     filters.theme,
     filters.storage_location_id,
+    filters.storage_area,
     filters.build_state,
     filters.condition,
-    filters.incomplete_only,
-    filters.retired_only,
+    filters.completeness && filters.completeness !== 'all' ? filters.completeness : undefined,
+    filters.retirement && filters.retirement !== 'all' ? filters.retirement : undefined,
     filters.ownership_status && filters.ownership_status !== 'IN_COLLECTION'
       ? filters.ownership_status
       : undefined,
   ].filter(Boolean).length;
+
+  // Storage stays a flat table; only the picker is hierarchical, so "everything in
+  // the garage" is one click without naming a container (M9.1).
+  const areas = React.useMemo(() => {
+    const map = new Map<string, StorageLocation[]>();
+    for (const location of storageLocations) {
+      const list = map.get(location.area) ?? [];
+      list.push(location);
+      map.set(location.area, list);
+    }
+    return [...map.entries()];
+  }, [storageLocations]);
+
+  const storageValue = filters.storage_location_id
+    ? filters.storage_location_id
+    : filters.storage_area
+      ? `${AREA_PREFIX}${filters.storage_area}`
+      : ALL;
+
+  function setStorage(value: string) {
+    if (value === ALL) setFilters({ storage_location_id: undefined, storage_area: undefined });
+    else if (value.startsWith(AREA_PREFIX))
+      setFilters({ storage_area: value.slice(AREA_PREFIX.length), storage_location_id: undefined });
+    else setFilters({ storage_location_id: value, storage_area: undefined });
+  }
 
   const groups = React.useMemo(() => {
     if (!grouped || !data) return [];
@@ -173,6 +299,7 @@ export function CollectionGrid({
   const page = Number(filters.page ?? '1');
   const pageSize = Number(filters.page_size ?? '25');
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+  const descending = (filters.direction ?? 'desc') === 'desc';
 
   return (
     <div className="space-y-4">
@@ -200,22 +327,32 @@ export function CollectionGrid({
           ) : null}
         </Button>
 
-        <Select
-          value={filters.sort ?? 'created_desc'}
-          onValueChange={(value) => setFilters({ sort: value })}
-        >
-          <SelectTrigger className="w-[13rem]">
-            <SlidersHorizontal className="size-4 text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1">
+          <Select
+            value={filters.sort ?? 'created'}
+            onValueChange={(value) => setFilters({ sort: value })}
+          >
+            <SelectTrigger className="w-[9.5rem]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_FIELDS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={descending ? 'Ordenação descendente' : 'Ordenação ascendente'}
+            title={descending ? 'Descendente' : 'Ascendente'}
+            onClick={() => setFilters({ direction: descending ? 'asc' : 'desc' })}
+          >
+            {descending ? <ArrowDownWideNarrow /> : <ArrowUpNarrowWide />}
+          </Button>
+        </div>
 
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-soft">
           <Checkbox checked={grouped} onCheckedChange={(value) => onToggleGrouped(value === true)} />
@@ -242,21 +379,22 @@ export function CollectionGrid({
             </SelectContent>
           </Select>
 
-          <Select
-            value={filters.storage_location_id ?? ALL}
-            onValueChange={(value) =>
-              setFilters({ storage_location_id: value === ALL ? undefined : value })
-            }
-          >
+          <Select value={storageValue} onValueChange={setStorage}>
             <SelectTrigger>
               <SelectValue placeholder="Arrumação" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>Qualquer local</SelectItem>
-              {storageLocations.map((location) => (
-                <SelectItem key={location.id} value={location.id}>
-                  {location.label}
-                </SelectItem>
+              {areas.map(([area, items]) => (
+                <SelectGroup key={area}>
+                  <SelectLabel>{area}</SelectLabel>
+                  <SelectItem value={`${AREA_PREFIX}${area}`}>Toda a área «{area}»</SelectItem>
+                  {items.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.container ?? area}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -312,25 +450,37 @@ export function CollectionGrid({
             </SelectContent>
           </Select>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <Checkbox
-              checked={filters.incomplete_only === '1'}
-              onCheckedChange={(checked) =>
-                setFilters({ incomplete_only: checked === true ? '1' : undefined })
-              }
-            />
-            Só incompletos
-          </label>
+          <Select
+            value={filters.completeness ?? 'all'}
+            onValueChange={(value) => setFilters({ completeness: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COMPLETENESS_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <Checkbox
-              checked={filters.retired_only === '1'}
-              onCheckedChange={(checked) =>
-                setFilters({ retired_only: checked === true ? '1' : undefined })
-              }
-            />
-            Só conjuntos retirados
-          </label>
+          <Select
+            value={filters.retirement ?? 'all'}
+            onValueChange={(value) => setFilters({ retirement: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RETIREMENT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {activeFilterCount ? (
             <Button
@@ -341,10 +491,11 @@ export function CollectionGrid({
                 setFilters({
                   theme: undefined,
                   storage_location_id: undefined,
+                  storage_area: undefined,
                   build_state: undefined,
                   condition: undefined,
-                  incomplete_only: undefined,
-                  retired_only: undefined,
+                  completeness: undefined,
+                  retirement: undefined,
                   ownership_status: undefined,
                 })
               }
@@ -355,6 +506,8 @@ export function CollectionGrid({
           ) : null}
         </div>
       ) : null}
+
+      {data ? <SummaryStrip summary={data.summary} /> : null}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         {isLoading ? (
@@ -376,6 +529,7 @@ export function CollectionGrid({
               <TableRow>
                 <TableHead>Conjunto</TableHead>
                 <TableHead>Cópias</TableHead>
+                <TableHead>Ano</TableHead>
                 <TableHead>Custo</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Ganho</TableHead>
@@ -393,10 +547,12 @@ export function CollectionGrid({
               <TableRow>
                 <TableHead>Conjunto</TableHead>
                 <TableHead>Tema</TableHead>
+                <TableHead>Ano</TableHead>
                 <TableHead>Arrumação</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Condição</TableHead>
                 <TableHead className="text-right">Custo</TableHead>
+                <TableHead className="text-right">PVP</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">ROI</TableHead>
               </TableRow>
@@ -405,43 +561,31 @@ export function CollectionGrid({
               {data.items.map((instance) => (
                 <TableRow
                   key={instance.id}
-                  className="cursor-pointer"
+                  className={cn(
+                    'cursor-pointer',
+                    // Retirement is a durable property of the row, so it tints the
+                    // whole line as well as carrying a labelled badge.
+                    instance.set_model?.is_retired && 'bg-warning/[0.06]',
+                  )}
                   onClick={() => onSelect(instance)}
                 >
                   <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Thumb instance={instance} />
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 truncate font-medium">
-                          {instance.set_model?.name}
-                          {!instance.is_complete ? (
-                            <span
-                              className="text-destructive"
-                              title={instance.missing_parts ?? 'Incompleto'}
-                            >
-                              ●
-                            </span>
-                          ) : null}
-                        </p>
-                        <p className="numeric truncate text-xs text-muted-foreground">
-                          {instance.set_model?.set_number ?? 'MOC'}
-                          {instance.set_model?.piece_count
-                            ? ` · ${num(instance.set_model.piece_count)} peças`
-                            : ''}
-                          {instance.acquisition_date ? ` · ${date(instance.acquisition_date)}` : ''}
-                        </p>
-                      </div>
-                    </div>
+                    <SetCell instance={instance} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {instance.set_model?.theme ?? '—'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    <YearsCell instance={instance} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {instance.storage_label ?? '—'}
                   </TableCell>
                   <TableCell>
                     {instance.build_state ? (
-                      <Badge variant="secondary">{BUILD_STATE_LABELS[instance.build_state]}</Badge>
+                      <Badge variant={BUILD_STATE_VARIANT}>
+                        {BUILD_STATE_LABELS[instance.build_state]}
+                      </Badge>
                     ) : (
                       '—'
                     )}
@@ -457,6 +601,9 @@ export function CollectionGrid({
                   </TableCell>
                   <TableCell className="numeric text-right">
                     {eur(instance.acquisition_cost_eur)}
+                  </TableCell>
+                  <TableCell className="numeric text-right text-muted-foreground">
+                    {eur(instance.set_model?.rrp_eur)}
                   </TableCell>
                   <TableCell className="numeric text-right">
                     <span className={instance.set_model?.value_is_stale ? 'text-warning' : ''}>

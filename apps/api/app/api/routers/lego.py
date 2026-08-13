@@ -3,15 +3,17 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, Query, Response, UploadFile
 
 from app.api.deps import CurrentAuth, Db, Writer, household_entity_ids, resolve_write_entity
 from app.core.errors import ValidationError
 from app.schemas.common import Ok, Page
 from app.schemas.lego import (
+    CompletenessFilter,
     ImageSource,
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
+    LegoSetInstancePage,
     LegoSetInstanceUpdate,
     LegoSetModelCreate,
     LegoSetModelOut,
@@ -19,6 +21,7 @@ from app.schemas.lego import (
     LookupRequest,
     LookupResult,
     OverviewOut,
+    RetirementFilter,
     StorageLocationCreate,
     StorageLocationOut,
     StorageLocationUpdate,
@@ -89,7 +92,7 @@ def model_instances(
     db: Db,
     ownership_status: str | None = None,
 ) -> list[LegoSetInstanceOut]:
-    items, _ = lego_service.list_instances(
+    items, _, _ = lego_service.list_instances(
         db,
         entity_ids=household_entity_ids(db, ctx),
         active_entity_id=ctx.active_entity_id,
@@ -138,39 +141,45 @@ async def set_model_image(
 
 
 # --- Copies ------------------------------------------------------------------
-@router.get("/instances", response_model=Page[LegoSetInstanceOut])
+@router.get("/instances", response_model=LegoSetInstancePage)
 def list_instances(
     ctx: CurrentAuth,
     db: Db,
     search: str | None = None,
     theme: str | None = None,
     storage_location_id: uuid.UUID | None = None,
+    storage_area: str | None = None,
     build_state: str | None = None,
     condition: str | None = None,
     ownership_status: str | None = "IN_COLLECTION",
-    incomplete_only: bool = False,
-    retired_only: bool = False,
-    sort: str = "created_desc",
+    completeness: CompletenessFilter = "all",
+    retirement: RetirementFilter = "all",
+    sort: str = "created",
+    direction: Annotated[str, Query(pattern="^(asc|desc)$")] = "desc",
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=200)] = 50,
-) -> Page[LegoSetInstanceOut]:
-    items, total = lego_service.list_instances(
+) -> LegoSetInstancePage:
+    items, total, summary = lego_service.list_instances(
         db,
         entity_ids=household_entity_ids(db, ctx),
         active_entity_id=ctx.active_entity_id,
         search=search,
         theme=theme,
         storage_location_id=storage_location_id,
+        storage_area=storage_area,
         build_state=build_state,
         condition=condition,
         ownership_status=ownership_status or None,
-        incomplete_only=incomplete_only,
-        retired_only=retired_only,
+        completeness=completeness,
+        retirement=retirement,
         sort=sort,
+        direction=direction,
         limit=page_size,
         offset=(page - 1) * page_size,
     )
-    return Page(items=items, total=total, page=page, page_size=page_size)
+    return LegoSetInstancePage(
+        items=items, total=total, page=page, page_size=page_size, summary=summary
+    )
 
 
 @router.post("/instances", response_model=LegoSetInstanceOut, status_code=201)
@@ -262,3 +271,26 @@ def delete_storage(location_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
     location = lego_service.get_storage_location(db, location_id)
     lego_service.delete_storage_location(db, location, actor_user_id=ctx.user.id)
     return Ok(message="Local eliminado.")
+
+
+# --- Export ------------------------------------------------------------------
+@router.get("/export.xlsx", response_class=Response)
+def export_workbook(ctx: CurrentAuth, db: Db) -> Response:
+    """The whole collection as one workbook: copies, sets and storage locations."""
+    # Imported here so the spreadsheet writer is only loaded when someone exports.
+    from app.services import lego_export
+
+    payload = lego_export.build_workbook(
+        db,
+        entity_ids=household_entity_ids(db, ctx),
+        active_entity_id=ctx.active_entity_id,
+    )
+    return Response(
+        content=payload,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{lego_export.filename(ctx.active_entity_id)}"'
+            )
+        },
+    )

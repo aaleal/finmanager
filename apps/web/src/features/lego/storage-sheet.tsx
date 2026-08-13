@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/feedback';
 import { eur, num } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
+import { EntityField } from './add-set-dialog';
 import { useStorageMutations } from './api';
 
 const PRESETS = [0, 25, 50, 75, 100];
@@ -98,12 +99,34 @@ function CapacityControl({ location }: { location: StorageLocation }) {
   );
 }
 
-function AddLocationDialog() {
+function AddLocationDialog({ locations }: { locations: StorageLocation[] }) {
   const [open, setOpen] = React.useState(false);
   const [area, setArea] = React.useState('');
   const [container, setContainer] = React.useState('');
   const [description, setDescription] = React.useState('');
+  const { activeEntityId } = useSession();
+  const [entityId, setEntityId] = React.useState(activeEntityId ?? '');
   const { create } = useStorageMutations();
+
+  React.useEffect(() => setEntityId(activeEntityId ?? ''), [activeEntityId, open]);
+
+  // Suggest what already exists so «Garagem» never becomes «garagem» by accident.
+  const areaOptions = React.useMemo(
+    () => [...new Set(locations.map((location) => location.area))].sort(),
+    [locations],
+  );
+  const containerOptions = React.useMemo(
+    () =>
+      [
+        ...new Set(
+          locations
+            .filter((location) => !area.trim() || location.area === area.trim())
+            .map((location) => location.container)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [locations, area],
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -119,19 +142,39 @@ function AddLocationDialog() {
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
+          {/* A record must name its owner; «todas» is refused, never guessed (ADR-0007). */}
+          {!activeEntityId ? (
+            <EntityField
+              value={entityId}
+              onChange={setEntityId}
+              hint="A quem pertence este local. Nunca é adivinhado quando está a ver «todas»."
+            />
+          ) : null}
           <Field label="Área">
             <Input
+              list="lego-storage-areas"
               placeholder="Garagem"
               value={area}
               onChange={(event) => setArea(event.target.value)}
             />
+            <datalist id="lego-storage-areas">
+              {areaOptions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
           </Field>
           <Field label="Contentor" hint="Caixa, prateleira ou estado (por exemplo, «Montado»).">
             <Input
+              list="lego-storage-containers"
               placeholder="Caixa TV"
               value={container}
               onChange={(event) => setContainer(event.target.value)}
             />
+            <datalist id="lego-storage-containers">
+              {containerOptions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
           </Field>
           <Field label="Descrição">
             <Input value={description} onChange={(event) => setDescription(event.target.value)} />
@@ -142,10 +185,11 @@ function AddLocationDialog() {
             Cancelar
           </Button>
           <Button
-            disabled={!area.trim()}
+            disabled={!area.trim() || !entityId}
             loading={create.isPending}
             onClick={async () => {
               await create.mutateAsync({
+                entity_id: entityId,
                 area: area.trim(),
                 container: container.trim() || null,
                 description: description.trim() || null,
@@ -203,7 +247,7 @@ export function StorageSheet({
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
             {canWrite ? (
               <div className="flex justify-end">
-                <AddLocationDialog />
+                <AddLocationDialog locations={locations} />
               </div>
             ) : null}
 

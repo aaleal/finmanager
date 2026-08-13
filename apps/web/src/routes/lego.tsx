@@ -1,12 +1,17 @@
 import * as React from 'react';
-import { Boxes, Plus } from 'lucide-react';
+import { Boxes, Plus, Sheet } from 'lucide-react';
 import type { LegoSetInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
 import { PageHeader } from '@/components/ui/feedback';
 import { useSession } from '@/features/auth/session';
 import { useUrlFilters } from '@/lib/filters';
-import { useInstances, useLegoOverview, useStorageLocations } from '@/features/lego/api';
+import {
+  useExportCollection,
+  useInstances,
+  useLegoOverview,
+  useStorageLocations,
+} from '@/features/lego/api';
 import { LegoOverviewPanel } from '@/features/lego/overview-panel';
 import { CollectionGrid } from '@/features/lego/collection-grid';
 import { CopyDetailSheet } from '@/features/lego/detail-sheet';
@@ -18,12 +23,14 @@ const DEFAULTS = {
   search: undefined,
   theme: undefined,
   storage_location_id: undefined,
+  storage_area: undefined,
   build_state: undefined,
   condition: undefined,
   ownership_status: 'IN_COLLECTION',
-  incomplete_only: undefined,
-  retired_only: undefined,
-  sort: 'created_desc',
+  completeness: 'all',
+  retirement: 'all',
+  sort: 'created',
+  direction: 'desc',
   page: '1',
   page_size: '25',
   agrupar: undefined,
@@ -38,17 +45,20 @@ export function LegoPage() {
 
   const overview = useLegoOverview();
   const storage = useStorageLocations();
+  const exportCollection = useExportCollection();
   const instances = useInstances({
     search: filters.search,
     theme: filters.theme,
     storage_location_id: filters.storage_location_id,
+    storage_area: filters.storage_area,
     build_state: filters.build_state,
     condition: filters.condition,
     ownership_status:
       filters.ownership_status === '__all__' ? undefined : filters.ownership_status,
-    incomplete_only: filters.incomplete_only,
-    retired_only: filters.retired_only,
+    completeness: filters.completeness,
+    retirement: filters.retirement,
     sort: filters.sort,
+    direction: filters.direction,
     page: filters.page,
     page_size: filters.page_size,
   });
@@ -76,6 +86,14 @@ export function LegoPage() {
         }
         actions={
           <>
+            <Button
+              variant="outline"
+              loading={exportCollection.isPending}
+              onClick={() => exportCollection.mutate()}
+            >
+              <Sheet />
+              Exportar
+            </Button>
             <Button variant="outline" onClick={() => setStorageOpen(true)}>
               <Boxes />
               Arrumação
@@ -133,6 +151,7 @@ export function LegoPage() {
       <CopyDetailSheet
         instance={selected}
         storageLocations={storage.data ?? []}
+        onSelectInstance={setSelected}
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}

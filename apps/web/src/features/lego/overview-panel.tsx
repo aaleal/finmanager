@@ -5,6 +5,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
   XAxis,
@@ -38,6 +40,15 @@ const THEME_COLORS = [
   '#0891b2',
   '#db2777',
 ];
+
+/** «2026-03» → «mar 26», so the axis stays readable at a dozen points. */
+function monthLabel(month: string) {
+  const [year, index] = month.split('-');
+  const name = new Date(Number(year), Number(index) - 1, 1).toLocaleDateString('pt-PT', {
+    month: 'short',
+  });
+  return `${name} ${year.slice(2)}`;
+}
 
 function KpiCard({
   icon: Icon,
@@ -142,6 +153,12 @@ export function LegoOverviewPanel({
     custo: Number(theme.cost_eur),
     copies: theme.copies,
   }));
+  const timelineData = overview.timeline.map((point) => ({
+    month: monthLabel(point.month),
+    copias: point.copies,
+    custo: Number(point.cost_eur),
+    valor: Number(point.value_eur),
+  }));
 
   return (
     <div className="space-y-5">
@@ -196,7 +213,7 @@ export function LegoOverviewPanel({
           icon={AlertTriangle}
           label="Conjuntos retirados"
           value={num(overview.retired_sets)}
-          onClick={() => onFilter({ tab: 'colecao', retired_only: '1' })}
+          onClick={() => onFilter({ tab: 'colecao', retirement: 'retired' })}
         />
       </div>
 
@@ -226,6 +243,96 @@ export function LegoOverviewPanel({
           </Button>
         ) : null}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Evolução da coleção</CardTitle>
+          <CardDescription>
+            Cópias e custo acumulados pela data de aquisição. A linha de valor é o valor{' '}
+            <strong>de hoje</strong> de tudo o que já tinha em cada mês — não é uma cotação
+            histórica, porque o módulo guarda um único valor por conjunto, por desenho.
+            {overview.copies_without_date > 0
+              ? ` ${overview.copies_without_date} cópia(s) sem data de aquisição ficam de fora.`
+              : ''}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {timelineData.length > 1 ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timelineData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11 }}
+                    stroke="hsl(var(--muted-foreground))"
+                    minTickGap={16}
+                  />
+                  <YAxis
+                    yAxisId="money"
+                    tick={{ fontSize: 11 }}
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(value: number) => eurCompact(value)}
+                    width={62}
+                  />
+                  <YAxis
+                    yAxisId="copies"
+                    orientation="right"
+                    tick={{ fontSize: 11 }}
+                    stroke="hsl(var(--muted-foreground))"
+                    width={40}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{
+                      borderRadius: 10,
+                      border: '1px solid hsl(var(--border))',
+                      background: 'hsl(var(--popover))',
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === 'Cópias' ? num(value) : eur(value),
+                      name,
+                    ]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Line
+                    yAxisId="money"
+                    type="monotone"
+                    dataKey="custo"
+                    name="Custo acumulado"
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    yAxisId="money"
+                    type="monotone"
+                    dataKey="valor"
+                    name="Valor atual acumulado"
+                    stroke={THEME_COLORS[0]}
+                    strokeWidth={2}
+                    strokeDasharray="5 3"
+                    dot={false}
+                  />
+                  <Line
+                    yAxisId="copies"
+                    type="monotone"
+                    dataKey="copias"
+                    name="Cópias"
+                    stroke={THEME_COLORS[1]}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              Registe datas de aquisição em pelo menos dois meses para ver a evolução.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">

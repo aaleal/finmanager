@@ -481,6 +481,26 @@ export interface paths {
         patch: operations["update_storage_api_lego_storage_locations__location_id__patch"];
         trace?: never;
     };
+    "/api/lego/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Workbook
+         * @description The whole collection as one workbook: copies, sets and storage locations.
+         */
+        get: operations["export_workbook_api_lego_export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/documents/{document_id}/content": {
         parameters: {
             query?: never;
@@ -652,6 +672,22 @@ export interface components {
             parent_id: string | null;
             /** Brand Axis */
             brand_axis: boolean;
+        };
+        /**
+         * CollectionSummary
+         * @description Totals for the *currently filtered* set of copies, not the whole collection.
+         */
+        CollectionSummary: {
+            /** Copies */
+            copies: number;
+            /** Unique Sets */
+            unique_sets: number;
+            /** Total Cost Eur */
+            total_cost_eur: string;
+            /** Total Value Eur */
+            total_value_eur: string;
+            /** Total Pieces */
+            total_pieces: number;
         };
         /** DashboardOut */
         DashboardOut: {
@@ -834,6 +870,18 @@ export interface components {
             storage_label?: string | null;
             set_model?: components["schemas"]["LegoSetModelOut"] | null;
         };
+        /** LegoSetInstancePage */
+        LegoSetInstancePage: {
+            /** Items */
+            items: components["schemas"]["LegoSetInstanceOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            summary: components["schemas"]["CollectionSummary"];
+        };
         /** LegoSetInstanceUpdate */
         LegoSetInstanceUpdate: {
             /** Acquisition Date */
@@ -984,6 +1032,10 @@ export interface components {
              * @default 0
              */
             owned_copies_count: number;
+            /** Rrp Appreciation Eur */
+            rrp_appreciation_eur?: string | null;
+            /** Rrp Roi Pct */
+            rrp_roi_pct?: string | null;
         };
         /** LegoSetModelUpdate */
         LegoSetModelUpdate: {
@@ -1226,6 +1278,10 @@ export interface components {
             departed_sale_total_eur: string;
             /** Themes */
             themes: components["schemas"]["ThemeBreakdown"][];
+            /** Timeline */
+            timeline: components["schemas"]["TimelinePoint"][];
+            /** Copies Without Date */
+            copies_without_date: number;
             /** Top Gainers */
             top_gainers: components["schemas"]["LegoSetInstanceOut"][];
             /** Top Losers */
@@ -1234,17 +1290,6 @@ export interface components {
             locations_full: number;
             /** Locations Total */
             locations_total: number;
-        };
-        /** Page[LegoSetInstanceOut] */
-        Page_LegoSetInstanceOut_: {
-            /** Items */
-            items: components["schemas"]["LegoSetInstanceOut"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
         };
         /** Page[LegoSetModelOut] */
         Page_LegoSetModelOut_: {
@@ -1477,6 +1522,24 @@ export interface components {
             copies: number;
             /** Unique Sets */
             unique_sets: number;
+            /** Cost Eur */
+            cost_eur: string;
+            /** Value Eur */
+            value_eur: string;
+        };
+        /**
+         * TimelinePoint
+         * @description One month of the acquisition curve.
+         *
+         *     ``value_eur`` is **today's** market value of everything acquired up to that
+         *     month — not a historical quote. There is no valuation snapshot table by design
+         *     (ADR-0008), so a true market-value history cannot be drawn.
+         */
+        TimelinePoint: {
+            /** Month */
+            month: string;
+            /** Copies */
+            copies: number;
             /** Cost Eur */
             cost_eur: string;
             /** Value Eur */
@@ -2493,12 +2556,14 @@ export interface operations {
                 search?: string | null;
                 theme?: string | null;
                 storage_location_id?: string | null;
+                storage_area?: string | null;
                 build_state?: string | null;
                 condition?: string | null;
                 ownership_status?: string | null;
-                incomplete_only?: boolean;
-                retired_only?: boolean;
+                completeness?: "all" | "complete" | "incomplete";
+                retirement?: "all" | "retired" | "available";
                 sort?: string;
+                direction?: string;
                 page?: number;
                 page_size?: number;
             };
@@ -2514,7 +2579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Page_LegoSetInstanceOut_"];
+                    "application/json": components["schemas"]["LegoSetInstancePage"];
                 };
             };
             /** @description Validation Error */
@@ -2844,6 +2909,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    export_workbook_api_lego_export_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

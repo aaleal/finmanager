@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
+  LegoInstancePage,
   LegoOverview,
   LegoSetInstance,
   LegoSetModel,
@@ -15,12 +16,14 @@ export type InstanceFilters = {
   search?: string;
   theme?: string;
   storage_location_id?: string;
+  storage_area?: string;
   build_state?: string;
   condition?: string;
   ownership_status?: string;
-  incomplete_only?: string;
-  retired_only?: string;
+  completeness?: string;
+  retirement?: string;
   sort?: string;
+  direction?: string;
   page?: string;
   page_size?: string;
 };
@@ -44,16 +47,18 @@ export function useInstances(filters: InstanceFilters) {
   return useQuery({
     queryKey: ['lego', 'instances', scope, filters],
     queryFn: () =>
-      api.get<Page<LegoSetInstance>>('/lego/instances', {
+      api.get<LegoInstancePage>('/lego/instances', {
         search: filters.search,
         theme: filters.theme,
         storage_location_id: filters.storage_location_id,
+        storage_area: filters.storage_area,
         build_state: filters.build_state,
         condition: filters.condition,
         ownership_status: filters.ownership_status,
-        incomplete_only: filters.incomplete_only === '1' ? true : undefined,
-        retired_only: filters.retired_only === '1' ? true : undefined,
-        sort: filters.sort,
+        completeness: filters.completeness ?? 'all',
+        retirement: filters.retirement ?? 'all',
+        sort: filters.sort ?? 'created',
+        direction: filters.direction ?? 'desc',
         page: filters.page ?? '1',
         page_size: filters.page_size ?? '25',
       }),
@@ -157,6 +162,27 @@ export function useUpdateModel() {
       api.patch<LegoSetModel>(`/lego/models/${id}`, payload),
     onSuccess: () => invalidate(),
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível atualizar o conjunto.')),
+  });
+}
+
+export function useDeleteModel() {
+  const invalidate = useInvalidateLego();
+  return useMutation({
+    mutationFn: ({ id, hard }: { id: string; hard?: boolean }) =>
+      api.delete(`/lego/models/${id}`, { hard: hard ? true : undefined }),
+    onSuccess: () => {
+      toast.success('Conjunto eliminado do catálogo.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível eliminar o conjunto.')),
+  });
+}
+
+export function useExportCollection() {
+  return useMutation({
+    mutationFn: () => api.download('/lego/export.xlsx'),
+    onSuccess: () => toast.success('Ficheiro exportado.'),
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível exportar a coleção.')),
   });
 }
 

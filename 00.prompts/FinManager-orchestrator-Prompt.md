@@ -4,7 +4,7 @@ You are the lead engineering agent building **FinManager**: a self-hosted, priva
 
 > **This brief is self-contained.** There is no external "archived master spec" or SRS file in this repository — everything needed to start building, including the shared core domain (**§1a** below), lives here or in the reference tree below. **Load files on demand, never assume their contents**:
 > - **[`modules/`](modules/)** — one enriched, authoritative spec per module (the **primary** per-module source of truth). Read `modules/NN-*.md` in full before implementing that module.
-> - **[`seed/supermarket-categories.pt-PT.json`](seed/supermarket-categories.pt-PT.json)** — the pt-PT grocery category taxonomy seed.
+> - **[`seed/`](seed/)** — real fixtures and taxonomy seeds, organised per module (e.g. `seed/supermarket/` holds the pt-PT category taxonomy, eleven real *talões* and the 2025 spreadsheet). Read the module spec for what each file proves.
 > **Precedence:** this brief (including **§1a Shared Core Domain**) wins on process, autonomy, and cross-module conventions → a `modules/NN-*.md` file wins for its own module's detail. If something is unspecified, pick the sensible default, record it in that module's *Open Questions/Decisions* section **and** as a new file under `docs/decisions/` (see §7), and continue — never invent silently, never stall waiting for the user.
 
 ---
@@ -22,12 +22,12 @@ You are the lead engineering agent building **FinManager**: a self-hosted, priva
 
 A single system of record covering supermarket receipts, bank transactions, health reimbursements, utilities, vehicles, net-worth/assets, household multi-user scope, dashboards, and a LEGO collection catalog. It runs entirely on a home Synology DS920+ NAS via `docker compose up`, reachable over LAN/VPN.
 
-**The product exists to automate.** Data arrives from messy external sources (receipt photos, bank exports, utility PDFs). The system parses, categorizes, reconciles, and enriches it, **auto-accepting high-confidence results and routing only the uncertain remainder to a human Review Queue**. Users approve and correct; they do not type. Target: **≥80% auto-accepted** on a realistic Portuguese seed sample. Every automated decision is explainable and reversible.
+**The product exists to automate.** Data arrives from messy external sources (receipt photos, bank exports, utility PDFs). The system parses, categorizes, reconciles, and enriches it, **auto-accepting high-confidence results and routing only the uncertain remainder to a human Review Queue**. Users approve and correct; they do not type. **Confidence is visible on every record and the backlog is always in view; the auto-accept rate is reported, never targeted.** Every automated decision is explainable and reversible.
 
 ### The nine modules (all in scope)
 | # | Module | Authoritative spec |
 |---|---|---|
-| 1 | Supermarket & Receipt Processing | [modules/01-receipts.md](modules/01-supermarket.md) |
+| 1 | Supermarket & Receipt Processing | [modules/01-supermarket.md](modules/01-supermarket.md) |
 | 2 | Bank Statements & Transaction Ledger | [modules/02-banking.md](modules/02-banking.md) |
 | 3 | Health Expenses & Insurance Claims | [modules/03-health.md](modules/03-health.md) |
 | 4 | Household Utilities | [modules/04-utilities.md](modules/04-utilities.md) |
@@ -36,6 +36,7 @@ A single system of record covering supermarket receipts, bank transactions, heal
 | 7 | Multi-User & Household Scope | [modules/07-household.md](modules/07-household.md) |
 | 8 | Dashboards & Insights | [modules/08-dashboards.md](modules/08-dashboards.md) |
 | 9 | LEGO Collection Catalog | [modules/09-lego-collection-catalog.md](modules/09-lego-collection-catalog.md) |
+| 9.1 | LEGO Collection Catalog — usability refinements (no schema change) | [modules/09.1-lego-collection-refinements.md](modules/09.1-lego-collection-refinements.md) |
 
 Shared entities used by every module (`User`, `Entity`, `Merchant`, `Category`, `Tag`, `Transaction`, `Document`, `Link`, `ReviewTask`, `AuditLog`, `Setting`, `ImportBatch`, `ProcessingJob`, …) are canonical and defined **once, below, in §1a** — do not redefine per module. Each module file's **Integration Contract** states exactly what it exposes to and consumes from the others; keep both sides in sync whenever you touch a shared entity.
 
@@ -44,7 +45,7 @@ Shared entities used by every module (`User`, `Entity`, `Merchant`, `Category`, 
 Identity, household, and RBAC entities (`User`, `Household`, `HouseholdMember`, `Entity`, `Session`) are **fully specified in [modules/07-household.md](modules/07-household.md) (M7)** — deliberately the **simplest and first module built**: login, entity/RBAC data model, and the entity selector, in full, in Phase 0. It is intentionally minimal (3 roles, **no per-entity read isolation** — everyone in the household reads everything; `Entity` has no `type` enum, just `name` + `member_ids`; no per-module permission overrides, no invite-token flow, no formal GDPR tooling) — do not re-add that complexity. The remaining cross-module entities have no other home; this is their canonical definition:
 
 - **Merchant** — `id, name, nif? (Portuguese tax ID, validated), kind(RETAIL|BANK|INSURER|UTILITY_PROVIDER|SERVICE_PROVIDER|OTHER), default_category_l1_id?, default_category_l2_id?, aliases (JSON array), website?, is_deleted, created_at, updated_at`. Global reference data (not entity-scoped); every module's `*_merchant_id` FK points here.
-- **Category** — `id, code_en, display_name_pt, domain(GROCERY|BANKING|HEALTH|UTILITY|VEHICLE|OTHER), level(1|2|3), parent_id?, brand_axis (bool, default false), is_deleted`. Invariants: `parent.domain == child.domain`; `level==1 ⇔ parent_id IS NULL`. Grocery is 3-tier (seeded from [seed/supermarket-categories.pt-PT.json](seed/supermarket-categories.pt-PT.json)); banking is 2-tier; other domains as needed.
+- **Category** — `id, code_en, display_name_pt, domain(GROCERY|BANKING|HEALTH|UTILITY|VEHICLE|OTHER), level(1|2|3), parent_id?, brand_axis (bool, default false), is_deleted`. Invariants: `parent.domain == child.domain`; `level==1 ⇔ parent_id IS NULL`. Grocery is 3-tier (seeded from [seed/supermarket/categories/supermarket-categories.pt-PT.json](seed/supermarket/categories/supermarket-categories.pt-PT.json)); banking is 2-tier; other domains as needed.
 - **Tag** — `id, household_id, name, color?, is_deleted`. Every module attaches a `tags[]` array of `Tag.id` to its records for cross-cutting labels (`#vacation`, `#daughter`).
 - **Transaction** (canonical ledger) — fully specified in [modules/02-banking.md](modules/02-banking.md); every reconciling module (M1, M3, M4, M5, M9) references `Transaction.id` via its own optional `*_transaction_id` FK — never redefine the ledger row.
 - **Document** — `id, sha256_hash, mime_type, byte_size, storage_path (outside web root), source(URL|UPLOAD), url? (provenance of a copied-from-web file), signed_url_expires_minutes (default 15), created_at`. Owning modules point to it via their own direct FK (`Receipt.document_id`, `LegoSetModel.image_document_id`, …). Uploads are magic-byte validated before persistence and served only via a signed, time-limited URL — never a static path. Web images are **downloaded once and stored locally**; `url` is kept as provenance and is never re-fetched at render time.
@@ -83,7 +84,7 @@ The obvious CRUD is inferable from the module specs. These are the non-obvious t
 - **`Fs` flag.** Fs-flagged receipt items are **excluded from the invoice total** but summed separately into `fs_total_eur` / `fs_item_count`. Every arithmetic reconciliation must respect this split. Prove it with unit tests.
 - **PVP vs paid.** Keep list price (`_pvp_`) separate from paid price. €/kg has **three** distinct variants the household uses: `pvp` (Price/weight), `promo` ((Price−PromoInd)/weight, individual promo only), and `final` (Price_Final/weight, after the prorated invoice discount too). Don't collapse them.
 - **Invoice-level (cartão/global) discount** is **prorated** across items (`invoice_allocated_discount_eur`), not a per-item promo (`promo_discount_eur`). A common bug is summing per-item discounts and missing the invoice-level credit.
-- **Category is intrinsic to a product.** Two items with different categories are, by rule, **different master products**. Enforce `parent.domain == child.domain` and `level==1 ⇔ parent_id IS NULL`. Grocery is 3-tier; banking is 2-tier. Grocery L3 is a normalized product-genus in pt-PT (brand/size-agnostic); brand/variant lives on `MasterProduct`; brand-as-L2 is an accepted exception flagged `brand_axis=true`. Seed: [seed/supermarket-categories.pt-PT.json](seed/supermarket-categories.pt-PT.json).
+- **Category is intrinsic to a product.** Two items with different categories are, by rule, **different master products**. Enforce `parent.domain == child.domain` and `level==1 ⇔ parent_id IS NULL`. Grocery is 3-tier; banking is 2-tier. Grocery L3 is a normalized product-genus in pt-PT (brand/size-agnostic); brand/variant lives on `MasterProduct`; brand-as-L2 is an accepted exception flagged `brand_axis=true`. Seed: [seed/supermarket/categories/supermarket-categories.pt-PT.json](seed/supermarket/categories/supermarket-categories.pt-PT.json).
 - **EUR formatting** is comma-decimal (`€1.234,56`) via a single money util. Money is stored as decimal `NUMERIC(10,2)` EUR (never minor-unit integers) and never reaches the UI as anything but pt-PT-formatted EUR.
 - **Dates:** store UTC, but invoice/business dates keep their local calendar date (`Europe/Lisbon`). Don't UTC-shift a receipt's purchase date.
 - **Health reimbursements** are multi-source (insurers + mutual funds / ADSE-style): several claims per expense, partial reimbursements accumulate, over-reimbursement (Σ reimbursed > gross) must be flagged, overdue claims (no movement in N days) are "leakage" to alert on. The claim state machine rejects illegal transitions.
@@ -128,7 +129,7 @@ The obvious CRUD is inferable from the module specs. These are the non-obvious t
 Treat these as the definition of done and prefer expressing them as executable tests. Do not consider a phase complete until its rubric is green and `make check` passes for both apps.
 
 - **Foundation:** `docker compose up` yields a working stack from clean; login + RBAC; household/entity/merchant/category/tag CRUD; empty dashboard + Review Queue shell; audit log records every mutation.
-- **Ingestion quality:** on the seed sample, ≥80% of receipts and bank rows reach `AUTO_ACCEPTED` without edits; Fs exclusion proven by unit tests; arithmetic reconciliation enforced.
+- **Ingestion quality:** every parsed line and every receipt carries a **visible confidence**, and a status screen shows what is waiting for a human. The auto-accept rate is **reported as a trend, never set as a target** — a threshold invites tuning `confidence.auto_accept` downwards to hit it. Arithmetic reconciliation is enforced, and the Fs rules are proven by unit tests.
 - **Explainability:** every auto-decision exposes human-readable reasons in the UI and is user-overridable; corrections feed learned mappings.
 - **Correctness:** no float money anywhere; every ledger write transactional; re-import and retry idempotent; snapshots immutable.
 - **Reconciliation:** receipt↔transaction, claim↔transaction, bill↔transaction links (1:N and N:1) with confidence, auto-created when confident, else reviewed.
@@ -137,7 +138,7 @@ Treat these as the definition of done and prefer expressing them as executable t
 - **Vehicles/Utilities/Assets:** monotonic-odometer + 100%-split guards; overlap/gap + estimated-vs-actual handling; immutable snapshots.
 - **LEGO (M9):** unrealized ROI math (incl. gift/zero-cost and no-value-set cases), ownership-transition guards, storage capacity math.
 - **Security (OWASP):** parameterized queries only; attachments validated by magic bytes, stored outside web root, served via signed time-limited URLs; CSRF on cookie auth; secrets from env; rate-limited auth/upload; encryption at rest for attachments and backups.
-- **Seed realism:** deterministic Portuguese seed (Continente, Pingo Doce, Auchan, pharmacies, Galp/BP, EDP; pt-PT categories; sample receipts/statements/bills with Fs items and a loyalty discount) that demonstrably hits the 80% target and powers the four correlation dashboards.
+- **Seed realism:** deterministic Portuguese seed (Continente, Pingo Doce, Lidl, Piquete da Fruta, pharmacies, Galp/BP, EDP; pt-PT categories; sample receipts/statements/bills with appended Fs articles and a loyalty discount) that powers the four correlation dashboards. For M1 the seed is **real**: eleven fixtures and a 2,429-row spreadsheet live under `seed/supermarket/`.
 
 ---
 
@@ -183,7 +184,7 @@ Corollary: **module specs must not encode build order or file paths.** No "built
 
 ## 7. Testing discipline — critical paths only, clearly identified
 
-- **Do not chase coverage for its own sake.** Write automated tests only for the few things that are genuinely load-bearing and easy to get subtly wrong: money/decimal arithmetic (never floats), the Fs exclusion split, immutability of snapshots, idempotent re-import/retry, the confidence engine's pure scoring functions, and lifecycle state-machine guards (health claims, LEGO ownership transitions, odometer monotonicity, 100%-split validation). Everything else is validated by manual/exploratory verification against the module's Definition of Done — don't hand-write exhaustive CRUD tests.
+- **Do not chase coverage for its own sake.** Write automated tests only for the few things that are genuinely load-bearing and easy to get subtly wrong: money/decimal arithmetic (never floats), the Fs valuation rules, immutability of snapshots, idempotent re-import/retry, the confidence engine's pure scoring functions, and lifecycle state-machine guards (health claims, LEGO ownership transitions, odometer monotonicity, 100%-split validation). Everything else is validated by manual/exploratory verification against the module's Definition of Done — don't hand-write exhaustive CRUD tests.
 - **Tests must be clearly identified and discoverable**, not scattered ad hoc:
   - Backend: `apps/api/tests/unit/` (pure domain logic, no I/O) and `apps/api/tests/integration/` (DB/Celery-backed, run inside the container against the test database), one file per module (`test_lego_roi.py`, `test_receipt_fs_split.py`, …).
   - Frontend: co-located `*.test.tsx` next to the component, plus `apps/web/tests/e2e/` for the one or two crown-jewel flows (receipt review, review queue confirm) if e2e tooling is set up.

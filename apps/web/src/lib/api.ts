@@ -113,4 +113,30 @@ export const api = {
     request<T>(path, { method: 'PUT', formData, query }),
   delete: <T,>(path: string, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'DELETE', query }),
+  download: (path: string, query?: RequestOptions['query']) => download(path, query),
 };
+
+/**
+ * Fetch a binary attachment and hand it to the browser as a file.
+ *
+ * Going through `fetch` rather than a plain `<a href>` keeps the download on the
+ * same error path as every other call, so a 401 still triggers the re-login flow.
+ */
+export async function download(path: string, query?: RequestOptions['query']): Promise<void> {
+  const response = await fetch(buildUrl(path, query), { credentials: 'same-origin' });
+
+  if (response.status === 401) listeners.forEach((listener) => listener());
+  if (!response.ok) throw new ApiError(response.status, `Erro ${response.status}`);
+
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const match = /filename="?([^"]+)"?/.exec(disposition);
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = match?.[1] ?? 'download';
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}

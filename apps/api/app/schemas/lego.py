@@ -7,12 +7,15 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.schemas.common import ApiModel
+from app.schemas.common import ApiModel, Page
 
 AcquisitionSource = Literal["RETAIL", "SECONDHAND", "GIFT", "OTHER"]
 BuildState = Literal["SEALED", "BUILT", "DISASSEMBLED"]
 Condition = Literal["NEW", "GOOD", "WORN", "DAMAGED"]
 OwnershipStatus = Literal["IN_COLLECTION", "SOLD", "GIFTED"]
+# Tri-state discovery filters (M9.1): «todos» is always the default.
+CompletenessFilter = Literal["all", "complete", "incomplete"]
+RetirementFilter = Literal["all", "retired", "available"]
 
 
 # --- Storage -----------------------------------------------------------------
@@ -120,6 +123,10 @@ class LegoSetModelOut(ApiModel):
     value_is_stale: bool = False
     value_age_days: int | None = None
     owned_copies_count: int = 0
+    # Second, cost-independent read on the same set: today's value against the
+    # original RRP. Never mixed into the acquisition-cost ROI (M9.1).
+    rrp_appreciation_eur: Decimal | None = None
+    rrp_roi_pct: Decimal | None = None
 
 
 # --- Instance ----------------------------------------------------------------
@@ -202,6 +209,20 @@ class LegoSetInstanceOut(ApiModel):
     set_model: LegoSetModelOut | None = None
 
 
+class CollectionSummary(BaseModel):
+    """Totals for the *currently filtered* set of copies, not the whole collection."""
+
+    copies: int
+    unique_sets: int
+    total_cost_eur: Decimal
+    total_value_eur: Decimal
+    total_pieces: int
+
+
+class LegoSetInstancePage(Page[LegoSetInstanceOut]):
+    summary: CollectionSummary
+
+
 class OwnershipChange(BaseModel):
     ownership_status: OwnershipStatus
     sale_price_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
@@ -254,6 +275,20 @@ class ThemeBreakdown(BaseModel):
     value_eur: Decimal
 
 
+class TimelinePoint(BaseModel):
+    """One month of the acquisition curve.
+
+    ``value_eur`` is **today's** market value of everything acquired up to that
+    month — not a historical quote. There is no valuation snapshot table by design
+    (ADR-0008), so a true market-value history cannot be drawn.
+    """
+
+    month: str
+    copies: int
+    cost_eur: Decimal
+    value_eur: Decimal
+
+
 class OverviewOut(BaseModel):
     total_cost_eur: Decimal
     total_value_eur: Decimal
@@ -271,6 +306,8 @@ class OverviewOut(BaseModel):
     departed_copies: int
     departed_sale_total_eur: Decimal
     themes: list[ThemeBreakdown]
+    timeline: list[TimelinePoint]
+    copies_without_date: int
     top_gainers: list[LegoSetInstanceOut]
     top_losers: list[LegoSetInstanceOut]
     locations_full: int

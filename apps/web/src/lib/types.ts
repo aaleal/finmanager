@@ -26,6 +26,9 @@ export type LegoSetInstance = Schemas['LegoSetInstanceOut'];
 export type StorageLocation = Schemas['StorageLocationOut'];
 export type LegoOverview = Schemas['OverviewOut'];
 export type ThemeBreakdown = Schemas['ThemeBreakdown'];
+export type TimelinePoint = Schemas['TimelinePoint'];
+export type CollectionSummary = Schemas['CollectionSummary'];
+export type LegoInstancePage = Schemas['LegoSetInstancePage'];
 export type LookupResult = Schemas['LookupResult'];
 
 export type AcquisitionSource = NonNullable<LegoSetInstance['acquisition_source']>;
