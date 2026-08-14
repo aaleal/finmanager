@@ -23,7 +23,7 @@
     --muted-foreground: 215 20% 45%;
 
     /* Form hints must never compete with what the user is typing. */
-    --placeholder: 215 16% 72%;
+    --placeholder: 215 10% 80%;
 
     --accent: 199 89% 95%;
     --accent-foreground: 200 98% 24%;
