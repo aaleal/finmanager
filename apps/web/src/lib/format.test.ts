@@ -9,10 +9,16 @@ import { EM_DASH, date, eur, num, percent, relativeDays, signedEur } from './for
 
 describe('eur', () => {
   it('formats decimal strings as pt-PT euros without ever parsing money as a float first', () => {
-    // Non-breaking space before the symbol is what Intl emits for pt-PT.
-    expect(eur('1234.56').replace(/\u00a0/g, ' ')).toBe('1234,56 €');
+    // Non-breaking spaces are what Intl emits for pt-PT, before the symbol and
+    // — since M9.2 — between thousands.
+    expect(eur('1234.56').replace(/\u00a0/g, ' ')).toBe('1 234,56 €');
     expect(eur('0.00').replace(/\u00a0/g, ' ')).toBe('0,00 €');
     expect(eur('689').replace(/\u00a0/g, ' ')).toBe('689,00 €');
+  });
+
+  it('groups thousands with a space at every magnitude, not just above 9999', () => {
+    expect(eur('1000').replace(/\u00a0/g, ' ')).toBe('1 000,00 €');
+    expect(eur('1234567.89').replace(/\u00a0/g, ' ')).toBe('1 234 567,89 €');
   });
 
   it('renders an em dash for absent values instead of a misleading zero', () => {
@@ -49,6 +55,7 @@ describe('dates and counts', () => {
 
   it('groups thousands the Portuguese way', () => {
     expect(num(10001).replace(/\u00a0/g, ' ')).toBe('10 001');
+    expect(num(1000).replace(/\u00a0/g, ' ')).toBe('1 000');
     expect(num(null)).toBe(EM_DASH);
   });
 

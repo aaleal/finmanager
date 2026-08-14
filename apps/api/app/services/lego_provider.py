@@ -8,6 +8,7 @@ the identical manual form.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 from decimal import Decimal, InvalidOperation
@@ -44,6 +45,26 @@ def _decimal(value: Any) -> Decimal | None:
         return None
 
 
+def _january_first(year: Any) -> dt.date | None:
+    """Brickset only publishes a release *year*; anchor it to the 1st of January."""
+    try:
+        return dt.date(int(year), 1, 1)
+    except (TypeError, ValueError):
+        return None
+
+
+def _retirement_date(raw: Any) -> dt.date | None:
+    """``dateLastAvailable`` is an ISO timestamp; a bare year means end of that year."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        return dt.datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+    except ValueError:
+        pass
+    head = raw[:4]
+    return dt.date(int(head), 12, 31) if head.isdigit() else None
+
+
 class BricksetProvider:
     name = "brickset"
 
@@ -76,11 +97,6 @@ class BricksetProvider:
         data = payload["sets"][0]
         lego_com = data.get("LEGOCom") or {}
         retail = lego_com.get("DE") or lego_com.get("UK") or lego_com.get("US") or {}
-        date_last_available = retail.get("dateLastAvailable") or ""
-        retired_year = None
-        if isinstance(date_last_available, str) and len(date_last_available) >= 4:
-            with_year = date_last_available[:4]
-            retired_year = int(with_year) if with_year.isdigit() else None
 
         return LookupResult(
             found=True,
@@ -88,8 +104,8 @@ class BricksetProvider:
             name=data.get("name"),
             theme=data.get("theme"),
             subtheme=data.get("subtheme"),
-            release_year=data.get("year"),
-            retired_year=retired_year,
+            release_date=_january_first(data.get("year")),
+            retirement_date=_retirement_date(retail.get("dateLastAvailable")),
             piece_count=data.get("pieces"),
             minifig_count=data.get("minifigs"),
             rrp_eur=_decimal(retail.get("retailPrice")),

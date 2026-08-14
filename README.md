@@ -48,11 +48,20 @@ and additionally creates `.env` for you if it is missing:
 
 ```bash
 make up                       # = ensure .env + docker compose up --build -d
-make seed                     # deterministic Portuguese demo data
 ```
 
-Open **http://localhost:8080** and sign in with the bootstrap account printed by
-`make seed` (`owner@finmanager.local` / `finmanager` by default — change it).
+Open **http://localhost:8080**. A clean installation has no users and no default
+password: the first screen asks you to name the household and create its owner,
+signs you in, and then closes that route permanently
+([ADR-0011](docs/decisions/0011-first-run-setup-over-seeded-credentials.md)).
+
+```bash
+make seed                     # optional: deterministic Portuguese demo data
+```
+
+The demo dataset is a **developer convenience**, not an installation step. It adds
+its own household, users (`owner@finmanager.local` / `finmanager`) and the LEGO
+collection used to exercise the module — do not run it on a real install.
 
 ### Development stack (hot reload)
 

@@ -17,6 +17,9 @@ RULES: list[tuple[str, str, int, int]] = [
     # (method, path prefix, max requests, window seconds)
     ("POST", "/api/auth/login", 10, 300),
     ("POST", "/api/auth/password", 10, 300),
+    # The only unauthenticated write in the API, so it gets the tightest budget
+    # that still survives a few mistyped forms.
+    ("POST", "/api/setup", 10, 900),
     ("PUT", "/api/lego", 60, 60),
     ("POST", "/api/lego/models/lookup", 30, 60),
 ]

@@ -21,7 +21,7 @@ from app.services import auth
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _set_session_cookie(response: Response, token: str) -> None:
+def set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         auth.SESSION_COOKIE,
         token,
@@ -37,7 +37,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
 def login(payload: LoginRequest, response: Response, db: Db) -> SessionOut:
     user = auth.authenticate(db, payload.email, payload.password)
     session, token = auth.create_session(db, user)
-    _set_session_cookie(response, token)
+    set_session_cookie(response, token)
 
     membership = db.scalar(
         select(HouseholdMember).where(

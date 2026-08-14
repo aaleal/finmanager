@@ -1,7 +1,10 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '@/components/app-shell';
 import { useSession } from '@/features/auth/session';
+import { api } from '@/lib/api';
 import { LoginPage } from '@/routes/login';
+import { SetupPage } from '@/routes/setup';
 import { DashboardPage } from '@/routes/dashboard';
 import { LegoPage } from '@/routes/lego';
 import { ReviewPage } from '@/routes/review';
@@ -25,8 +28,20 @@ function BootScreen() {
 export default function App() {
   const { session, isLoading } = useSession();
 
+  // Only asked when there is no session: a configured install never pays for it.
+  const setupStatus = useQuery({
+    queryKey: ['setup-status'],
+    queryFn: () => api.get<{ needs_setup: boolean }>('/setup/status'),
+    enabled: !isLoading && !session,
+    retry: false,
+    staleTime: Infinity,
+  });
+
   if (isLoading) return <BootScreen />;
-  if (!session) return <LoginPage />;
+  if (!session) {
+    if (setupStatus.isLoading) return <BootScreen />;
+    return setupStatus.data?.needs_setup ? <SetupPage /> : <LoginPage />;
+  }
 
   return (
     <Routes>

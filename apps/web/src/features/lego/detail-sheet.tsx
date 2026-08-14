@@ -14,7 +14,14 @@ import type { LegoSetInstance, StorageLocation, TransactionSuggestion } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Field, Input, Textarea } from '@/components/ui/input';
-import { Checkbox, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
+import {
+  Checkbox,
+  Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/primitives';
 import {
   Select,
   SelectContent,
@@ -41,6 +48,7 @@ import {
   useDeleteModel,
   useModelInstances,
   useSetInstancePhoto,
+  useSetModelImage,
   useUpdateInstance,
   useUpdateModel,
 } from './api';
@@ -59,6 +67,13 @@ function money(value: string) {
   if (!normalized) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed.toFixed(2) : null;
+}
+
+function count(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function RoiPill({ instance }: { instance: LegoSetInstance }) {
@@ -177,7 +192,11 @@ function OwnershipControls({ instance }: { instance: LegoSetInstance }) {
             />
           </Field>
           <Field label="Data">
-            <Input type="date" value={saleDate} onChange={(event) => setSaleDate(event.target.value)} />
+            <Input
+              type="date"
+              value={saleDate}
+              onChange={(event) => setSaleDate(event.target.value)}
+            />
           </Field>
         </div>
       ) : (
@@ -201,6 +220,175 @@ function OwnershipControls({ instance }: { instance: LegoSetInstance }) {
       >
         Guardar estado
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Every catalog field of the set, editable in place.
+ *
+ * The create dialog is not the only place a set can be described: metadata arrives
+ * late (a lookup that failed, a PVP found afterwards, a retirement date announced
+ * next year), so the sheet edits the same fields rather than sending the user back
+ * through "delete and re-add" (M9.2 FR-9.23).
+ */
+function EditSetForm({ instance }: { instance: LegoSetInstance }) {
+  const model = instance.set_model;
+  const update = useUpdateModel();
+  const setImage = useSetModelImage();
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [form, setForm] = React.useState({
+    set_number: model?.set_number ?? '',
+    name: model?.name ?? '',
+    theme: model?.theme ?? '',
+    subtheme: model?.subtheme ?? '',
+    release_date: toDateInput(model?.release_date),
+    retirement_date: toDateInput(model?.retirement_date),
+    piece_count: model?.piece_count?.toString() ?? '',
+    minifig_count: model?.minifig_count?.toString() ?? '',
+    rrp_eur: model?.rrp_eur ?? '',
+    current_value_eur: model?.current_value_eur ?? '',
+    short_description: model?.short_description ?? '',
+    notes: model?.notes ?? '',
+  });
+
+  if (!model) return null;
+
+  function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
+    setForm((previous) => ({ ...previous, [key]: value }));
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label="Número do conjunto"
+          hint={model.is_custom ? 'Um MOC não tem número.' : undefined}
+        >
+          <Input
+            disabled={model.is_custom}
+            value={form.set_number}
+            onChange={(event) => set('set_number', event.target.value)}
+          />
+        </Field>
+        <Field label="Nome">
+          <Input value={form.name} onChange={(event) => set('name', event.target.value)} />
+        </Field>
+        <Field label="Tema">
+          <Input value={form.theme} onChange={(event) => set('theme', event.target.value)} />
+        </Field>
+        <Field label="Subtema">
+          <Input value={form.subtheme} onChange={(event) => set('subtheme', event.target.value)} />
+        </Field>
+        <Field label="Data de lançamento">
+          <Input
+            type="date"
+            value={form.release_date}
+            onChange={(event) => set('release_date', event.target.value)}
+          />
+        </Field>
+        <Field
+          label="Data de retirada"
+          hint="Vazio se ainda está à venda. Só conta como retirado depois de a data passar."
+        >
+          <Input
+            type="date"
+            value={form.retirement_date}
+            onChange={(event) => set('retirement_date', event.target.value)}
+          />
+        </Field>
+        <Field label="Peças">
+          <Input
+            type="number"
+            value={form.piece_count}
+            onChange={(event) => set('piece_count', event.target.value)}
+          />
+        </Field>
+        <Field label="Minifiguras">
+          <Input
+            type="number"
+            value={form.minifig_count}
+            onChange={(event) => set('minifig_count', event.target.value)}
+          />
+        </Field>
+        <Field label="PVP original (€)">
+          <Input
+            inputMode="decimal"
+            value={form.rrp_eur}
+            onChange={(event) => set('rrp_eur', event.target.value)}
+          />
+        </Field>
+        <Field label="Valor de mercado (€)" hint="Alterá-lo volta a marcar a data de atualização.">
+          <Input
+            inputMode="decimal"
+            value={form.current_value_eur}
+            onChange={(event) => set('current_value_eur', event.target.value)}
+          />
+        </Field>
+      </div>
+
+      <Field label="Descrição">
+        <Textarea
+          rows={2}
+          value={form.short_description}
+          onChange={(event) => set('short_description', event.target.value)}
+        />
+      </Field>
+
+      <Field label="Notas do conjunto">
+        <Textarea
+          rows={2}
+          value={form.notes}
+          onChange={(event) => set('notes', event.target.value)}
+        />
+      </Field>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          loading={update.isPending}
+          onClick={() =>
+            update.mutate({
+              id: model.id,
+              set_number: model.is_custom ? null : form.set_number.trim().toUpperCase() || null,
+              name: form.name.trim(),
+              theme: form.theme || null,
+              subtheme: form.subtheme || null,
+              release_date: form.release_date || null,
+              retirement_date: form.retirement_date || null,
+              piece_count: count(form.piece_count),
+              minifig_count: count(form.minifig_count),
+              rrp_eur: money(form.rrp_eur),
+              current_value_eur: money(form.current_value_eur),
+              short_description: form.short_description || null,
+              notes: form.notes || null,
+            })
+          }
+        >
+          Guardar conjunto
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) setImage.mutate({ id: model.id, file });
+            event.target.value = '';
+          }}
+        />
+        <Button
+          variant="outline"
+          loading={setImage.isPending}
+          onClick={() => fileRef.current?.click()}
+        >
+          <ImageIcon />
+          {model.image_url ? 'Substituir imagem' : 'Carregar imagem'}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Estes campos descrevem o conjunto e valem para todas as cópias.
+      </p>
     </div>
   );
 }
@@ -368,9 +556,7 @@ function EditCopyForm({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() =>
-                  update.mutate({ id: instance.id, clear_transaction_link: true })
-                }
+                onClick={() => update.mutate({ id: instance.id, clear_transaction_link: true })}
               >
                 Remover
               </Button>
@@ -447,10 +633,13 @@ function CopySwitcher({
 
   return (
     <Field label="Cópia a editar" hint={`Este conjunto tem ${copies.length} cópias.`}>
-      <Select value={current.id} onValueChange={(id) => {
-        const next = copies.find((copy) => copy.id === id);
-        if (next) onSelect(next);
-      }}>
+      <Select
+        value={current.id}
+        onValueChange={(id) => {
+          const next = copies.find((copy) => copy.id === id);
+          if (next) onSelect(next);
+        }}
+      >
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>
@@ -556,9 +745,7 @@ export function CopyDetailSheet({
                       )}
                       {model.is_retired ? <Badge variant="warning">retirado</Badge> : null}
                       {instance.ownership_status !== 'IN_COLLECTION' ? (
-                        <Badge variant="muted">
-                          {OWNERSHIP_LABELS[instance.ownership_status]}
-                        </Badge>
+                        <Badge variant="muted">{OWNERSHIP_LABELS[instance.ownership_status]}</Badge>
                       ) : null}
                       {!instance.is_complete ? (
                         <Badge variant="destructive">incompleto</Badge>
@@ -583,6 +770,7 @@ export function CopyDetailSheet({
                   <TabsList>
                     <TabsTrigger value="overview">Resumo</TabsTrigger>
                     {canWrite ? <TabsTrigger value="edit">Editar cópia</TabsTrigger> : null}
+                    {canWrite ? <TabsTrigger value="set">Editar conjunto</TabsTrigger> : null}
                     <TabsTrigger value="copies">Cópias</TabsTrigger>
                   </TabsList>
 
@@ -640,7 +828,10 @@ export function CopyDetailSheet({
                         )}
                       </DetailRow>
                       <DetailRow label="Caixa / instruções">
-                        {[instance.has_box ? 'caixa' : null, instance.has_instructions ? 'instruções' : null]
+                        {[
+                          instance.has_box ? 'caixa' : null,
+                          instance.has_instructions ? 'instruções' : null,
+                        ]
                           .filter(Boolean)
                           .join(' + ') || 'nenhuma'}
                       </DetailRow>
@@ -664,8 +855,17 @@ export function CopyDetailSheet({
                     <div className="space-y-3">
                       <p className="text-sm font-medium">Detalhes do conjunto</p>
                       <dl className="divide-y divide-border">
-                        <DetailRow label="Ano">{num(model.release_year)}</DetailRow>
-                        <DetailRow label="Retirado">{num(model.retired_year)}</DetailRow>
+                        <DetailRow label="Lançamento">{date(model.release_date)}</DetailRow>
+                        <DetailRow label="Retirada">
+                          {model.retirement_date ? (
+                            <span className={model.is_retired ? '' : 'text-muted-foreground'}>
+                              {date(model.retirement_date)}
+                              {model.is_retired ? '' : ' (ainda à venda)'}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </DetailRow>
                         <DetailRow label="Peças">{num(model.piece_count)}</DetailRow>
                         <DetailRow label="Minifiguras">{num(model.minifig_count)}</DetailRow>
                         <DetailRow label="PVP original">{eur(model.rrp_eur)}</DetailRow>
@@ -727,6 +927,12 @@ export function CopyDetailSheet({
                         <Trash2 />
                         Eliminar esta cópia
                       </Button>
+                    </TabsContent>
+                  ) : null}
+
+                  {canWrite ? (
+                    <TabsContent value="set">
+                      <EditSetForm instance={instance} />
                     </TabsContent>
                   ) : null}
 
@@ -815,8 +1021,8 @@ export function CopyDetailSheet({
           </DialogHeader>
           <DialogBody className="space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong className="text-foreground">Arquivar</strong> mantém o histórico e a
-              auditoria — a cópia deixa de contar para os totais.
+              <strong className="text-foreground">Arquivar</strong> mantém o histórico e a auditoria
+              — a cópia deixa de contar para os totais.
             </p>
             <p>
               <strong className="text-foreground">Eliminar definitivamente</strong> remove a linha

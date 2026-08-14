@@ -12,12 +12,14 @@ import datetime as dt
 from decimal import Decimal
 
 import pytest
+from app.core.errors import ValidationError
 from app.models import Entity, LegoSetInstance, User
 from app.models.lego import LegoSetModel
 from app.schemas.lego import (
     LegoSetInstanceCreate,
     LegoSetInstanceUpdate,
     LegoSetModelCreate,
+    LegoSetModelUpdate,
     StorageLocationCreate,
 )
 from app.services import lego_service
@@ -38,7 +40,7 @@ def _copy(
     rrp: str | None = None,
     pieces: int | None = None,
     acquired: dt.date | None = None,
-    retired_year: int | None = None,
+    retirement_date: dt.date | None = None,
     storage_location_id: object = None,
     missing_parts: str | None = None,
 ) -> LegoSetInstance:
@@ -51,7 +53,7 @@ def _copy(
             set_number=set_number,
             name=name,
             piece_count=pieces,
-            retired_year=retired_year,
+            retirement_date=retirement_date,
             rrp_eur=Decimal(rrp) if rrp else None,
             current_value_eur=Decimal(value) if value else None,
         ),
@@ -122,7 +124,14 @@ def test_storage_filter_by_area_spans_every_container(
 def test_completeness_and_retirement_are_tri_state(
     db: Session, entity: Entity, owner: User
 ) -> None:
-    _copy(db, entity, owner, set_number="1000", name="Alfa", retired_year=2015)
+    _copy(
+        db,
+        entity,
+        owner,
+        set_number="1000",
+        name="Alfa",
+        retirement_date=dt.date(2015, 12, 31),
+    )
     _copy(db, entity, owner, set_number="2000", name="Beta", missing_parts="2x 3001 vermelho")
 
     assert len(_list(db, entity)) == 2
@@ -130,6 +139,63 @@ def test_completeness_and_retirement_are_tri_state(
     assert len(_list(db, entity, retirement="available")) == 1
     assert len(_list(db, entity, completeness="complete")) == 1
     assert len(_list(db, entity, completeness="incomplete")) == 1
+
+
+def test_a_future_retirement_date_is_still_on_sale(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    """M9.2: a set retiring on 31 December is buyable for the whole of that year."""
+    end_of_year = dt.date(dt.date.today().year, 12, 31)
+    copy = _copy(db, entity, owner, set_number="1000", name="Alfa", retirement_date=end_of_year)
+
+    still_selling = end_of_year > dt.date.today()
+    assert copy.model.is_retired is not still_selling
+    assert len(_list(db, entity, retirement="available")) == (1 if still_selling else 0)
+    assert len(_list(db, entity, retirement="retired")) == (0 if still_selling else 1)
+
+    out = lego_service.model_out(db, copy.model)
+    # The grid still reads a plain year, whatever the exact date is (M9.1 UX-9.10).
+    assert out.retired_year == end_of_year.year
+
+
+def test_every_catalog_field_is_editable_and_dates_must_stay_ordered(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    """M9.2 FR-9.23: the detail sheet edits the set, not just the copy."""
+    copy = _copy(db, entity, owner, set_number="1000", name="Alfa", value=None)
+
+    lego_service.update_model(
+        db,
+        copy.model,
+        LegoSetModelUpdate(
+            name="Alfa editado",
+            theme="Icons",
+            subtheme="Landmarks",
+            release_date=dt.date(2020, 1, 1),
+            retirement_date=dt.date(2099, 12, 31),
+            piece_count=500,
+            minifig_count=2,
+            rrp_eur=Decimal("99.99"),
+            current_value_eur=Decimal("120.00"),
+            short_description="editado",
+            notes="nota",
+        ),
+        actor_user_id=owner.id,
+    )
+    out = lego_service.model_out(db, copy.model)
+    assert (out.name, out.subtheme, out.piece_count) == ("Alfa editado", "Landmarks", 500)
+    assert out.release_year == 2020
+    # Setting a value by hand re-stamps its freshness date, from here too (FR-9.6).
+    assert out.value_updated_at == dt.date.today()
+
+    # A partial update supplying only one date is still checked against the row.
+    with pytest.raises(ValidationError):
+        lego_service.update_model(
+            db,
+            copy.model,
+            LegoSetModelUpdate(retirement_date=dt.date(2019, 1, 1)),
+            actor_user_id=owner.id,
+        )
 
 
 def test_summary_covers_every_match_not_just_the_page(

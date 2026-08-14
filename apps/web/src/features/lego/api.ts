@@ -66,7 +66,11 @@ export function useInstances(filters: InstanceFilters) {
   });
 }
 
-export function useModels(params: { search?: string; stale_only?: boolean; no_value_only?: boolean }) {
+export function useModels(params: {
+  search?: string;
+  stale_only?: boolean;
+  no_value_only?: boolean;
+}) {
   const scope = useScope();
   return useQuery({
     queryKey: ['lego', 'models', scope, params],
@@ -160,7 +164,10 @@ export function useUpdateModel() {
   return useMutation({
     mutationFn: ({ id, ...payload }: { id: string } & Record<string, unknown>) =>
       api.patch<LegoSetModel>(`/lego/models/${id}`, payload),
-    onSuccess: () => invalidate(),
+    onSuccess: () => {
+      toast.success('Conjunto atualizado.');
+      invalidate();
+    },
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível atualizar o conjunto.')),
   });
 }

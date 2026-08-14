@@ -71,8 +71,10 @@ class LegoSetModel(Base, TimestampMixin, SoftDeleteMixin):
     name: Mapped[str] = mapped_column(String(250), nullable=False)
     theme: Mapped[str | None] = mapped_column(String(120), nullable=True)
     subtheme: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    release_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    retired_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Dates, not years: a set retiring in December is on sale for the whole year.
+    # See docs/decisions/0012-lego-retirement-is-a-date.md
+    release_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    retirement_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     piece_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     minifig_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     rrp_eur: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
@@ -90,7 +92,8 @@ class LegoSetModel(Base, TimestampMixin, SoftDeleteMixin):
 
     @property
     def is_retired(self) -> bool:
-        return self.retired_year is not None
+        """Retired only once the date has actually passed, never in advance."""
+        return self.retirement_date is not None and self.retirement_date <= dt.date.today()
 
 
 class StorageLocation(Base, SoftDeleteMixin):

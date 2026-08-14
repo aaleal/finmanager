@@ -17,6 +17,7 @@ from app.api.routers import (
     lego,
     reference,
     review,
+    setup,
     transactions,
 )
 from app.api.routers import (
@@ -81,6 +82,7 @@ def health() -> dict[str, str]:
 
 
 for router in (
+    setup.router,
     auth.router,
     household.router,
     reference.router,

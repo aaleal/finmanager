@@ -21,13 +21,18 @@ import { Checkbox } from '@/components/ui/primitives';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
 import { eur, num, percent, signedEur } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -41,11 +46,10 @@ import {
   RETIREMENT_OPTIONS,
   SORT_FIELDS,
 } from './constants';
+import { StorageFilter } from './storage-filter';
 import type { InstanceFilters } from './api';
 
 const ALL = '__all__';
-/** Prefix that tells a whole-area choice apart from a single container. */
-const AREA_PREFIX = 'area:';
 
 function Thumb({ instance }: { instance: LegoSetInstance }) {
   const image = instance.photo_url ?? instance.set_model?.image_url ?? null;
@@ -260,31 +264,6 @@ export function CollectionGrid({
       : undefined,
   ].filter(Boolean).length;
 
-  // Storage stays a flat table; only the picker is hierarchical, so "everything in
-  // the garage" is one click without naming a container (M9.1).
-  const areas = React.useMemo(() => {
-    const map = new Map<string, StorageLocation[]>();
-    for (const location of storageLocations) {
-      const list = map.get(location.area) ?? [];
-      list.push(location);
-      map.set(location.area, list);
-    }
-    return [...map.entries()];
-  }, [storageLocations]);
-
-  const storageValue = filters.storage_location_id
-    ? filters.storage_location_id
-    : filters.storage_area
-      ? `${AREA_PREFIX}${filters.storage_area}`
-      : ALL;
-
-  function setStorage(value: string) {
-    if (value === ALL) setFilters({ storage_location_id: undefined, storage_area: undefined });
-    else if (value.startsWith(AREA_PREFIX))
-      setFilters({ storage_area: value.slice(AREA_PREFIX.length), storage_location_id: undefined });
-    else setFilters({ storage_location_id: value, storage_area: undefined });
-  }
-
   const groups = React.useMemo(() => {
     if (!grouped || !data) return [];
     const map = new Map<string, LegoSetInstance[]>();
@@ -355,7 +334,10 @@ export function CollectionGrid({
         </div>
 
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-soft">
-          <Checkbox checked={grouped} onCheckedChange={(value) => onToggleGrouped(value === true)} />
+          <Checkbox
+            checked={grouped}
+            onCheckedChange={(value) => onToggleGrouped(value === true)}
+          />
           Agrupar por conjunto
         </label>
       </div>
@@ -379,29 +361,25 @@ export function CollectionGrid({
             </SelectContent>
           </Select>
 
-          <Select value={storageValue} onValueChange={setStorage}>
-            <SelectTrigger>
-              <SelectValue placeholder="Arrumação" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Qualquer local</SelectItem>
-              {areas.map(([area, items]) => (
-                <SelectGroup key={area}>
-                  <SelectLabel>{area}</SelectLabel>
-                  <SelectItem value={`${AREA_PREFIX}${area}`}>Toda a área «{area}»</SelectItem>
-                  {items.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.container ?? area}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
+          <StorageFilter
+            locations={storageLocations}
+            value={{
+              storage_location_id: filters.storage_location_id,
+              storage_area: filters.storage_area,
+            }}
+            onChange={(selection) =>
+              setFilters({
+                storage_location_id: selection.storage_location_id,
+                storage_area: selection.storage_area,
+              })
+            }
+          />
 
           <Select
             value={filters.build_state ?? ALL}
-            onValueChange={(value) => setFilters({ build_state: value === ALL ? undefined : value })}
+            onValueChange={(value) =>
+              setFilters({ build_state: value === ALL ? undefined : value })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Estado" />

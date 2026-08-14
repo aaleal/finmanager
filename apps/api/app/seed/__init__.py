@@ -1,5 +1,10 @@
 """Deterministic Portuguese demo dataset.
 
+The LEGO collection is the household's real inventory (``data/lego-inventory.json``,
+converted once from ``00.prompts/seed/Lego/Lego_Inventory.xlsx``) plus a handful of
+hand-written sets that exist to exercise cases the spreadsheet has none of: a sale,
+a gift, a MOC, a missing part and a retirement date still in the future.
+
 Idempotent: re-running only fills what is missing. Run with ``make seed``.
 """
 
@@ -27,6 +32,7 @@ from app.services import documents, settings_service
 
 DATA_DIR = Path(__file__).parent / "data"
 TAXONOMY_FILE = DATA_DIR / "supermarket-categories.pt-PT.json"
+INVENTORY_FILE = DATA_DIR / "lego-inventory.json"
 
 
 def slugify(value: str) -> str:
@@ -215,8 +221,8 @@ SETS: list[dict[str, Any]] = [
         "name": "Torre Eiffel",
         "theme": "Icons",
         "subtheme": "Landmarks",
-        "release_year": 2022,
-        "retired_year": None,
+        "release_date": dt.date(2022, 11, 25),
+        "retirement_date": None,
         "piece_count": 10001,
         "minifig_count": 0,
         "rrp_eur": Decimal("629.99"),
@@ -251,8 +257,8 @@ SETS: list[dict[str, Any]] = [
         "name": "Millennium Falcon",
         "theme": "Star Wars",
         "subtheme": "Ultimate Collector Series",
-        "release_year": 2017,
-        "retired_year": None,
+        "release_date": dt.date(2017, 10, 1),
+        "retirement_date": None,
         "piece_count": 7541,
         "minifig_count": 10,
         "rrp_eur": Decimal("849.99"),
@@ -275,8 +281,8 @@ SETS: list[dict[str, Any]] = [
         "set_number": "21318",
         "name": "Casa da Árvore",
         "theme": "Ideas",
-        "release_year": 2019,
-        "retired_year": 2023,
+        "release_date": dt.date(2019, 8, 1),
+        "retirement_date": dt.date(2023, 12, 31),
         "piece_count": 3036,
         "minifig_count": 4,
         "rrp_eur": Decimal("219.99"),
@@ -298,8 +304,8 @@ SETS: list[dict[str, Any]] = [
         "set_number": "42115",
         "name": "Lamborghini Sián FKP 37",
         "theme": "Technic",
-        "release_year": 2020,
-        "retired_year": 2023,
+        "release_date": dt.date(2020, 6, 1),
+        "retirement_date": dt.date(2023, 12, 31),
         "piece_count": 3696,
         "minifig_count": 0,
         "rrp_eur": Decimal("379.99"),
@@ -322,8 +328,8 @@ SETS: list[dict[str, Any]] = [
         "name": "Galaxy Explorer",
         "theme": "Icons",
         "subtheme": "90 Anos",
-        "release_year": 2022,
-        "retired_year": 2024,
+        "release_date": dt.date(2022, 8, 1),
+        "retirement_date": dt.date(2024, 12, 31),
         "piece_count": 1254,
         "minifig_count": 4,
         "rrp_eur": Decimal("99.99"),
@@ -353,6 +359,32 @@ SETS: list[dict[str, Any]] = [
         ],
     },
     {
+        # Retires at the very end of next year: proves that a future retirement
+        # date does not flag the set as retired today.
+        "set_number": "76240",
+        "name": "Batmobile Tumbler",
+        "theme": "Icons",
+        "subtheme": "DC",
+        "release_date": dt.date(2021, 11, 1),
+        "retirement_date": dt.date(dt.date.today().year + 1, 12, 31),
+        "piece_count": 2049,
+        "minifig_count": 0,
+        "rrp_eur": Decimal("229.99"),
+        "current_value_eur": Decimal("249.00"),
+        "value_age_days": 10,
+        "short_description": "Saída de linha já anunciada, mas à venda até ao fim do ano seguinte.",
+        "copies": [
+            {
+                "acquisition_date": dt.date(2022, 4, 2),
+                "acquisition_cost_eur": Decimal("205.00"),
+                "acquisition_source": "RETAIL",
+                "storage": ("Casa", "Montado"),
+                "build_state": "BUILT",
+                "condition": "GOOD",
+            }
+        ],
+    },
+    {
         "set_number": None,
         "is_custom": True,
         "name": "Farol de Leça (MOC)",
@@ -376,38 +408,85 @@ SETS: list[dict[str, Any]] = [
 ]
 
 
+def inventory_sets() -> tuple[list[tuple[str, str | None]], list[dict[str, Any]]]:
+    """The household's real spreadsheet, converted once into JSON.
+
+    Source: ``00.prompts/seed/Lego/Lego_Inventory.xlsx``. The sheet records no
+    release or retirement information and writes ``0`` where the price paid was
+    never noted, so those copies keep a zero cost basis (cost ROI stays ``NULL``
+    and the PVP reading takes over) rather than an invented number.
+    """
+    if not INVENTORY_FILE.exists():  # pragma: no cover - the file ships with the package
+        return [], []
+
+    payload = json.loads(INVENTORY_FILE.read_text(encoding="utf-8"))
+    storage = [(row["area"], row["container"]) for row in payload["storage"]]
+
+    specs: list[dict[str, Any]] = []
+    for row in payload["sets"]:
+        specs.append(
+            {
+                "set_number": row["set_number"],
+                "name": row["name"],
+                "theme": row["theme"],
+                "short_description": row["short_description"],
+                "piece_count": row["piece_count"],
+                "minifig_count": row["minifig_count"],
+                "rrp_eur": Decimal(row["rrp_eur"]) if row["rrp_eur"] else None,
+                "current_value_eur": (
+                    Decimal(row["current_value_eur"]) if row["current_value_eur"] else None
+                ),
+                # Hand-maintained values are only as fresh as the spreadsheet was.
+                "value_age_days": 90 if row["current_value_eur"] else None,
+                "copies": [
+                    {
+                        "acquisition_cost_eur": Decimal(copy["acquisition_cost_eur"]),
+                        "acquisition_source": copy["acquisition_source"],
+                        "storage": tuple(copy["storage"]) if copy["storage"] else None,
+                        "build_state": copy["build_state"],
+                        "condition": copy["condition"],
+                        "has_box": copy.get("has_box", True),
+                        "has_instructions": copy.get("has_instructions", True),
+                        "missing_parts": copy.get("missing_parts"),
+                        "notes": copy.get("notes"),
+                    }
+                    for copy in row["copies"]
+                ],
+            }
+        )
+    return storage, specs
+
+
 def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
     owner_entity = entities["Ana & Bruno"]
     child_entity = entities["Clara"]
 
-    locations: dict[tuple[str, str], StorageLocation] = {}
+    inventory_storage, inventory_specs = inventory_sets()
+
+    locations: dict[tuple[str, str | None], StorageLocation] = {}
     for area, container, description, capacity in STORAGE:
-        location = db.scalar(
-            select(StorageLocation).where(
-                StorageLocation.entity_id == owner_entity.id,
-                StorageLocation.area == area,
-                StorageLocation.container == container,
-            )
+        locations[(area, container)] = _storage_location(
+            db, owner_entity, area, container, description, capacity
         )
-        if location is None:
-            location = StorageLocation(
-                entity_id=owner_entity.id,
-                area=area,
-                container=container,
-                description=description,
-                capacity_pct=capacity,
-            )
-            db.add(location)
-            db.flush()
-        locations[(area, container)] = location
+    for inventory_area, inventory_container in inventory_storage:
+        if (inventory_area, inventory_container) in locations:
+            continue
+        locations[(inventory_area, inventory_container)] = _storage_location(
+            db, owner_entity, inventory_area, inventory_container
+        )
 
     today = dt.date.today()
-    for spec in SETS:
+    for spec in SETS + inventory_specs:
         entity = child_entity if spec.get("is_custom") else owner_entity
+        # A set number is unique per entity; a MOC has none, so it falls back to
+        # its name. Either way, re-running the seed adds nothing twice.
+        criterion = (
+            LegoSetModel.set_number == spec["set_number"]
+            if spec.get("set_number")
+            else LegoSetModel.name == spec["name"]
+        )
         existing = db.scalar(
-            select(LegoSetModel).where(
-                LegoSetModel.entity_id == entity.id, LegoSetModel.name == spec["name"]
-            )
+            select(LegoSetModel).where(LegoSetModel.entity_id == entity.id, criterion)
         )
         if existing is not None:
             continue
@@ -425,8 +504,8 @@ def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
             name=spec["name"],
             theme=spec.get("theme"),
             subtheme=spec.get("subtheme"),
-            release_year=spec.get("release_year"),
-            retired_year=spec.get("retired_year"),
+            release_date=spec.get("release_date"),
+            retirement_date=spec.get("retirement_date"),
             piece_count=spec.get("piece_count"),
             minifig_count=spec.get("minifig_count"),
             rrp_eur=spec.get("rrp_eur"),
@@ -462,6 +541,36 @@ def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
                 )
             )
     db.flush()
+
+
+def _storage_location(
+    db: DbSession,
+    entity: Entity,
+    area: str,
+    container: str | None,
+    description: str | None = None,
+    capacity_pct: int | None = None,
+) -> StorageLocation:
+    location = db.scalar(
+        select(StorageLocation).where(
+            StorageLocation.entity_id == entity.id,
+            StorageLocation.area == area,
+            StorageLocation.container.is_(None)
+            if container is None
+            else StorageLocation.container == container,
+        )
+    )
+    if location is None:
+        location = StorageLocation(
+            entity_id=entity.id,
+            area=area,
+            container=container,
+            description=description,
+            capacity_pct=capacity_pct,
+        )
+        db.add(location)
+        db.flush()
+    return location
 
 
 def main() -> None:

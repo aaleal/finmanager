@@ -58,8 +58,8 @@ class LegoSetModelBase(BaseModel):
     name: str = Field(min_length=1, max_length=250)
     theme: str | None = Field(default=None, max_length=120)
     subtheme: str | None = Field(default=None, max_length=120)
-    release_year: int | None = Field(default=None, ge=1932, le=2100)
-    retired_year: int | None = Field(default=None, ge=1932, le=2100)
+    release_date: dt.date | None = None
+    retirement_date: dt.date | None = None
     piece_count: int | None = Field(default=None, ge=0)
     minifig_count: int | None = Field(default=None, ge=0)
     rrp_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
@@ -73,6 +73,12 @@ class LegoSetModelBase(BaseModel):
             raise ValueError("uma construção personalizada (MOC) não pode ter número de conjunto")
         if not self.is_custom and not self.set_number:
             raise ValueError("indique o número do conjunto ou marque-o como MOC")
+        if (
+            self.release_date is not None
+            and self.retirement_date is not None
+            and self.retirement_date < self.release_date
+        ):
+            raise ValueError("a data de retirada não pode ser anterior à data de lançamento")
         return self
 
 
@@ -86,8 +92,8 @@ class LegoSetModelUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=250)
     theme: str | None = Field(default=None, max_length=120)
     subtheme: str | None = Field(default=None, max_length=120)
-    release_year: int | None = Field(default=None, ge=1932, le=2100)
-    retired_year: int | None = Field(default=None, ge=1932, le=2100)
+    release_date: dt.date | None = None
+    retirement_date: dt.date | None = None
     piece_count: int | None = Field(default=None, ge=0)
     minifig_count: int | None = Field(default=None, ge=0)
     rrp_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
@@ -105,8 +111,8 @@ class LegoSetModelOut(ApiModel):
     name: str
     theme: str | None
     subtheme: str | None
-    release_year: int | None
-    retired_year: int | None
+    release_date: dt.date | None
+    retirement_date: dt.date | None
     piece_count: int | None
     minifig_count: int | None
     rrp_eur: Decimal | None
@@ -120,6 +126,9 @@ class LegoSetModelOut(ApiModel):
     updated_at: dt.datetime
 
     is_retired: bool = False
+    # Year views of the two dates, so the grid can stay a compact "2022 / 2024".
+    release_year: int | None = None
+    retired_year: int | None = None
     value_is_stale: bool = False
     value_age_days: int | None = None
     owned_copies_count: int = 0
@@ -257,8 +266,8 @@ class LookupResult(BaseModel):
     name: str | None = None
     theme: str | None = None
     subtheme: str | None = None
-    release_year: int | None = None
-    retired_year: int | None = None
+    release_date: dt.date | None = None
+    retirement_date: dt.date | None = None
     piece_count: int | None = None
     minifig_count: int | None = None
     rrp_eur: Decimal | None = None

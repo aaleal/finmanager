@@ -81,6 +81,18 @@ lives here, where it can be corrected when code moves.
 | Filtered summary, tri-state discovery filters, area-level storage filter, field+direction sort | `apps/api/app/services/lego_service.py` | Phase 1 (M9.1) |
 | Derived RRP appreciation/ROI, cumulative acquisition timeline | `apps/api/app/services/lego_service.py` | Phase 1 (M9.1) |
 | `GET /lego/export.xlsx` workbook export (copies, sets, storage) | `apps/api/app/services/lego_export.py` | Phase 1 (M9.1) |
+| Exact `release_date` / `retirement_date`, with `is_retired` waiting for the date to pass | `apps/api/app/models/lego.py` | Phase 1 (M9.2) |
+| Full catalog editing from the detail sheet («Editar conjunto» tab) | `apps/web/src/features/lego/detail-sheet.tsx` | Phase 1 (M9.2) |
+| Collapsible two-level storage filter (areas, then containers) | `apps/web/src/features/lego/storage-filter.tsx` | Phase 1 (M9.2) |
+| Real household inventory as seed data (93 sets, 97 copies) | `apps/api/app/seed/data/lego-inventory.json` | Phase 1 (M9.2) |
+
+## First-run setup (M10)
+
+| Capability | Where | Shipped by |
+| :--- | :--- | :--- |
+| `GET /setup/status`, `POST /setup` — the only unauthenticated write, one-shot | `apps/api/app/api/routers/setup.py` | Phase 1 (M10) |
+| Household + first OWNER + entity + default settings bootstrap | `apps/api/app/services/setup_service.py` | Phase 1 (M10) |
+| Setup screen chosen automatically when there is no session and no user | `apps/web/src/routes/setup.tsx` | Phase 1 (M10) |
 
 ---
 

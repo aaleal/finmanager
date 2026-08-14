@@ -56,7 +56,9 @@ def _model_out(
     return LegoSetModelOut(
         **{c.name: getattr(model, c.name) for c in model.__table__.columns},
         image_url=signed_document_url(model.image_document_id) if model.image_document_id else None,
-        is_retired=model.retired_year is not None,
+        is_retired=model.is_retired,
+        release_year=model.release_date.year if model.release_date else None,
+        retired_year=model.retirement_date.year if model.retirement_date else None,
         value_is_stale=stale,
         value_age_days=age_days,
         owned_copies_count=owned_copies_count,
@@ -284,6 +286,13 @@ def update_model(
             raise Conflict(f"Já existe um conjunto {candidate} nesta entidade.")
         changes["set_number"] = candidate
 
+    # A partial update may supply only one of the two dates, so the pair is checked
+    # against the row as it will end up, not against the payload alone.
+    release = changes.get("release_date", model.release_date)
+    retirement = changes.get("retirement_date", model.retirement_date)
+    if release is not None and retirement is not None and retirement < release:
+        raise ValidationError("A data de retirada não pode ser anterior à data de lançamento.")
+
     # FR-9.6: any hand-set value re-stamps its freshness date.
     if "current_value_eur" in changes and changes["current_value_eur"] != model.current_value_eur:
         model.value_updated_at = (
@@ -392,10 +401,18 @@ SORT_FIELDS: dict[str, Any] = {
     "created": LegoSetInstance.created_at,
     "name": LegoSetModel.name,
     "pieces": LegoSetModel.piece_count,
-    "year": LegoSetModel.release_year,
+    "year": LegoSetModel.release_date,
     "cost": LegoSetInstance.acquisition_cost_eur,
     "value": LegoSetModel.current_value_eur,
 }
+
+
+def _retired_clause() -> Any:
+    """A set is retired only once its retirement date has arrived."""
+    return and_(
+        LegoSetModel.retirement_date.is_not(None),
+        LegoSetModel.retirement_date <= dt.date.today(),
+    )
 
 
 def _order_by(sort: str, direction: str) -> Any:
@@ -486,9 +503,9 @@ def list_instances(
         stmt = stmt.where(~has_missing_parts)
 
     if retirement == "retired":
-        stmt = stmt.where(LegoSetModel.retired_year.is_not(None))
+        stmt = stmt.where(_retired_clause())
     elif retirement == "available":
-        stmt = stmt.where(LegoSetModel.retired_year.is_(None))
+        stmt = stmt.where(~_retired_clause())
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     summary = _collection_summary(db, stmt, total)
@@ -901,7 +918,7 @@ def overview(
         total_pieces += model.piece_count or 0
         total_minifigs += model.minifig_count or 0
         seen_models.add(model.id)
-        if model.retired_year is not None:
+        if model.is_retired:
             retired_models.add(model.id)
 
         theme = model.theme or "Sem tema"

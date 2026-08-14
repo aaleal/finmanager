@@ -37,8 +37,8 @@ interface FormValues {
   name: string;
   theme: string;
   subtheme: string;
-  release_year: string;
-  retired_year: string;
+  release_date: string;
+  retirement_date: string;
   piece_count: string;
   minifig_count: string;
   rrp_eur: string;
@@ -63,8 +63,8 @@ const EMPTY: FormValues = {
   name: '',
   theme: '',
   subtheme: '',
-  release_year: '',
-  retired_year: '',
+  release_date: '',
+  retirement_date: '',
   piece_count: '',
   minifig_count: '',
   rrp_eur: '',
@@ -224,8 +224,8 @@ export function AddSetDialog({
     apply('name', result.name);
     apply('theme', result.theme);
     apply('subtheme', result.subtheme);
-    apply('release_year', result.release_year);
-    apply('retired_year', result.retired_year);
+    apply('release_date', result.release_date);
+    apply('retirement_date', result.retirement_date);
     apply('piece_count', result.piece_count);
     apply('minifig_count', result.minifig_count);
     apply('rrp_eur', result.rrp_eur);
@@ -259,8 +259,8 @@ export function AddSetDialog({
         name: values.name.trim(),
         theme: values.theme || null,
         subtheme: values.subtheme || null,
-        release_year: toNumber(values.release_year),
-        retired_year: toNumber(values.retired_year),
+        release_date: values.release_date || null,
+        retirement_date: values.retirement_date || null,
         piece_count: toNumber(values.piece_count),
         minifig_count: toNumber(values.minifig_count),
         rrp_eur: toMoney(values.rrp_eur),
@@ -390,11 +390,14 @@ export function AddSetDialog({
 
                   <Collapsible title="Detalhes do conjunto">
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field label="Ano de lançamento">
-                        <Input type="number" {...form.register('release_year')} />
+                      <Field label="Data de lançamento">
+                        <Input type="date" {...form.register('release_date')} />
                       </Field>
-                      <Field label="Ano de retirada" hint="Deixe vazio se ainda está à venda.">
-                        <Input type="number" {...form.register('retired_year')} />
+                      <Field
+                        label="Data de retirada"
+                        hint="Vazio se ainda está à venda. Só conta como retirado depois de a data passar."
+                      >
+                        <Input type="date" {...form.register('retirement_date')} />
                       </Field>
                       <Field label="Peças">
                         <Input type="number" {...form.register('piece_count')} />

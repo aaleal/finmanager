@@ -15,3 +15,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0008](0008-lego-value-history-from-audit-log.md) | No valuation-history table for LEGO |
 | [0009](0009-lego-evolution-is-an-acquisition-curve.md) | The LEGO evolution chart is an acquisition curve, not a price history |
 | [0010](0010-lego-cost-roi-and-rrp-roi.md) | Two readings of value: cost ROI and RRP ROI, never merged |
+| [0011](0011-first-run-setup-over-seeded-credentials.md) | First-run setup instead of seeded credentials |
+| [0012](0012-lego-retirement-is-a-date.md) | LEGO retirement is a date, and it has to arrive |
