@@ -109,8 +109,12 @@ export const api = {
   patch: <T,>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
   put: <T,>(path: string, body?: unknown, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'PUT', body, query }),
-  upload: <T,>(path: string, formData: FormData, query?: RequestOptions['query']) =>
-    request<T>(path, { method: 'PUT', formData, query }),
+  upload: <T,>(
+    path: string,
+    formData: FormData,
+    query?: RequestOptions['query'],
+    method: 'PUT' | 'POST' = 'PUT',
+  ) => request<T>(path, { method, formData, query }),
   delete: <T,>(path: string, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'DELETE', query }),
   download: (path: string, query?: RequestOptions['query']) => download(path, query),

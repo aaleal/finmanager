@@ -4,9 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Baby, MoreHorizontal, Plus, ShieldCheck, UserMinus, Users } from 'lucide-react';
+import { Baby, KeyRound, MoreHorizontal, Palette, Pencil, Plus, ShieldCheck, UserMinus, Users } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
+import { cn } from '@/lib/utils';
 import type { Entity, Member, Role } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -181,45 +182,114 @@ function AddMemberDialog() {
   );
 }
 
-function AddEntityDialog({ members }: { members: Member[] }) {
-  const [open, setOpen] = React.useState(false);
-  const [name, setName] = React.useState('');
-  const [selected, setSelected] = React.useState<string[]>([]);
-  const queryClient = useQueryClient();
+/** The palette the API assigns from, offered as one click each, plus a free picker. */
+const ENTITY_PALETTE = [
+  '#2563eb',
+  '#0d9488',
+  '#c026d3',
+  '#ea580c',
+  '#65a30d',
+  '#7c3aed',
+  '#e11d48',
+  '#0891b2',
+];
 
-  const create = useMutation({
-    mutationFn: () => api.post<Entity>('/entities', { name, member_ids: selected }),
+function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {ENTITY_PALETTE.map((color) => (
+        <button
+          key={color}
+          type="button"
+          aria-label={`Cor ${color}`}
+          aria-pressed={value.toLowerCase() === color}
+          onClick={() => onChange(color)}
+          className={cn(
+            'size-6 rounded-full border-2 transition-transform hover:scale-110',
+            value.toLowerCase() === color ? 'border-foreground' : 'border-transparent',
+          )}
+          style={{ backgroundColor: color }}
+        />
+      ))}
+      <label
+        className="ml-1 flex size-6 cursor-pointer items-center justify-center rounded-full border border-dashed border-border"
+        title="Escolher outra cor"
+      >
+        <Palette className="size-3.5 text-muted-foreground" />
+        <input
+          type="color"
+          className="sr-only"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </label>
+    </div>
+  );
+}
+
+function EntityDialog({
+  members,
+  entity,
+  open,
+  onOpenChange,
+}: {
+  members: Member[];
+  entity?: Entity;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [name, setName] = React.useState(entity?.name ?? '');
+  const [color, setColor] = React.useState(entity?.color ?? ENTITY_PALETTE[0]);
+  const [selected, setSelected] = React.useState<string[]>(entity?.member_ids ?? []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setName(entity?.name ?? '');
+    setColor(entity?.color ?? ENTITY_PALETTE[0]);
+    setSelected(entity?.member_ids ?? []);
+  }, [open, entity]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      const payload = { name, color, member_ids: selected };
+      return entity
+        ? api.patch<Entity>(`/entities/${entity.id}`, payload)
+        : api.post<Entity>('/entities', payload);
+    },
     onSuccess: () => {
-      toast.success('Entidade criada.');
+      toast.success(entity ? 'Entidade atualizada.' : 'Entidade criada.');
       queryClient.invalidateQueries({ queryKey: ['entities'] });
-      setName('');
-      setSelected([]);
-      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+      onOpenChange(false);
     },
     onError: (error) =>
-      toast.error(error instanceof ApiError ? error.message : 'Não foi possível criar a entidade.'),
+      toast.error(error instanceof ApiError ? error.message : 'Não foi possível guardar.'),
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus />
-          Nova entidade
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Nova entidade</DialogTitle>
+          <DialogTitle>{entity ? 'Editar entidade' : 'Nova entidade'}</DialogTitle>
           <DialogDescription>
-            Uma entidade é um titular com um ou mais membros — por exemplo, o casal. As entidades
-            individuais são criadas automaticamente.
+            Uma entidade é um titular com um ou mais membros — por exemplo, o casal. A cor
+            identifica-a em todos os módulos.
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
           <Field label="Nome">
-            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ana & Bruno" />
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ana & Bruno"
+            />
           </Field>
+
+          <Field label="Cor">
+            <ColorPicker value={color} onChange={setColor} />
+          </Field>
+
           <div className="space-y-2">
             <p className="text-sm font-medium">Membros</p>
             {members
@@ -245,15 +315,78 @@ function AddEntityDialog({ members }: { members: Member[] }) {
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
-            onClick={() => create.mutate()}
+            onClick={() => save.mutate()}
             disabled={!name || selected.length === 0}
-            loading={create.isPending}
+            loading={save.isPending}
           >
-            Criar
+            {entity ? 'Guardar' : 'Criar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** An owner resetting someone else's password — the only recovery route, since there is no email. */
+function ResetPasswordDialog({
+  member,
+  open,
+  onOpenChange,
+}: {
+  member: Member | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [password, setPassword] = React.useState('');
+
+  React.useEffect(() => {
+    if (open) setPassword('');
+  }, [open]);
+
+  const reset = useMutation({
+    mutationFn: () => api.patch(`/members/${member?.id}`, { new_password: password }),
+    onSuccess: () => {
+      toast.success('Palavra-passe definida. O membro terá de a alterar no próximo acesso.');
+      onOpenChange(false);
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : 'Não foi possível alterar.'),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>Definir palavra-passe</DialogTitle>
+          <DialogDescription>
+            {member?.display_name} vai receber esta palavra-passe temporária e terá de a alterar no
+            próximo acesso. As sessões abertas dessa pessoa são terminadas.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody>
+          <Field label="Palavra-passe temporária" hint="Mínimo 8 caracteres.">
+            <Input
+              type="text"
+              autoComplete="off"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => reset.mutate()}
+            disabled={password.length < 8}
+            loading={reset.isPending}
+          >
+            Definir
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -264,6 +397,10 @@ function AddEntityDialog({ members }: { members: Member[] }) {
 export function HouseholdPage() {
   const { isOwner, session } = useSession();
   const queryClient = useQueryClient();
+  const [entityDialog, setEntityDialog] = React.useState<{ open: boolean; entity?: Entity }>({
+    open: false,
+  });
+  const [passwordFor, setPasswordFor] = React.useState<Member | null>(null);
 
   const members = useQuery({ queryKey: ['members'], queryFn: () => api.get<Member[]>('/members') });
   const entities = useQuery({ queryKey: ['entities'], queryFn: () => api.get<Entity[]>('/entities') });
@@ -374,6 +511,10 @@ export function HouseholdPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onSelect={() => setPasswordFor(member)}>
+                                    <KeyRound />
+                                    Definir palavra-passe
+                                  </DropdownMenuItem>
                                   {(['OWNER', 'MEMBER', 'VIEWER'] as Role[])
                                     .filter((role) => role !== member.role)
                                     .map((role) => (
@@ -410,7 +551,10 @@ export function HouseholdPage() {
         <TabsContent value="entities" className="space-y-4">
           {isOwner ? (
             <div className="flex justify-end">
-              <AddEntityDialog members={members.data ?? []} />
+              <Button variant="outline" onClick={() => setEntityDialog({ open: true })}>
+                <Plus />
+                Nova entidade
+              </Button>
             </div>
           ) : null}
 
@@ -424,10 +568,21 @@ export function HouseholdPage() {
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
                       <span
-                        className="size-2.5 rounded-full"
+                        className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: entity.color ?? '#94a3b8' }}
                       />
-                      {entity.name}
+                      <span className="truncate">{entity.name}</span>
+                      {isOwner ? (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="ml-auto"
+                          title="Editar entidade"
+                          onClick={() => setEntityDialog({ open: true, entity })}
+                        >
+                          <Pencil />
+                        </Button>
+                      ) : null}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -448,6 +603,20 @@ export function HouseholdPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <EntityDialog
+        members={members.data ?? []}
+        entity={entityDialog.entity}
+        open={entityDialog.open}
+        onOpenChange={(open) => setEntityDialog((previous) => ({ ...previous, open }))}
+      />
+      <ResetPasswordDialog
+        member={passwordFor}
+        open={Boolean(passwordFor)}
+        onOpenChange={(open) => {
+          if (!open) setPasswordFor(null);
+        }}
+      />
     </div>
   );
 }

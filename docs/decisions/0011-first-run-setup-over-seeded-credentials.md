@@ -24,8 +24,9 @@ ask.
 The application asks, once.
 
 1. **No account ships with the product.** `BOOTSTRAP_OWNER_EMAIL` /
-   `BOOTSTRAP_OWNER_PASSWORD` keep their meaning — input to the opt-in demo seed
-   — and gain no other. A production install never runs the seed and never has a
+   `BOOTSTRAP_OWNER_PASSWORD` were kept at first as input to the opt-in demo seed,
+   and later deleted outright when the seed stopped creating users
+   ([ADR-0014](0014-seed-creates-no-users.md)). A production install never has a
    default password to rotate.
 2. **`POST /setup` is the only unauthenticated write in the API,** and only while
    the database has no non-deleted `User`. It creates the household, the first

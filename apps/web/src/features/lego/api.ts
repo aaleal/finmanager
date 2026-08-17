@@ -22,6 +22,7 @@ export type InstanceFilters = {
   ownership_status?: string;
   completeness?: string;
   retirement?: string;
+  copies?: string;
   sort?: string;
   direction?: string;
   page?: string;
@@ -57,6 +58,7 @@ export function useInstances(filters: InstanceFilters) {
         ownership_status: filters.ownership_status,
         completeness: filters.completeness ?? 'all',
         retirement: filters.retirement ?? 'all',
+        copies: filters.copies ?? 'all',
         sort: filters.sort ?? 'created',
         direction: filters.direction ?? 'desc',
         page: filters.page ?? '1',
@@ -229,6 +231,59 @@ export function useSetModelImage() {
     },
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível guardar a imagem.')),
   });
+}
+
+/** Add / remove / promote the extra views that make up a set's carousel. */
+export function useSetGallery() {
+  const invalidate = useInvalidateLego();
+
+  const add = useMutation({
+    mutationFn: async ({
+      id,
+      file,
+      url,
+      caption,
+    }: {
+      id: string;
+      file?: File;
+      url?: string;
+      caption?: string;
+    }) => {
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.upload<LegoSetModel>(`/lego/models/${id}/images`, formData, { caption }, 'POST');
+      }
+      return api.post<LegoSetModel>(`/lego/models/${id}/images`, undefined, { url, caption });
+    },
+    onSuccess: () => {
+      toast.success('Imagem adicionada à galeria.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível adicionar a imagem.')),
+  });
+
+  const promote = useMutation({
+    mutationFn: ({ id, imageId }: { id: string; imageId: string }) =>
+      api.post<LegoSetModel>(`/lego/models/${id}/images/${imageId}/cover`),
+    onSuccess: () => {
+      toast.success('Imagem principal alterada.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível alterar a capa.')),
+  });
+
+  const remove = useMutation({
+    mutationFn: ({ id, imageId }: { id: string; imageId: string }) =>
+      api.delete<LegoSetModel>(`/lego/models/${id}/images/${imageId}`),
+    onSuccess: () => {
+      toast.success('Imagem removida.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível remover a imagem.')),
+  });
+
+  return { add, promote, remove };
 }
 
 export function useStorageMutations() {

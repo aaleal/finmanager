@@ -1,8 +1,13 @@
 import * as React from 'react';
 import {
+  ArrowDown,
   ArrowDownWideNarrow,
+  ArrowUp,
   ArrowUpNarrowWide,
   Blocks,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronsUpDown,
   Filter,
   Package,
   Search,
@@ -42,7 +47,9 @@ import {
   COMPLETENESS_OPTIONS,
   CONDITION_LABELS,
   CONDITION_VARIANTS,
+  COPIES_OPTIONS,
   OWNERSHIP_LABELS,
+  PAGE_SIZES,
   RETIREMENT_OPTIONS,
   SORT_FIELDS,
 } from './constants';
@@ -121,21 +128,36 @@ function YearsCell({ instance }: { instance: LegoSetInstance }) {
   );
 }
 
+/**
+ * The name is the only free-text column, so it is the one that gets capped: it
+ * truncates with the full name on hover, which keeps the ten columns inside the
+ * viewport instead of pushing them behind a horizontal scrollbar.
+ */
 function SetCell({ instance }: { instance: LegoSetInstance }) {
   const model = instance.set_model;
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex max-w-[15rem] items-center gap-2.5">
       <Thumb instance={instance} />
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 truncate font-medium">
-          <span className="truncate">{model?.name}</span>
+        <p className="flex items-center gap-1.5 font-medium">
+          <span className="truncate" title={model?.name}>
+            {model?.name}
+          </span>
           {!instance.is_complete ? (
-            <Badge variant="destructive" title={instance.missing_parts ?? 'Incompleto'}>
+            <Badge
+              variant="destructive"
+              className="shrink-0"
+              title={instance.missing_parts ?? 'Incompleto'}
+            >
               incompleto
             </Badge>
           ) : null}
           {model?.is_retired ? (
-            <Badge variant="warning" title={`Retirado em ${model.retired_year}`}>
+            <Badge
+              variant="warning"
+              className="shrink-0"
+              title={`Retirado em ${model.retired_year}`}
+            >
               retirado
             </Badge>
           ) : null}
@@ -148,6 +170,59 @@ function SetCell({ instance }: { instance: LegoSetInstance }) {
     </div>
   );
 }
+
+/** A column header that sorts: click to sort, click again to flip the direction. */
+function SortHead({
+  field,
+  label,
+  filters,
+  setFilters,
+  align = 'left',
+}: {
+  field: string;
+  label: string;
+  filters: Record<string, string | undefined>;
+  setFilters: (patch: Record<string, string | undefined>) => void;
+  align?: 'left' | 'right';
+}) {
+  const active = (filters.sort ?? 'created') === field;
+  const descending = (filters.direction ?? 'desc') === 'desc';
+
+  return (
+    <TableHead className={align === 'right' ? 'text-right' : undefined}>
+      <button
+        type="button"
+        aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
+        onClick={() =>
+          setFilters({
+            sort: field,
+            // A fresh column starts descending for numbers and ascending for text.
+            direction: active ? (descending ? 'asc' : 'desc') : TEXT_FIELDS.has(field) ? 'asc' : 'desc',
+            page: '1',
+          })
+        }
+        className={cn(
+          'group inline-flex items-center gap-1 uppercase transition-colors hover:text-foreground',
+          align === 'right' && 'flex-row-reverse',
+          active ? 'text-foreground' : 'text-muted-foreground',
+        )}
+      >
+        {label}
+        {active ? (
+          descending ? (
+            <ArrowDown className="size-3" />
+          ) : (
+            <ArrowUp className="size-3" />
+          )
+        ) : (
+          <ChevronsUpDown className="size-3 opacity-0 transition-opacity group-hover:opacity-60" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
+
+const TEXT_FIELDS = new Set(['number', 'name', 'theme', 'storage', 'ownership']);
 
 function GroupedRow({
   group,
@@ -259,6 +334,7 @@ export function CollectionGrid({
     filters.condition,
     filters.completeness && filters.completeness !== 'all' ? filters.completeness : undefined,
     filters.retirement && filters.retirement !== 'all' ? filters.retirement : undefined,
+    filters.copies && filters.copies !== 'all' ? filters.copies : undefined,
     filters.ownership_status && filters.ownership_status !== 'IN_COLLECTION'
       ? filters.ownership_status
       : undefined,
@@ -446,13 +522,29 @@ export function CollectionGrid({
 
           <Select
             value={filters.retirement ?? 'all'}
-            onValueChange={(value) => setFilters({ retirement: value })}
+            onValueChange={(value) => setFilters({ retirement: value, page: '1' })}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {RETIREMENT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.copies ?? 'all'}
+            onValueChange={(value) => setFilters({ copies: value, page: '1' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COPIES_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -474,7 +566,9 @@ export function CollectionGrid({
                   condition: undefined,
                   completeness: undefined,
                   retirement: undefined,
+                  copies: undefined,
                   ownership_status: undefined,
+                  page: '1',
                 })
               }
             >
@@ -505,12 +599,24 @@ export function CollectionGrid({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Conjunto</TableHead>
-                <TableHead>Cópias</TableHead>
-                <TableHead>Ano</TableHead>
-                <TableHead>Custo</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Ganho</TableHead>
+                <SortHead field="name" label="Conjunto" filters={filters} setFilters={setFilters} />
+                <SortHead field="copies" label="Cópias" filters={filters} setFilters={setFilters} />
+                <SortHead field="year" label="Ano" filters={filters} setFilters={setFilters} />
+                <SortHead
+                  field="cost"
+                  label="Custo"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
+                <SortHead
+                  field="value"
+                  label="Valor"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
+                <TableHead className="text-right">Ganho</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -523,16 +629,50 @@ export function CollectionGrid({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Conjunto</TableHead>
-                <TableHead>Tema</TableHead>
-                <TableHead>Ano</TableHead>
-                <TableHead>Arrumação</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Condição</TableHead>
-                <TableHead className="text-right">Custo</TableHead>
-                <TableHead className="text-right">PVP</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">ROI</TableHead>
+                <SortHead field="name" label="Conjunto" filters={filters} setFilters={setFilters} />
+                <SortHead field="theme" label="Tema" filters={filters} setFilters={setFilters} />
+                <SortHead field="year" label="Ano" filters={filters} setFilters={setFilters} />
+                <SortHead
+                  field="storage"
+                  label="Arrumação"
+                  filters={filters}
+                  setFilters={setFilters}
+                />
+                <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
+                <SortHead
+                  field="condition"
+                  label="Condição"
+                  filters={filters}
+                  setFilters={setFilters}
+                />
+                <SortHead
+                  field="cost"
+                  label="Custo"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
+                <SortHead
+                  field="rrp"
+                  label="PVP"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
+                <SortHead
+                  field="value"
+                  label="Valor"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
+                <SortHead
+                  field="roi"
+                  label="ROI"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -598,12 +738,42 @@ export function CollectionGrid({
         )}
       </div>
 
-      {data && data.total > pageSize ? (
-        <div className="flex items-center justify-between gap-4 text-sm">
-          <p className="text-muted-foreground">
-            {data.total} cópia(s) · página {page} de {totalPages}
-          </p>
-          <div className="flex gap-2">
+      {data ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Linhas por página</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(value) => setFilters({ page_size: value, page: '1' })}
+            >
+              <SelectTrigger className="h-8 w-[4.5rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZES.map((size) => (
+                  <SelectItem key={size} value={size}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-muted-foreground">
+              {data.total === 0
+                ? 'sem resultados'
+                : `${num((page - 1) * pageSize + 1)}–${num(Math.min(page * pageSize, data.total))} de ${num(data.total)}`}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setFilters({ page: '1' })}
+              aria-label="Primeira página"
+            >
+              <ChevronsLeft />
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -612,6 +782,9 @@ export function CollectionGrid({
             >
               Anterior
             </Button>
+            <span className="text-muted-foreground">
+              {page} / {totalPages}
+            </span>
             <Button
               variant="outline"
               size="sm"
@@ -619,6 +792,15 @@ export function CollectionGrid({
               onClick={() => setFilters({ page: String(page + 1) })}
             >
               Seguinte
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setFilters({ page: String(totalPages) })}
+              aria-label="Última página"
+            >
+              <ChevronsRight />
             </Button>
           </div>
         </div>

@@ -5,14 +5,20 @@ converted once from ``00.prompts/seed/Lego/Lego_Inventory.xlsx``) plus a handful
 hand-written sets that exist to exercise cases the spreadsheet has none of: a sale,
 a gift, a MOC, a missing part and a retirement date still in the future.
 
-Idempotent: re-running only fills what is missing. Run with ``make seed``.
+It creates **no users**: the household and its owner come from the first-run setup
+(ADR-0011), and this only fills reference data and the collection alongside them.
+Run it after the first login, with ``make seed``. Idempotent — re-running only
+fills what is missing.
 """
 
 from __future__ import annotations
 
+import argparse
+import contextlib
 import datetime as dt
 import json
 import re
+import sys
 import unicodedata
 from decimal import Decimal
 from pathlib import Path
@@ -21,12 +27,11 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
-from app.core.config import settings
 from app.core.db import session_scope
-from app.core.security import hash_password
+from app.core.errors import ValidationError
 from app.models.core import Category, Merchant, Tag
-from app.models.household import Entity, Household, HouseholdMember, User
-from app.models.lego import LegoSetInstance, LegoSetModel, StorageLocation
+from app.models.household import Entity, Household
+from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
 from app.seed.images import cover_for
 from app.services import documents, settings_service
 
@@ -42,72 +47,29 @@ def slugify(value: str) -> str:
 
 
 # --- Household ---------------------------------------------------------------
-def seed_household(db: DbSession) -> tuple[Household, dict[str, User], dict[str, Entity]]:
-    household = db.scalar(select(Household).limit(1))
+def resolve_target(db: DbSession) -> tuple[Household, Entity]:
+    """The household and entity the demo data attaches to.
+
+    Both already exist: first-run setup creates the household, the first owner and
+    that owner's entity. The seed never invents a user, so an unconfigured
+    installation is an error rather than an invitation to create one.
+    """
+    household = db.scalar(select(Household).order_by(Household.created_at).limit(1))
     if household is None:
-        household = Household(name=settings.bootstrap_household_name)
-        db.add(household)
-        db.flush()
-
-    people = [
-        ("owner", settings.bootstrap_owner_email, "Ana", "OWNER", False),
-        ("partner", "bruno@finmanager.local", "Bruno", "MEMBER", False),
-        ("child", None, "Clara", "VIEWER", True),
-    ]
-    users: dict[str, User] = {}
-    for key, email, display_name, role, is_dependent in people:
-        user = db.scalar(
-            select(User).where(
-                (User.email == email) if email else (User.display_name == display_name)
-            )
+        raise ValidationError(
+            "Esta instalação ainda não foi configurada. Abra a aplicação e crie o "
+            "titular do agregado antes de carregar os dados de demonstração."
         )
-        if user is None:
-            user = User(
-                email=email,
-                display_name=display_name,
-                password_hash=(
-                    None if is_dependent else hash_password(settings.bootstrap_owner_password)
-                ),
-                role=role,
-                is_dependent=is_dependent,
-                must_change_password=False,
-            )
-            db.add(user)
-            db.flush()
-        users[key] = user
 
-        membership = db.scalar(
-            select(HouseholdMember).where(
-                HouseholdMember.household_id == household.id,
-                HouseholdMember.user_id == user.id,
-            )
-        )
-        if membership is None:
-            db.add(HouseholdMember(household_id=household.id, user_id=user.id, role=role))
-
-    db.flush()
-    household.created_by = users["owner"].id
-
-    entity_specs = [
-        ("Ana", [users["owner"].id], "#2563eb"),
-        ("Bruno", [users["partner"].id], "#0d9488"),
-        ("Clara", [users["child"].id], "#c026d3"),
-        ("Ana & Bruno", [users["owner"].id, users["partner"].id], "#ea580c"),
-    ]
-    entities: dict[str, Entity] = {}
-    for name, member_ids, color in entity_specs:
-        entity = db.scalar(
-            select(Entity).where(Entity.household_id == household.id, Entity.name == name)
-        )
-        if entity is None:
-            entity = Entity(
-                household_id=household.id, name=name, member_ids=member_ids, color=color
-            )
-            db.add(entity)
-            db.flush()
-        entities[name] = entity
-
-    return household, users, entities
+    entity = db.scalar(
+        select(Entity)
+        .where(Entity.household_id == household.id, Entity.is_deleted.is_(False))
+        .order_by(Entity.created_at)
+        .limit(1)
+    )
+    if entity is None:
+        raise ValidationError("O agregado não tem nenhuma entidade para atribuir os dados.")
+    return household, entity
 
 
 # --- Reference data ----------------------------------------------------------
@@ -184,7 +146,7 @@ def seed_tags(db: DbSession, household: Household) -> None:
         ("férias", "#0ea5e9"),
         ("culinária", "#f59e0b"),
         ("social", "#8b5cf6"),
-        ("Clara", "#ec4899"),
+        ("presentes", "#ec4899"),
     ]:
         if db.scalar(select(Tag).where(Tag.household_id == household.id, Tag.name == name)):
             continue
@@ -202,8 +164,6 @@ def seed_settings(db: DbSession) -> None:
         )
         if existing is None:
             settings_service.set_value(db, key, value)
-    if settings.brickset_api_key:
-        settings_service.set_value(db, settings_service.BRICKSET_API_KEY, settings.brickset_api_key)
 
 
 # --- LEGO --------------------------------------------------------------------
@@ -212,7 +172,7 @@ STORAGE: list[tuple[str, str, str, int | None]] = [
     ("Garagem", "Caixa A", "Caixa de arrumação empilhável", 40),
     ("Casa", "Armário", "Armário do escritório", 90),
     ("Casa", "Montado", "Sets expostos, já construídos", None),
-    ("Casa", "A uso", "Peças em utilização pela Clara", 100),
+    ("Casa", "A uso", "Peças soltas, em utilização", 100),
 ]
 
 SETS: list[dict[str, Any]] = [
@@ -457,27 +417,23 @@ def inventory_sets() -> tuple[list[tuple[str, str | None]], list[dict[str, Any]]
     return storage, specs
 
 
-def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
-    owner_entity = entities["Ana & Bruno"]
-    child_entity = entities["Clara"]
-
+def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3, offline: bool = False) -> None:
     inventory_storage, inventory_specs = inventory_sets()
 
     locations: dict[tuple[str, str | None], StorageLocation] = {}
     for area, container, description, capacity in STORAGE:
         locations[(area, container)] = _storage_location(
-            db, owner_entity, area, container, description, capacity
+            db, entity, area, container, description, capacity
         )
     for inventory_area, inventory_container in inventory_storage:
         if (inventory_area, inventory_container) in locations:
             continue
         locations[(inventory_area, inventory_container)] = _storage_location(
-            db, owner_entity, inventory_area, inventory_container
+            db, entity, inventory_area, inventory_container
         )
 
     today = dt.date.today()
     for spec in SETS + inventory_specs:
-        entity = child_entity if spec.get("is_custom") else owner_entity
         # A set number is unique per entity; a MOC has none, so it falls back to
         # its name. Either way, re-running the seed adds nothing twice.
         criterion = (
@@ -492,11 +448,6 @@ def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
             continue
 
         value_age = spec.get("value_age_days")
-        cover = documents.store_bytes(
-            db,
-            cover_for(spec.get("theme")),
-            original_filename=f"{spec.get('set_number') or slugify(spec['name'])}.png",
-        )
         model = LegoSetModel(
             entity_id=entity.id,
             set_number=spec.get("set_number"),
@@ -514,10 +465,10 @@ def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
                 today - dt.timedelta(days=value_age) if value_age is not None else None
             ),
             short_description=spec.get("short_description"),
-            image_document_id=cover.id,
         )
         db.add(model)
         db.flush()
+        _seed_images(db, model, alts=alts, offline=offline)
 
         for copy_spec in spec["copies"]:
             storage_key = copy_spec.get("storage")
@@ -540,6 +491,48 @@ def seed_lego(db: DbSession, entities: dict[str, Entity]) -> None:
                     notes=copy_spec.get("notes"),
                 )
             )
+    db.flush()
+
+
+# Brickset publishes both at predictable paths. They are fetched once and stored
+# locally like any other web image (§1a Document); nothing is ever hotlinked.
+BOX_URL = "https://images.brickset.com/sets/images/{number}-1.jpg"
+ALT_URL = "https://images.brickset.com/sets/AdditionalImages/{number}-1/{number}_alt{index}.jpg"
+
+
+def _seed_images(db: DbSession, model: LegoSetModel, *, alts: int, offline: bool) -> None:
+    """Box shot as the cover, then whatever extra views exist, as the gallery.
+
+    Every download is best-effort: a NAS with no internet, a set Brickset has never
+    photographed and a MOC all end up on the generated placeholder instead.
+    """
+    number = model.set_number
+    if number and not offline:
+        # Any failure just means "no box shot": offline NAS, a set Brickset never
+        # photographed, a MOC. The placeholder below picks it up.
+        with contextlib.suppress(Exception):
+            model.image_document_id = documents.store_from_url(db, BOX_URL.format(number=number)).id
+
+        for index in range(1, alts + 1):
+            try:
+                document = documents.store_from_url(db, ALT_URL.format(number=number, index=index))
+            except Exception:
+                break  # the set simply has no further views
+            db.add(
+                LegoSetImage(
+                    lego_set_model_id=model.id,
+                    document_id=document.id,
+                    position=index - 1,
+                )
+            )
+
+    if model.image_document_id is None:
+        placeholder = documents.store_bytes(
+            db,
+            cover_for(model.theme),
+            original_filename=f"{number or slugify(model.name)}.png",
+        )
+        model.image_document_id = placeholder.id
     db.flush()
 
 
@@ -574,16 +567,32 @@ def _storage_location(
 
 
 def main() -> None:
-    with session_scope() as db:
-        household, _users, entities = seed_household(db)
-        seed_settings(db)
-        seed_categories(db)
-        seed_merchants(db)
-        seed_tags(db, household)
-        seed_lego(db, entities)
+    parser = argparse.ArgumentParser(description="Carrega os dados de demonstração.")
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Não contacta a rede: as capas ficam com o marcador gerado localmente.",
+    )
+    parser.add_argument(
+        "--alts",
+        type=int,
+        default=3,
+        help="Máximo de imagens adicionais por conjunto (0 desliga a galeria).",
+    )
+    args = parser.parse_args()
 
-    print("Seed concluído.")
-    print(f"  Login: {settings.bootstrap_owner_email} / {settings.bootstrap_owner_password}")
+    try:
+        with session_scope() as db:
+            household, entity = resolve_target(db)
+            seed_settings(db)
+            seed_categories(db)
+            seed_merchants(db)
+            seed_tags(db, household)
+            seed_lego(db, entity, alts=max(0, args.alts), offline=args.offline)
+    except ValidationError as exc:
+        sys.exit(exc.detail)
+
+    print(f"Seed concluído em «{household.name}», atribuído a «{entity.name}».")
 
 
 if __name__ == "__main__":

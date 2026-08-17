@@ -29,10 +29,6 @@ class Settings(BaseSettings):
 
     storage_root: Path = Path("/var/lib/finmanager/storage")
 
-    bootstrap_owner_email: str = "owner@finmanager.local"
-    bootstrap_owner_password: str = "finmanager"
-    bootstrap_household_name: str = "Casa"
-
     brickset_api_key: str = ""
 
     # Signed document URLs are short-lived by design (§1a Document).

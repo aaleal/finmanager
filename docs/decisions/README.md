@@ -17,3 +17,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0010](0010-lego-cost-roi-and-rrp-roi.md) | Two readings of value: cost ROI and RRP ROI, never merged |
 | [0011](0011-first-run-setup-over-seeded-credentials.md) | First-run setup instead of seeded credentials |
 | [0012](0012-lego-retirement-is-a-date.md) | LEGO retirement is a date, and it has to arrive |
+| [0013](0013-lego-set-gallery.md) | The LEGO set gallery is worth a fourth table |
+| [0014](0014-seed-creates-no-users.md) | The demo seed no longer creates users |

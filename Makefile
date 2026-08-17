@@ -78,9 +78,14 @@ downgrade: ## Roll back one migration
 	$(RUN_API) alembic downgrade -1
 
 .PHONY: seed
-seed: ## Load the deterministic Portuguese demo dataset
+seed: ## Load the deterministic Portuguese demo dataset (after the first-run setup)
 	@$(DB_UP)
-	$(RUN_API) python -m app.seed
+	$(RUN_API) python -m app.seed $(ARGS)
+
+.PHONY: passwd
+passwd: ## Set a member's password: make passwd EMAIL=ana@exemplo.pt
+	@$(DB_UP)
+	$(RUN_API) python -m app.reset_password $(EMAIL)
 
 .PHONY: shell-db
 shell-db: ## Open psql inside the database container

@@ -16,6 +16,8 @@ OwnershipStatus = Literal["IN_COLLECTION", "SOLD", "GIFTED"]
 # Tri-state discovery filters (M9.1): «todos» is always the default.
 CompletenessFilter = Literal["all", "complete", "incomplete"]
 RetirementFilter = Literal["all", "retired", "available"]
+# How many copies of the same set are owned — «todos» is always the default.
+CopiesFilter = Literal["all", "single", "multiple"]
 
 
 # --- Storage -----------------------------------------------------------------
@@ -52,6 +54,19 @@ class StorageLocationOut(ApiModel):
 
 
 # --- Set model ---------------------------------------------------------------
+class LegoSetImageOut(ApiModel):
+    id: uuid.UUID
+    document_id: uuid.UUID
+    url: str | None = None
+    caption: str | None = None
+    position: int = 0
+
+
+class LegoSetImageUpdate(BaseModel):
+    caption: str | None = Field(default=None, max_length=200)
+    position: int | None = Field(default=None, ge=0)
+
+
 class LegoSetModelBase(BaseModel):
     set_number: str | None = Field(default=None, max_length=32)
     is_custom: bool = False
@@ -120,6 +135,8 @@ class LegoSetModelOut(ApiModel):
     value_updated_at: dt.date | None
     image_document_id: uuid.UUID | None
     image_url: str | None = None
+    # The box shot above is always the first frame; these are the extra views.
+    images: list[LegoSetImageOut] = []
     short_description: str | None
     notes: str | None
     created_at: dt.datetime

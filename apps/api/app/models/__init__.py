@@ -24,7 +24,7 @@ from app.models.household import (
     Session,
     User,
 )
-from app.models.lego import LegoSetInstance, LegoSetModel, StorageLocation
+from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
 
 __all__ = [
     "ROLES",
@@ -37,6 +37,7 @@ __all__ = [
     "Household",
     "HouseholdMember",
     "ImportBatch",
+    "LegoSetImage",
     "LegoSetInstance",
     "LegoSetModel",
     "Link",

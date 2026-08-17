@@ -85,6 +85,16 @@ lives here, where it can be corrected when code moves.
 | Full catalog editing from the detail sheet («Editar conjunto» tab) | `apps/web/src/features/lego/detail-sheet.tsx` | Phase 1 (M9.2) |
 | Collapsible two-level storage filter (areas, then containers) | `apps/web/src/features/lego/storage-filter.tsx` | Phase 1 (M9.2) |
 | Real household inventory as seed data (93 sets, 97 copies) | `apps/api/app/seed/data/lego-inventory.json` | Phase 1 (M9.2) |
+| Sort on every grid column, incl. derived `copies` and `roi`, ordinal `condition` | `apps/api/app/services/lego_service.py` | Phase 1 (M9.3) |
+| Set image gallery + carousel (box shot plus extra views) | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/set-carousel.tsx` | Phase 1 (M9.3) |
+| Real Brickset box art downloaded once into the seed | `apps/api/app/seed/__init__.py` | Phase 1 (M9.3) |
+
+## Household administration (M7)
+
+| Capability | Where | Shipped by |
+| :--- | :--- | :--- |
+| Entity colour picker, rename and membership editing | `apps/web/src/routes/household.tsx` | Phase 1 (M9.3) |
+| Owner sets a member's password; `./fm passwd` does it from the host | `apps/api/app/reset_password.py` | Phase 1 (M10) |
 
 ## First-run setup (M10)
 

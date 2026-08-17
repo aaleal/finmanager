@@ -15,6 +15,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -22,6 +23,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
@@ -89,11 +91,48 @@ class LegoSetModel(Base, TimestampMixin, SoftDeleteMixin):
     instances: Mapped[list[LegoSetInstance]] = relationship(
         "LegoSetInstance", back_populates="model", lazy="selectin"
     )
+    images: Mapped[list[LegoSetImage]] = relationship(
+        "LegoSetImage",
+        back_populates="model",
+        lazy="selectin",
+        order_by="LegoSetImage.position",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def is_retired(self) -> bool:
         """Retired only once the date has actually passed, never in advance."""
         return self.retirement_date is not None and self.retirement_date <= dt.date.today()
+
+
+class LegoSetImage(Base):
+    """An extra view of the set beyond the box shot kept in ``image_document_id``.
+
+    See docs/decisions/0013-lego-set-gallery.md for why this is the fourth table.
+    """
+
+    __tablename__ = "lego_set_images"
+    __table_args__ = (
+        UniqueConstraint(
+            "lego_set_model_id", "document_id", name="uq_lego_set_images_model_document"
+        ),
+        Index("ix_lego_set_images_model_position", "lego_set_model_id", "position"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    lego_set_model_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("lego_set_models.id", ondelete="CASCADE"), nullable=False
+    )
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("documents.id"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    caption: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    model: Mapped[LegoSetModel] = relationship("LegoSetModel", back_populates="images")
 
 
 class StorageLocation(Base, SoftDeleteMixin):

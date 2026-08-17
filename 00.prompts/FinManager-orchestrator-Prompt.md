@@ -38,6 +38,7 @@ A single system of record covering supermarket receipts, bank transactions, heal
 | 9 | LEGO Collection Catalog | [modules/09-lego-collection-catalog.md](modules/09-lego-collection-catalog.md) |
 | 9.1 | LEGO Collection Catalog — usability refinements (no schema change) | [modules/09.1-lego-collection-refinements.md](modules/09.1-lego-collection-refinements.md) |
 | 9.2 | LEGO Collection Catalog — real inventory, full editing, retirement dates | [modules/09.2-lego-real-inventory-and-editing.md](modules/09.2-lego-real-inventory-and-editing.md) |
+| 9.3 | LEGO Collection Catalog — grid sorting, paging and the set gallery | [modules/09.3-lego-grid-and-gallery.md](modules/09.3-lego-grid-and-gallery.md) |
 | 10 | First-Run Setup — a clean install configures itself (no schema change) | [modules/10-first-run-setup.md](modules/10-first-run-setup.md) |
 
 Shared entities used by every module (`User`, `Entity`, `Merchant`, `Category`, `Tag`, `Transaction`, `Document`, `Link`, `ReviewTask`, `AuditLog`, `Setting`, `ImportBatch`, `ProcessingJob`, …) are canonical and defined **once, below, in §1a** — do not redefine per module. Each module file's **Integration Contract** states exactly what it exposes to and consumes from the others; keep both sides in sync whenever you touch a shared entity.

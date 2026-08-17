@@ -1,16 +1,16 @@
 import * as React from 'react';
 import {
   AlertTriangle,
-  Blocks,
   Boxes,
   ExternalLink,
   Image as ImageIcon,
   Link2,
   PencilLine,
   Plus,
+  Star,
   Trash2,
 } from 'lucide-react';
-import type { LegoSetInstance, StorageLocation, TransactionSuggestion } from '@/lib/types';
+import type { LegoSetInstance, LegoSetModel, StorageLocation, TransactionSuggestion } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Field, Input, Textarea } from '@/components/ui/input';
@@ -47,6 +47,7 @@ import {
   useDeleteInstance,
   useDeleteModel,
   useModelInstances,
+  useSetGallery,
   useSetInstancePhoto,
   useSetModelImage,
   useUpdateInstance,
@@ -61,6 +62,7 @@ import {
   externalLinks,
 } from './constants';
 import { AddSetDialog } from './add-set-dialog';
+import { SetCarousel, frames } from './set-carousel';
 
 function money(value: string) {
   const normalized = value.trim().replace(',', '.');
@@ -389,6 +391,103 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
       <p className="text-xs text-muted-foreground">
         Estes campos descrevem o conjunto e valem para todas as cópias.
       </p>
+
+      <Separator />
+      <GalleryEditor model={model} />
+    </div>
+  );
+}
+
+/** The carousel's contents: the box shot plus every extra view, reorderable by promotion. */
+function GalleryEditor({ model }: { model: LegoSetModel }) {
+  const gallery = useSetGallery();
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [url, setUrl] = React.useState('');
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-medium">Galeria do conjunto</p>
+        <p className="text-xs text-muted-foreground">
+          A caixa é a imagem principal. As restantes servem para inspecionar o conjunto de perto.
+        </p>
+      </div>
+
+      <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <li className="space-y-1">
+          <div className="aspect-square overflow-hidden rounded border-2 border-primary bg-muted">
+            {model.image_url ? (
+              <img src={model.image_url} alt="" className="size-full object-cover" loading="lazy" />
+            ) : null}
+          </div>
+          <p className="text-center text-xs font-medium">Principal</p>
+        </li>
+
+        {model.images.map((image) => (
+          <li key={image.id} className="space-y-1">
+            <div className="aspect-square overflow-hidden rounded border border-border bg-muted">
+              {image.url ? (
+                <img src={image.url} alt="" className="size-full object-cover" loading="lazy" />
+              ) : null}
+            </div>
+            <div className="flex justify-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Tornar principal"
+                onClick={() => gallery.promote.mutate({ id: model.id, imageId: image.id })}
+              >
+                <Star className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Remover da galeria"
+                className="text-destructive"
+                onClick={() => gallery.remove.mutate({ id: model.id, imageId: image.id })}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) gallery.add.mutate({ id: model.id, file });
+          event.target.value = '';
+        }}
+      />
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label="Endereço de uma imagem" className="min-w-[12rem] flex-1">
+          <Input
+            placeholder="https://…"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+          />
+        </Field>
+        <Button
+          variant="outline"
+          loading={gallery.add.isPending}
+          disabled={!url.trim()}
+          onClick={async () => {
+            await gallery.add.mutateAsync({ id: model.id, url: url.trim() });
+            setUrl('');
+          }}
+        >
+          Adicionar
+        </Button>
+        <Button variant="outline" onClick={() => fileRef.current?.click()}>
+          <ImageIcon />
+          Carregar ficheiro
+        </Button>
+      </div>
     </div>
   );
 }
@@ -709,7 +808,10 @@ export function CopyDetailSheet({
   const copies = siblings.data ?? [];
 
   const model = instance?.set_model ?? null;
-  const image = instance?.photo_url ?? model?.image_url ?? null;
+  const gallery = React.useMemo(
+    () => frames(model, instance?.photo_url),
+    [model, instance?.photo_url],
+  );
   const isLastCopy = copies.length <= 1;
 
   return (
@@ -720,20 +822,7 @@ export function CopyDetailSheet({
             <div className="flex h-full min-h-0 flex-col">
               <div className="shrink-0 border-b border-border">
                 <div className="flex gap-4 p-6 pr-12">
-                  <div className="size-24 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={model.name}
-                        className="size-full object-contain"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex size-full items-center justify-center text-muted-foreground">
-                        <Blocks className="size-6" />
-                      </div>
-                    )}
-                  </div>
+                  <SetCarousel items={gallery} className="w-44 shrink-0" />
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       {model.set_number ? (

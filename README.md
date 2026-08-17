@@ -59,9 +59,17 @@ signs you in, and then closes that route permanently
 make seed                     # optional: deterministic Portuguese demo data
 ```
 
-The demo dataset is a **developer convenience**, not an installation step. It adds
-its own household, users (`owner@finmanager.local` / `finmanager`) and the LEGO
-collection used to exercise the module — do not run it on a real install.
+The demo dataset is a **developer convenience**, not an installation step. It
+creates no users: it attaches reference data and the LEGO collection to the
+household and entity you just created, and refuses to run before you have. Add
+`ARGS=--offline` to skip downloading box art.
+
+Forgotten a password? An owner can set any member's from **Agregado**. If the
+owner's own password is the one lost, there is no email recovery — use the host:
+
+```bash
+make passwd EMAIL=ana@exemplo.pt      # or: ./fm passwd ana@exemplo.pt
+```
 
 ### Development stack (hot reload)
 
@@ -133,5 +141,8 @@ docs/         architecture, database, debugging, testing + ADRs
 ## Reset everything
 
 ```bash
-make reset && make up && make seed
+make reset && make up
 ```
+
+You land back on the first-run setup screen. Run `make seed` afterwards if you
+want the demo data again.

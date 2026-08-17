@@ -10,7 +10,9 @@ from app.core.errors import ValidationError
 from app.schemas.common import Ok, Page
 from app.schemas.lego import (
     CompletenessFilter,
+    CopiesFilter,
     ImageSource,
+    LegoSetImageUpdate,
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
     LegoSetInstancePage,
@@ -140,6 +142,70 @@ async def set_model_image(
     return lego_service.model_out(db, model)
 
 
+@router.post("/models/{model_id}/images", response_model=LegoSetModelOut, status_code=201)
+async def add_model_image(
+    model_id: uuid.UUID,
+    ctx: Writer,
+    db: Db,
+    url: str | None = None,
+    caption: str | None = None,
+    file: Annotated[UploadFile | None, File()] = None,
+) -> LegoSetModelOut:
+    """Add one more view of the set. The box shot stays the cover until promoted."""
+    model = lego_service.get_model(db, model_id)
+    data = await file.read() if file is not None else None
+    if url is None and data is None:
+        raise ValidationError("Indique um endereço de imagem ou carregue um ficheiro.")
+    lego_service.add_model_image(
+        db,
+        model,
+        url=ImageSource(url=url).url if url else None,
+        data=data,
+        filename=file.filename if file else None,
+        caption=caption,
+        actor_user_id=ctx.user.id,
+    )
+    return lego_service.model_out(db, model)
+
+
+@router.patch("/models/{model_id}/images/{image_id}", response_model=LegoSetModelOut)
+def update_model_image(
+    model_id: uuid.UUID,
+    image_id: uuid.UUID,
+    payload: LegoSetImageUpdate,
+    ctx: Writer,
+    db: Db,
+) -> LegoSetModelOut:
+    model = lego_service.get_model(db, model_id)
+    lego_service.update_model_image(
+        db, lego_service.get_model_image(db, image_id), payload, actor_user_id=ctx.user.id
+    )
+    return lego_service.model_out(db, model)
+
+
+@router.post("/models/{model_id}/images/{image_id}/cover", response_model=LegoSetModelOut)
+def promote_model_image(
+    model_id: uuid.UUID, image_id: uuid.UUID, ctx: Writer, db: Db
+) -> LegoSetModelOut:
+    lego_service.get_model(db, model_id)
+    model = lego_service.promote_model_image(
+        db, lego_service.get_model_image(db, image_id), actor_user_id=ctx.user.id
+    )
+    return lego_service.model_out(db, model)
+
+
+@router.delete("/models/{model_id}/images/{image_id}", response_model=LegoSetModelOut)
+def delete_model_image(
+    model_id: uuid.UUID, image_id: uuid.UUID, ctx: Writer, db: Db
+) -> LegoSetModelOut:
+    model = lego_service.get_model(db, model_id)
+    lego_service.delete_model_image(
+        db, lego_service.get_model_image(db, image_id), actor_user_id=ctx.user.id
+    )
+    db.refresh(model)
+    return lego_service.model_out(db, model)
+
+
 # --- Copies ------------------------------------------------------------------
 @router.get("/instances", response_model=LegoSetInstancePage)
 def list_instances(
@@ -154,6 +220,7 @@ def list_instances(
     ownership_status: str | None = "IN_COLLECTION",
     completeness: CompletenessFilter = "all",
     retirement: RetirementFilter = "all",
+    copies: CopiesFilter = "all",
     sort: str = "created",
     direction: Annotated[str, Query(pattern="^(asc|desc)$")] = "desc",
     page: Annotated[int, Query(ge=1)] = 1,
@@ -172,6 +239,7 @@ def list_instances(
         ownership_status=ownership_status or None,
         completeness=completeness,
         retirement=retirement,
+        copies=copies,
         sort=sort,
         direction=direction,
         limit=page_size,

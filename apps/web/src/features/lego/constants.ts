@@ -40,13 +40,29 @@ export const CONDITION_VARIANTS: Record<Condition, 'success' | 'secondary' | 'wa
  */
 export const BUILD_STATE_VARIANT = 'outline' as const;
 
+/**
+ * Every column the grid renders is sortable, plus the two things it does not show.
+ * The `column` key is what the header uses; the select lists all of them.
+ */
 export const SORT_FIELDS = [
   { value: 'created', label: 'Adicionado' },
+  { value: 'number', label: 'Número' },
   { value: 'name', label: 'Nome' },
+  { value: 'theme', label: 'Tema' },
+  { value: 'copies', label: 'Cópias' },
   { value: 'pieces', label: 'Peças' },
-  { value: 'year', label: 'Ano' },
+  { value: 'minifigs', label: 'Minifiguras' },
+  { value: 'year', label: 'Lançamento' },
+  { value: 'retired', label: 'Retirada' },
+  { value: 'storage', label: 'Arrumação' },
+  { value: 'state', label: 'Estado' },
+  { value: 'condition', label: 'Condição' },
+  { value: 'acquired', label: 'Data de aquisição' },
   { value: 'cost', label: 'Custo' },
+  { value: 'rrp', label: 'PVP' },
   { value: 'value', label: 'Valor' },
+  { value: 'roi', label: 'ROI' },
+  { value: 'ownership', label: 'Propriedade' },
 ];
 
 export const COMPLETENESS_OPTIONS = [
@@ -60,6 +76,14 @@ export const RETIREMENT_OPTIONS = [
   { value: 'retired', label: 'Só retirados' },
   { value: 'available', label: 'Só ainda à venda' },
 ];
+
+export const COPIES_OPTIONS = [
+  { value: 'all', label: 'Uma ou mais cópias' },
+  { value: 'multiple', label: 'Só com cópias repetidas' },
+  { value: 'single', label: 'Só com uma cópia' },
+];
+
+export const PAGE_SIZES = ['10', '25', '50', '100', '200'];
 
 /**
  * External marketplace links are built from `set_number` on the client and never

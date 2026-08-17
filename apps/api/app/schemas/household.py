@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 import uuid
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models.household import Role
 from app.schemas.common import ApiModel
+
+_HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def _hex_color(v: str | None) -> str | None:
+    if v is not None and not _HEX_COLOR.match(v):
+        raise ValueError("a cor tem de estar no formato #rrggbb")
+    return v.lower() if v else v
 
 
 class LoginRequest(BaseModel):
@@ -82,11 +91,15 @@ class EntityCreate(BaseModel):
     member_ids: list[uuid.UUID] = Field(min_length=1)
     color: str | None = None
 
+    _check_color = field_validator("color")(_hex_color)
+
 
 class EntityUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     member_ids: list[uuid.UUID] | None = None
     color: str | None = None
+
+    _check_color = field_validator("color")(_hex_color)
 
 
 class SessionOut(BaseModel):

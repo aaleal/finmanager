@@ -90,8 +90,13 @@ password hasher.
   `GET /setup/status` reports `needs_setup: false`. The guard is re-evaluated
   inside the writing transaction — the status probe is advisory only.
 - **FR-7.10 No Seeded Credentials.** The application ships with no default
-  account. `BOOTSTRAP_OWNER_*` remains what it always was: input to the opt-in
-  demo seed, never to a production install.
+  account, and the demo seed creates none either: it attaches to the household and
+  entity that already exist and refuses to run before the first login
+  ([ADR-0014](../../docs/decisions/0014-seed-creates-no-users.md)).
+- **FR-7.13 Password Recovery Without Email.** There is no reset-by-link. An owner
+  sets any member's password from «Agregado»; when the owner's own password is
+  lost, `./fm passwd <email>` does it from the host. Both revoke every open session
+  of that member.
 - **FR-7.11 Setup Password Floor.** The first owner's password is at least 12
   characters — longer than the 8 required of invited members, because it cannot
   be reset from inside the application by anyone else.

@@ -427,6 +427,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lego/models/{model_id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Model Image
+         * @description Add one more view of the set. The box shot stays the cover until promoted.
+         */
+        post: operations["add_model_image_api_lego_models__model_id__images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/models/{model_id}/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Model Image */
+        delete: operations["delete_model_image_api_lego_models__model_id__images__image_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Model Image */
+        patch: operations["update_model_image_api_lego_models__model_id__images__image_id__patch"];
+        trace?: never;
+    };
+    "/api/lego/models/{model_id}/images/{image_id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Promote Model Image */
+        post: operations["promote_model_image_api_lego_models__model_id__images__image_id__cover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lego/instances": {
         parameters: {
             query?: never;
@@ -680,6 +735,11 @@ export interface components {
             /** Actor Display Name */
             actor_display_name?: string | null;
         };
+        /** Body_add_model_image_api_lego_models__model_id__images_post */
+        Body_add_model_image_api_lego_models__model_id__images_post: {
+            /** File */
+            file?: string | null;
+        };
         /** Body_set_instance_photo_api_lego_instances__instance_id__photo_put */
         Body_set_instance_photo_api_lego_instances__instance_id__photo_put: {
             /** File */
@@ -790,6 +850,35 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LegoSetImageOut */
+        LegoSetImageOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Url */
+            url?: string | null;
+            /** Caption */
+            caption?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+        };
+        /** LegoSetImageUpdate */
+        LegoSetImageUpdate: {
+            /** Caption */
+            caption?: string | null;
+            /** Position */
+            position?: number | null;
         };
         /** LegoSetInstanceCreate */
         LegoSetInstanceCreate: {
@@ -1038,6 +1127,11 @@ export interface components {
             image_document_id: string | null;
             /** Image Url */
             image_url?: string | null;
+            /**
+             * Images
+             * @default []
+             */
+            images: components["schemas"]["LegoSetImageOut"][];
             /** Short Description */
             short_description: string | null;
             /** Notes */
@@ -2666,6 +2760,144 @@ export interface operations {
             };
         };
     };
+    add_model_image_api_lego_models__model_id__images_post: {
+        parameters: {
+            query?: {
+                url?: string | null;
+                caption?: string | null;
+            };
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_model_image_api_lego_models__model_id__images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_image_api_lego_models__model_id__images__image_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_model_image_api_lego_models__model_id__images__image_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegoSetImageUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_model_image_api_lego_models__model_id__images__image_id__cover_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_instances_api_lego_instances_get: {
         parameters: {
             query?: {
@@ -2678,6 +2910,7 @@ export interface operations {
                 ownership_status?: string | null;
                 completeness?: "all" | "complete" | "incomplete";
                 retirement?: "all" | "retired" | "available";
+                copies?: "all" | "single" | "multiple";
                 sort?: string;
                 direction?: string;
                 page?: number;

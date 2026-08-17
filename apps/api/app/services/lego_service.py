@@ -11,18 +11,28 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Select, and_, func, or_, select
+from sqlalchemy import Select, and_, case, func, or_, select
 from sqlalchemy.orm import Session as DbSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import aliased, selectinload
 
 from app.core import audit
 from app.core.errors import Conflict, NotFound, ValidationError
 from app.core.money import ZERO, appreciation_eur, roi_pct
 from app.core.security import signed_document_url
-from app.models.lego import LegoSetInstance, LegoSetModel, StorageLocation
+from app.models.lego import (
+    BUILD_STATES,
+    CONDITIONS,
+    LegoSetImage,
+    LegoSetInstance,
+    LegoSetModel,
+    StorageLocation,
+)
 from app.schemas.lego import (
     CollectionSummary,
     CompletenessFilter,
+    CopiesFilter,
+    LegoSetImageOut,
+    LegoSetImageUpdate,
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
     LegoSetInstanceUpdate,
@@ -42,6 +52,7 @@ from app.services import documents, settings_service
 MODEL_TABLE = "lego_set_models"
 INSTANCE_TABLE = "lego_set_instances"
 STORAGE_TABLE = "lego_storage_locations"
+IMAGE_TABLE = "lego_set_images"
 
 
 # --- Serialization -----------------------------------------------------------
@@ -56,6 +67,16 @@ def _model_out(
     return LegoSetModelOut(
         **{c.name: getattr(model, c.name) for c in model.__table__.columns},
         image_url=signed_document_url(model.image_document_id) if model.image_document_id else None,
+        images=[
+            LegoSetImageOut(
+                id=image.id,
+                document_id=image.document_id,
+                url=signed_document_url(image.document_id),
+                caption=image.caption,
+                position=image.position,
+            )
+            for image in model.images
+        ],
         is_retired=model.is_retired,
         release_year=model.release_date.year if model.release_date else None,
         retired_year=model.retirement_date.year if model.retirement_date else None,
@@ -387,6 +408,147 @@ def set_model_image(
     return model
 
 
+# --- Set gallery -------------------------------------------------------------
+def _next_image_position(db: DbSession, model_id: uuid.UUID) -> int:
+    highest = db.scalar(
+        select(func.max(LegoSetImage.position)).where(LegoSetImage.lego_set_model_id == model_id)
+    )
+    return 0 if highest is None else highest + 1
+
+
+def add_model_image(
+    db: DbSession,
+    model: LegoSetModel,
+    *,
+    url: str | None = None,
+    data: bytes | None = None,
+    filename: str | None = None,
+    caption: str | None = None,
+    actor_user_id: uuid.UUID,
+) -> LegoSetImage:
+    if url:
+        document = documents.store_from_url(db, url)
+    elif data is not None:
+        document = documents.store_bytes(db, data, original_filename=filename)
+    else:
+        raise ValidationError("Indique um endereço de imagem ou carregue um ficheiro.")
+
+    # Documents are content-addressed, so the same file uploaded twice is one row.
+    existing = db.scalar(
+        select(LegoSetImage).where(
+            LegoSetImage.lego_set_model_id == model.id,
+            LegoSetImage.document_id == document.id,
+        )
+    )
+    if existing is not None:
+        raise Conflict("Esta imagem já faz parte da galeria deste conjunto.")
+    if model.image_document_id == document.id:
+        raise Conflict("Esta imagem já é a imagem principal deste conjunto.")
+
+    image = LegoSetImage(
+        lego_set_model_id=model.id,
+        document_id=document.id,
+        position=_next_image_position(db, model.id),
+        caption=caption,
+    )
+    db.add(image)
+    db.flush()
+    db.refresh(model)
+    audit.record(
+        db,
+        action="CREATE",
+        table_name=IMAGE_TABLE,
+        record_id=image.id,
+        entity_id=model.entity_id,
+        actor_user_id=actor_user_id,
+        after=audit.snapshot(image),
+    )
+    return image
+
+
+def get_model_image(db: DbSession, image_id: uuid.UUID) -> LegoSetImage:
+    image = db.get(LegoSetImage, image_id)
+    if image is None:
+        raise NotFound("Imagem não encontrada.")
+    return image
+
+
+def update_model_image(
+    db: DbSession,
+    image: LegoSetImage,
+    payload: LegoSetImageUpdate,
+    *,
+    actor_user_id: uuid.UUID,
+) -> LegoSetImage:
+    before = audit.snapshot(image)
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(image, field, value)
+    db.flush()
+    audit.record(
+        db,
+        action="UPDATE",
+        table_name=IMAGE_TABLE,
+        record_id=image.id,
+        entity_id=image.model.entity_id,
+        actor_user_id=actor_user_id,
+        before=before,
+        after=audit.snapshot(image),
+    )
+    return image
+
+
+def promote_model_image(
+    db: DbSession, image: LegoSetImage, *, actor_user_id: uuid.UUID
+) -> LegoSetModel:
+    """Make a gallery image the box shot, demoting the current cover into the gallery."""
+    model = image.model
+    before = audit.snapshot(model)
+    previous_cover = model.image_document_id
+
+    model.image_document_id = image.document_id
+    db.delete(image)
+    db.flush()
+
+    if previous_cover is not None:
+        db.add(
+            LegoSetImage(
+                lego_set_model_id=model.id,
+                document_id=previous_cover,
+                position=_next_image_position(db, model.id),
+                caption=image.caption,
+            )
+        )
+    db.flush()
+    db.refresh(model)
+    audit.record(
+        db,
+        action="UPDATE",
+        table_name=MODEL_TABLE,
+        record_id=model.id,
+        entity_id=model.entity_id,
+        actor_user_id=actor_user_id,
+        before=before,
+        after=audit.snapshot(model),
+        reason="gallery image promoted to cover",
+    )
+    return model
+
+
+def delete_model_image(db: DbSession, image: LegoSetImage, *, actor_user_id: uuid.UUID) -> None:
+    audit.record(
+        db,
+        action="DELETE",
+        table_name=IMAGE_TABLE,
+        record_id=image.id,
+        entity_id=image.model.entity_id,
+        actor_user_id=actor_user_id,
+        before=audit.snapshot(image),
+    )
+    # The Document row itself stays: it is content-addressed and may be shared.
+    db.delete(image)
+    db.flush()
+
+
 # --- Instances ---------------------------------------------------------------
 def _instance_query() -> Select[Any]:
     return select(LegoSetInstance).options(
@@ -394,17 +556,68 @@ def _instance_query() -> Select[Any]:
     )
 
 
-# One sortable field per column the grid offers; direction is chosen separately
-# so the UI needs a short list plus an asc/desc toggle rather than two entries per
-# field.
+def _owned_copies_expr() -> Any:
+    """Copies of the same set still in the collection, as a scalar subquery."""
+    sibling = aliased(LegoSetInstance)
+    return (
+        select(func.count())
+        .select_from(sibling)
+        .where(
+            sibling.lego_set_model_id == LegoSetInstance.lego_set_model_id,
+            sibling.is_deleted.is_(False),
+            sibling.ownership_status == "IN_COLLECTION",
+        )
+        .scalar_subquery()
+    )
+
+
+def _roi_expr() -> Any:
+    """The same rule as ``roi_pct``: no cost basis and no value both mean NULL."""
+    return case(
+        (
+            and_(
+                LegoSetInstance.acquisition_cost_eur > 0,
+                LegoSetModel.current_value_eur.is_not(None),
+            ),
+            (LegoSetModel.current_value_eur - LegoSetInstance.acquisition_cost_eur)
+            / LegoSetInstance.acquisition_cost_eur,
+        ),
+        else_=None,
+    )
+
+
+def _ordinal_expr(column: Any, order: tuple[str, ...]) -> Any:
+    """Rank a quality/lifecycle scale by meaning rather than alphabetically."""
+    return case({value: rank for rank, value in enumerate(order)}, value=column, else_=None)
+
+
+# Every column the grid renders is sortable, plus the two things it does not show
+# (when the copy was added, and how many minifigures the set has). Direction is
+# chosen separately, so the UI needs one entry per field and an asc/desc toggle.
 SORT_FIELDS: dict[str, Any] = {
     "created": LegoSetInstance.created_at,
+    "number": LegoSetModel.set_number,
     "name": LegoSetModel.name,
+    "theme": LegoSetModel.theme,
     "pieces": LegoSetModel.piece_count,
+    "minifigs": LegoSetModel.minifig_count,
     "year": LegoSetModel.release_date,
+    "retired": LegoSetModel.retirement_date,
+    "copies": _owned_copies_expr(),
+    "storage": StorageLocation.area,
+    "state": _ordinal_expr(LegoSetInstance.build_state, BUILD_STATES),
+    "condition": _ordinal_expr(LegoSetInstance.condition, CONDITIONS),
+    "acquired": LegoSetInstance.acquisition_date,
     "cost": LegoSetInstance.acquisition_cost_eur,
+    "rrp": LegoSetModel.rrp_eur,
     "value": LegoSetModel.current_value_eur,
+    "roi": _roi_expr(),
+    "ownership": LegoSetInstance.ownership_status,
 }
+
+# The second key breaks ties so that paging is stable: without it Postgres is free
+# to return a different row order for equal values on every page.
+_TIEBREAK = LegoSetInstance.created_at.desc()
 
 
 def _retired_clause() -> Any:
@@ -415,7 +628,7 @@ def _retired_clause() -> Any:
     )
 
 
-def _order_by(sort: str, direction: str) -> Any:
+def _order_by(sort: str, direction: str) -> list[Any]:
     """Resolve ``sort``/``direction`` into an ORDER BY clause.
 
     Legacy combined values (``value_desc``) are still understood so bookmarked
@@ -426,7 +639,8 @@ def _order_by(sort: str, direction: str) -> Any:
         direction = suffix
     column = SORT_FIELDS.get(field, LegoSetInstance.created_at)
     # NULLs are absent data, never "the smallest" — they belong at the bottom.
-    return column.desc().nullslast() if direction == "desc" else column.asc().nullslast()
+    primary = column.desc().nullslast() if direction == "desc" else column.asc().nullslast()
+    return [primary, _TIEBREAK]
 
 
 def list_instances(
@@ -443,6 +657,7 @@ def list_instances(
     ownership_status: str | None = "IN_COLLECTION",
     completeness: CompletenessFilter = "all",
     retirement: RetirementFilter = "all",
+    copies: CopiesFilter = "all",
     model_id: uuid.UUID | None = None,
     sort: str = "created",
     direction: str = "desc",
@@ -453,6 +668,9 @@ def list_instances(
     stmt = (
         _instance_query()
         .join(LegoSetModel)
+        # Outer, and with an explicit ON clause, so copies with no place still show
+        # and «sort by arrumação» has a column to order on.
+        .outerjoin(StorageLocation, LegoSetInstance.storage_location_id == StorageLocation.id)
         .where(LegoSetInstance.is_deleted.is_(False), LegoSetModel.is_deleted.is_(False))
     )
     stmt = _scope(stmt, LegoSetInstance.entity_id, entity_ids, active_entity_id)
@@ -507,11 +725,16 @@ def list_instances(
     elif retirement == "available":
         stmt = stmt.where(~_retired_clause())
 
+    if copies == "multiple":
+        stmt = stmt.where(_owned_copies_expr() > 1)
+    elif copies == "single":
+        stmt = stmt.where(_owned_copies_expr() <= 1)
+
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     summary = _collection_summary(db, stmt, total)
 
     rows = list(
-        db.scalars(stmt.order_by(_order_by(sort, direction)).limit(limit).offset(offset))
+        db.scalars(stmt.order_by(*_order_by(sort, direction)).limit(limit).offset(offset))
         .unique()
         .all()
     )
