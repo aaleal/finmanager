@@ -12,8 +12,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# tesseract (+ Portuguese data) and zbar back the local OCR and fiscal-QR engines.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl tzdata \
+ && apt-get install -y --no-install-recommends \
+      curl tzdata tesseract-ocr tesseract-ocr-por libzbar0 \
  && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt requirements-dev.txt ./

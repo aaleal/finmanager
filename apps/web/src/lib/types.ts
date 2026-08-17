@@ -36,6 +36,48 @@ export type BuildState = NonNullable<LegoSetInstance['build_state']>;
 export type Condition = NonNullable<LegoSetInstance['condition']>;
 export type OwnershipStatus = LegoSetInstance['ownership_status'];
 
+// --- Supermarket & receipts (M1) ---------------------------------------------
+export type ReceiptSummary = Schemas['ReceiptSummary'];
+export type ReceiptDetail = Schemas['ReceiptDetail'];
+export type ReceiptItem = Schemas['ReceiptItemOut'];
+export type ReceiptDerived = Schemas['ReceiptDerived'];
+export type ReceiptStatusBoard = Schemas['StatusBoard'];
+export type QueueEntry = Schemas['QueueEntry'];
+export type UploadResponse = Schemas['UploadResponse'];
+export type ParserProfile = Schemas['ParserProfileOut'];
+export type ParserOption = Schemas['ParserOption'];
+export type FsFilter = 'all' | 'only' | 'exclude';
+export type ReceiptStatus = ReceiptSummary['status'];
+
+// --- Product catalogue and the GROCERY taxonomy (M1b) ------------------------
+export type MasterProduct = Schemas['MasterProductOut'];
+export type ProductSearchResult = Schemas['ProductSearchResult'];
+export type ProductAlias = Schemas['ProductAliasOut'];
+export type ProductOccurrence = Schemas['ProductOccurrence'];
+export type MergeCandidate = Schemas['MergeCandidate'];
+export type CategoryResult = Schemas['CategorySearchResult'];
+export type CategoryTreeNode = Schemas['CategoryTreeNode'];
+export type CategoryImpact = Schemas['CategoryImpactOut'];
+export type CategoryOperationResult = Schemas['CategoryOperationResult'];
+export type LegacyImportResult = Schemas['LegacyImportResult'];
+export type CategoryStatus = MasterProduct['category_status'];
+
+// --- Money over time (M1c) ----------------------------------------------------
+export type PricePoint = Schemas['PricePointOut'];
+export type PriceHistory = Schemas['PriceHistoryOut'];
+export type ShrinkflationSignal = Schemas['ShrinkflationOut'];
+export type CategorySpend = Schemas['CategorySpendOut'];
+export type LoyaltyGroup = Schemas['LoyaltyGroupOut'];
+export type LoyaltyAllocation = Schemas['LoyaltyAllocationOut'];
+export type ReceiptLink = Schemas['ReceiptLinkOut'];
+
+/** `{rule, detail, score}` — what the «Porquê?» popover renders. */
+export interface DecisionReason {
+  rule: string;
+  detail: string;
+  score?: string | null;
+}
+
 // --- Shared surfaces ---------------------------------------------------------
 export type TransactionSuggestion = Schemas['TransactionSuggestion'];
 export type SuggestionResponse = Schemas['SuggestionResponse'];

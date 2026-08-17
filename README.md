@@ -18,7 +18,7 @@ human **Review Queue**. Every automated decision is explainable and reversible.
 | 0 | **M7** Household & user management | ✅ shipped |
 | 1 | **M9** LEGO Collection Catalog | ✅ shipped |
 | 2 | M2 Banking ledger | ⏳ next |
-| 3 | M1 Receipts & OCR | ⏳ |
+| 3 | **M1** Supermarket & Receipt Processing | ✅ shipped (M1a/M1b/M1c — ingest, review, catalogue, prices & loyalty) |
 | 4 | M3–M5 Health, Utilities, Vehicles | ⏳ |
 | 5 | M6 Assets & net worth | ⏳ |
 | 6 | M8 Dashboards & PWA polish | ⏳ |
@@ -62,7 +62,10 @@ make seed                     # optional: deterministic Portuguese demo data
 The demo dataset is a **developer convenience**, not an installation step. It
 creates no users: it attaches reference data and the LEGO collection to the
 household and entity you just created, and refuses to run before you have. Add
-`ARGS=--offline` to skip downloading box art.
+`ARGS=--offline` to skip downloading box art. It also seeds one supermarket
+receipt carrying an appended Fs article, a prorated loyalty discount, a refund
+and a deposit return, so the Fs arithmetic on the Supermercado tabs is visible
+immediately after seeding, without importing anything.
 
 Forgotten a password? An owner can set any member's from **Agregado**. If the
 owner's own password is the one lost, there is no email recovery — use the host:
@@ -111,6 +114,35 @@ apps/web/     React 18 · TypeScript · Vite · TailwindCSS · TanStack Query/Ta
 docs/         architecture, database, debugging, testing + ADRs
 00.prompts/   the build brief and per-module specifications
 ```
+
+## Receipt parsing runs entirely on your own hardware
+
+M1a's ingestion pipeline — extraction, OCR, the fiscal QR reader and merchant
+matching — is **local by default**: it needs no subscription and no network, and
+a Continente or Lidl PDF reconciles to the cent with none. The OS packages
+behind it (`apps/api/Dockerfile`) are `tesseract-ocr`, `tesseract-ocr-por` and
+`libzbar0`. `make seed` now also creates the household's merchant NIFs and the
+five parser profiles, and the reconciliation tolerance is a `Setting`
+(`receipts.arithmetic_tolerance_eur`, default `0.02`) rather than a constant.
+
+M1b's «Importar folha» tab, under **Supermercado**, migrates a household's own
+years-old `SUPERMARKET_YYYY` spreadsheet into the same `Receipt`/`ReceiptItem`
+model a scanned *talão* produces: it snaps each Fs row's nudged timestamp back
+onto its invoice, recomputes the invoice-level discount rather than trusting a
+column the sheet only filled in by hand, and scores every imported receipt like
+a parsed one, so a group that does not reconcile lands in the Review Queue
+rather than being written as fact ([ADR-0021](docs/decisions/0021-the-legacy-sheet-is-validated-not-trusted.md)).
+
+M1c closes the module with money over time: the «Preços», «Despesa» and
+«Fidelização» tabs chart €/kg trends and shrinkflation alerts, spend by
+category over both what was paid and what was worth having, and loyalty
+totals grouped by scheme and card. Every observation is appended, never
+rewritten — a correction made during review sits beside the price it
+supersedes rather than replacing it
+([ADR-0022](docs/decisions/0022-price-history-is-append-only-and-stores-no-quotient.md)).
+The review pane can also link a receipt to the bank transaction that paid for
+it: the link is wired end to end today through a `LedgerProvider` seam, and
+is waiting on the Banking module (M2) for a real ledger to search.
 
 ## Principles worth knowing before you touch the code
 

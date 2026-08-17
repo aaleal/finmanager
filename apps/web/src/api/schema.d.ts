@@ -277,7 +277,8 @@ export interface paths {
         /** List Categories */
         get: operations["list_categories_api_categories_get"];
         put?: never;
-        post?: never;
+        /** Create Category */
+        post: operations["create_category_api_categories_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -593,6 +594,754 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Receipts */
+        get: operations["list_receipts_api_receipts_get"];
+        put?: never;
+        /**
+         * Upload
+         * @description Accept **one or many** invoices; each becomes its own job and receipt.
+         *
+         *     One bad scan never blocks the batch — the failure is recorded on its own job
+         *     row and is retryable from the stored document, without a re-upload.
+         */
+        post: operations["upload_api_receipts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Queue */
+        get: operations["queue_api_receipts_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status Board */
+        get: operations["status_board_api_receipts_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Receipt */
+        get: operations["get_receipt_api_receipts__receipt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Receipt */
+        patch: operations["update_receipt_api_receipts__receipt_id__patch"];
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Item */
+        delete: operations["delete_item_api_receipts__receipt_id__items__item_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Item */
+        patch: operations["update_item_api_receipts__receipt_id__items__item_id__patch"];
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Fs Item
+         * @description Append an Fs article. Every printed figure must be unchanged afterwards.
+         */
+        post: operations["add_fs_item_api_receipts__receipt_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/reparse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reparse */
+        post: operations["reparse_api_receipts__receipt_id__reparse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm */
+        post: operations["confirm_api_receipts__receipt_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/confirm-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Categories
+         * @description Promote every ``AUTO`` classification on this receipt to ``VALIDATED``.
+         */
+        post: operations["confirm_categories_api_receipts__receipt_id__confirm_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void */
+        post: operations["void_api_receipts__receipt_id__void_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parser-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["list_profiles_api_parser_profiles_get"];
+        put?: never;
+        /** Create Profile */
+        post: operations["create_profile_api_parser_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parser-profiles/parsers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Parsers */
+        get: operations["list_parsers_api_parser_profiles_parsers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parser-profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Profile */
+        delete: operations["delete_profile_api_parser_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Profile */
+        patch: operations["update_profile_api_parser_profiles__profile_id__patch"];
+        trace?: never;
+    };
+    "/api/parser-profiles/{profile_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Profile
+         * @description Re-parse a stored document with this profile and diff against the current result.
+         */
+        post: operations["test_profile_api_parser_profiles__profile_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipt-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Items */
+        get: operations["list_items_api_receipt_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Products */
+        get: operations["list_products_api_master_products_get"];
+        put?: never;
+        /** Create Product */
+        post: operations["create_product_api_master_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Products
+         * @description Autocomplete over canonical names, brands and learned aliases.
+         *
+         *     Returns the category and the last known price so any picker can pre-fill —
+         *     which is what stops a near-duplicate being created by hand.
+         */
+        get: operations["search_products_api_master_products_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/merge-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Merge Candidates */
+        get: operations["list_merge_candidates_api_master_products_merge_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Product */
+        get: operations["get_product_api_master_products__product_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Product */
+        delete: operations["delete_product_api_master_products__product_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Product */
+        patch: operations["update_product_api_master_products__product_id__patch"];
+        trace?: never;
+    };
+    "/api/master-products/{product_id}/validate-category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Category */
+        post: operations["validate_category_api_master_products__product_id__validate_category_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/{product_id}/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Product Aliases */
+        get: operations["product_aliases_api_master_products__product_id__aliases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/{product_id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Product Occurrences
+         * @description Every receipt line this product has appeared on, with a link to each invoice.
+         */
+        get: operations["product_occurrences_api_master_products__product_id__occurrences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/{product_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge Products */
+        post: operations["merge_products_api_master_products__product_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/product-aliases/learn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Learn Alias */
+        post: operations["learn_alias_api_product_aliases_learn_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Categories */
+        get: operations["search_categories_api_categories_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Category Tree
+         * @description Every node, flat, with its path and how many products reference it.
+         *
+         *     The taxonomy editor needs the whole tree; a search limit would silently
+         *     truncate it and make a node look retired when it is merely off the end.
+         */
+        get: operations["category_tree_api_categories_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{category_id}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Category Impact
+         * @description What a destructive operation would touch, **before** it runs.
+         */
+        get: operations["category_impact_api_categories__category_id__impact_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Retire Category
+         * @description Refused while in use, with the usage count returned.
+         */
+        delete: operations["retire_category_api_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename Category
+         * @description A rename costs nothing: rows reference categories by id.
+         */
+        patch: operations["rename_category_api_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/categories/{category_id}/reparent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reparent Category */
+        post: operations["reparent_category_api_categories__category_id__reparent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{category_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge Categories */
+        post: operations["merge_categories_api_categories__category_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/import/legacy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Legacy
+         * @description The ``SUPERMARKET_YYYY`` migration, wrapped in an ``ImportBatch``.
+         *
+         *     Re-runnable without duplication: a group already imported for this entity is
+         *     updated in place rather than doubled.
+         */
+        post: operations["import_legacy_api_receipts_import_legacy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/analytics/shrinkflation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Shrinkflation
+         * @description Products whose pack shrank faster than their price fell.
+         */
+        get: operations["shrinkflation_api_receipts_analytics_shrinkflation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/analytics/category-spend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Category Spend */
+        get: operations["category_spend_api_receipts_analytics_category_spend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/analytics/loyalty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Loyalty */
+        get: operations["loyalty_api_receipts_analytics_loyalty_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/analytics/loyalty/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Loyalty Receipts
+         * @description The per-receipt allocation behind a scheme's totals.
+         */
+        get: operations["loyalty_receipts_api_receipts_analytics_loyalty_receipts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/{product_id}/price-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Price History */
+        get: operations["price_history_api_master_products__product_id__price_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master-products/{product_id}/price-history.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Price History Csv */
+        get: operations["price_history_csv_api_master_products__product_id__price_history_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Link */
+        get: operations["get_link_api_receipts__receipt_id__link_get"];
+        put?: never;
+        /**
+         * Create Link
+         * @description Manual linking, reusing the shared transaction picker on the client.
+         */
+        post: operations["create_link_api_receipts__receipt_id__link_post"];
+        /** Delete Link */
+        delete: operations["delete_link_api_receipts__receipt_id__link_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Receipt Tags
+         * @description Open labels. They change no total — that is what separates them from ``is_fs``.
+         */
+        put: operations["set_receipt_tags_api_receipts__receipt_id__tags_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/items/{item_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Item Tags */
+        put: operations["set_item_tags_api_receipts__receipt_id__items__item_id__tags_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/documents/{document_id}/content": {
         parameters: {
             query?: never;
@@ -740,6 +1489,14 @@ export interface components {
             /** File */
             file?: string | null;
         };
+        /** Body_import_legacy_api_receipts_import_legacy_post */
+        Body_import_legacy_api_receipts_import_legacy_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
         /** Body_set_instance_photo_api_lego_instances__instance_id__photo_put */
         Body_set_instance_photo_api_lego_instances__instance_id__photo_put: {
             /** File */
@@ -749,6 +1506,62 @@ export interface components {
         Body_set_model_image_api_lego_models__model_id__image_put: {
             /** File */
             file?: string | null;
+        };
+        /** Body_upload_api_receipts_post */
+        Body_upload_api_receipts_post: {
+            /** Files */
+            files: string[];
+        };
+        /** CategoryCreate */
+        CategoryCreate: {
+            /** Display Name Pt */
+            display_name_pt: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /**
+             * Brand Axis
+             * @default false
+             */
+            brand_axis: boolean;
+        };
+        /** CategoryImpactOut */
+        CategoryImpactOut: {
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
+            /** Descendants */
+            descendants: number;
+            /** Master Products */
+            master_products: number;
+            /** Receipt Items */
+            receipt_items: number;
+            /** In Use */
+            in_use: boolean;
+        };
+        /** CategoryMerge */
+        CategoryMerge: {
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** CategoryOperationResult */
+        CategoryOperationResult: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+            /**
+             * Affected Products
+             * @default 0
+             */
+            affected_products: number;
+            /** Message */
+            message?: string | null;
         };
         /** CategoryOut */
         CategoryOut: {
@@ -769,6 +1582,66 @@ export interface components {
             parent_id: string | null;
             /** Brand Axis */
             brand_axis: boolean;
+        };
+        /** CategoryRename */
+        CategoryRename: {
+            /** Display Name Pt */
+            display_name_pt: string;
+        };
+        /** CategoryReparent */
+        CategoryReparent: {
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /** CategorySearchResult */
+        CategorySearchResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Display Name Pt */
+            display_name_pt: string;
+            /** Level */
+            level: number;
+            /** Path */
+            path: string;
+        };
+        /** CategorySpendOut */
+        CategorySpendOut: {
+            /** Category Id */
+            category_id: string | null;
+            /** Display Name Pt */
+            display_name_pt: string;
+            /** Paid Eur */
+            paid_eur: string;
+            /** Notional Eur */
+            notional_eur: string;
+            /** Item Count */
+            item_count: number;
+        };
+        /**
+         * CategoryTreeNode
+         * @description One node of the whole GROCERY tree, flat, for the taxonomy editor.
+         */
+        CategoryTreeNode: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Display Name Pt */
+            display_name_pt: string;
+            /** Level */
+            level: number;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Brand Axis */
+            brand_axis: boolean;
+            /** Path */
+            path: string;
+            /** Product Count */
+            product_count: number;
         };
         /**
          * CollectionSummary
@@ -846,10 +1719,104 @@ export interface components {
             /** Color */
             color?: string | null;
         };
+        /**
+         * FsItemCreate
+         * @description An article that was **never on the invoice**, appended by hand.
+         */
+        FsItemCreate: {
+            /** Description Raw */
+            description_raw: string;
+            /** Unit Price Pvp Eur */
+            unit_price_pvp_eur: number | string;
+            /**
+             * Quantity
+             * @default 1
+             */
+            quantity: number | string;
+            /**
+             * Unit
+             * @default UN
+             */
+            unit: string;
+            /**
+             * Notional Value Source
+             * @default MANUAL
+             * @enum {string}
+             */
+            notional_value_source: "PRICE_HISTORY" | "MANUAL";
+            /** Notes */
+            notes?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * LastKnownPrice
+         * @description Derived from the newest price observation; never stored, never a second truth.
+         */
+        LastKnownPrice: {
+            /** Last Pvp Eur */
+            last_pvp_eur?: string | null;
+            /** Last Price Per Kg Eur */
+            last_price_per_kg_eur?: string | null;
+            /** Last Weight Kg */
+            last_weight_kg?: string | null;
+            /** Last Observed On */
+            last_observed_on?: string | null;
+        };
+        /** LearnAliasRequest */
+        LearnAliasRequest: {
+            /**
+             * Master Product Id
+             * Format: uuid
+             */
+            master_product_id: string;
+            /**
+             * Merchant Id
+             * Format: uuid
+             */
+            merchant_id: string;
+            /** Merchant Description */
+            merchant_description: string;
+        };
+        /**
+         * LegacyImportResult
+         * @description The sheet is validated, not trusted: every exception is reported, not repaired.
+         */
+        LegacyImportResult: {
+            /**
+             * Import Batch Id
+             * Format: uuid
+             */
+            import_batch_id: string;
+            /** Row Count */
+            row_count: number;
+            /** Skipped Non Grocery Rows */
+            skipped_non_grocery_rows: number;
+            /** Skipped Non Grocery Merchants */
+            skipped_non_grocery_merchants: string[];
+            /** Receipts Created */
+            receipts_created: number;
+            /** Receipts Reconciled */
+            receipts_reconciled: number;
+            /** Receipts Needing Review */
+            receipts_needing_review: number;
+            /** Fs Rows */
+            fs_rows: number;
+            /** Fs Rows Snapped */
+            fs_rows_snapped: number;
+            /** All Fs Groups */
+            all_fs_groups: number;
+            /** Products Created */
+            products_created: number;
+            /** Aliases Created */
+            aliases_created: number;
+            /** Merchants Created */
+            merchants_created: number;
+            /** Exceptions */
+            exceptions: Record<string, never>[];
         };
         /** LegoSetImageOut */
         LegoSetImageOut: {
@@ -1201,6 +2168,14 @@ export interface components {
             /** Entity Id */
             entity_id?: string | null;
         };
+        /** LinkRequest */
+        LinkRequest: {
+            /**
+             * Transaction Id
+             * Format: uuid
+             */
+            transaction_id: string;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Email */
@@ -1246,6 +2221,148 @@ export interface components {
             image_url?: string | null;
             /** Short Description */
             short_description?: string | null;
+        };
+        /** LoyaltyAllocationOut */
+        LoyaltyAllocationOut: {
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /** Purchase Date */
+            purchase_date: string | null;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Total Eur */
+            total_eur: string;
+            /** Loyalty Discount Eur */
+            loyalty_discount_eur: string;
+            /** Loyalty Accrued Eur */
+            loyalty_accrued_eur: string;
+            /** Allocated Across Items Eur */
+            allocated_across_items_eur: string;
+        };
+        /** LoyaltyGroupOut */
+        LoyaltyGroupOut: {
+            /** Scheme */
+            scheme: string | null;
+            /** Card Masked */
+            card_masked: string | null;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Accrued Eur */
+            accrued_eur: string;
+            /** Discount Eur */
+            discount_eur: string;
+            /** First Purchase */
+            first_purchase: string | null;
+            /** Last Purchase */
+            last_purchase: string | null;
+        };
+        /** MasterProductCreate */
+        MasterProductCreate: {
+            /** Canonical Name */
+            canonical_name: string;
+            /** Brand */
+            brand?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Sold By Weight
+             * @default false
+             */
+            sold_by_weight: boolean;
+            /** Pack Variants */
+            pack_variants?: components["schemas"]["PackVariant"][];
+            /** Dietary Attributes */
+            dietary_attributes?: string[];
+            /** Allergen List */
+            allergen_list?: string[];
+            /** Seasonal Flags */
+            seasonal_flags?: string[];
+            /** Expected Shelf Life Days */
+            expected_shelf_life_days?: number | null;
+            /** Deposit Value Eur */
+            deposit_value_eur?: number | string | null;
+        };
+        /** MasterProductOut */
+        MasterProductOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Brand */
+            brand: string | null;
+            /** Category Id */
+            category_id: string | null;
+            /** Category L1 Id */
+            category_l1_id: string | null;
+            /** Category L2 Id */
+            category_l2_id: string | null;
+            /** Category L3 Id */
+            category_l3_id: string | null;
+            /** Category Status */
+            category_status: string;
+            /** Category Confidence */
+            category_confidence: string | null;
+            /** Pack Variants */
+            pack_variants: unknown[];
+            /** Sold By Weight */
+            sold_by_weight: boolean;
+            /** Dietary Attributes */
+            dietary_attributes: unknown[];
+            /** Allergen List */
+            allergen_list: unknown[];
+            /** Seasonal Flags */
+            seasonal_flags: unknown[];
+            /** Expected Shelf Life Days */
+            expected_shelf_life_days: number | null;
+            /** Deposit Value Eur */
+            deposit_value_eur: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Category Path */
+            category_path?: string | null;
+            /**
+             * Alias Count
+             * @default 0
+             */
+            alias_count: number;
+            /**
+             * Occurrence Count
+             * @default 0
+             */
+            occurrence_count: number;
+            last_known_price?: components["schemas"]["LastKnownPrice"] | null;
+        };
+        /** MasterProductUpdate */
+        MasterProductUpdate: {
+            /** Canonical Name */
+            canonical_name?: string | null;
+            /** Brand */
+            brand?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Sold By Weight */
+            sold_by_weight?: boolean | null;
+            /** Pack Variants */
+            pack_variants?: components["schemas"]["PackVariant"][] | null;
+            /** Dietary Attributes */
+            dietary_attributes?: string[] | null;
+            /** Allergen List */
+            allergen_list?: string[] | null;
+            /** Seasonal Flags */
+            seasonal_flags?: string[] | null;
+            /** Expected Shelf Life Days */
+            expected_shelf_life_days?: number | null;
+            /** Deposit Value Eur */
+            deposit_value_eur?: number | string | null;
         };
         /** MemberCreate */
         MemberCreate: {
@@ -1347,6 +2464,33 @@ export interface components {
             /** Aliases */
             aliases: string[];
         };
+        /** MergeCandidate */
+        MergeCandidate: {
+            /** Key */
+            key: string;
+            /** Products */
+            products: components["schemas"]["MergeCandidateProduct"][];
+        };
+        /** MergeCandidateProduct */
+        MergeCandidateProduct: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Brand */
+            brand?: string | null;
+        };
+        /** MergeRequest */
+        MergeRequest: {
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+        };
         /** ModuleTile */
         ModuleTile: {
             /** Key */
@@ -1426,10 +2570,55 @@ export interface components {
             /** Locations Total */
             locations_total: number;
         };
+        /**
+         * PackVariant
+         * @description One pack size. A 500 g and a 1 kg bag are one product with two variants.
+         */
+        PackVariant: {
+            /** Label */
+            label?: string | null;
+            /** Weight Kg */
+            weight_kg?: number | string | null;
+            /** Barcode */
+            barcode?: string | null;
+        };
         /** Page[LegoSetModelOut] */
         Page_LegoSetModelOut_: {
             /** Items */
             items: components["schemas"]["LegoSetModelOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** Page[MasterProductOut] */
+        Page_MasterProductOut_: {
+            /** Items */
+            items: components["schemas"]["MasterProductOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** Page[ReceiptItemOut] */
+        Page_ReceiptItemOut_: {
+            /** Items */
+            items: components["schemas"]["ReceiptItemOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** Page[ReceiptSummary] */
+        Page_ReceiptSummary_: {
+            /** Items */
+            items: components["schemas"]["ReceiptSummary"][];
             /** Total */
             total: number;
             /** Page */
@@ -1448,12 +2637,244 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** ParserOption */
+        ParserOption: {
+            /** Parser Key */
+            parser_key: string;
+            /** Display Name */
+            display_name: string;
+        };
+        /** ParserProfileIn */
+        ParserProfileIn: {
+            /** Merchant Id */
+            merchant_id?: string | null;
+            /** Name */
+            name: string;
+            /** Parser Key */
+            parser_key: string;
+            /** Document Kinds */
+            document_kinds?: string[];
+            /** Detection Patterns */
+            detection_patterns?: string[];
+            /** Field Hints */
+            field_hints?: Record<string, never>;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** ParserProfileOut */
+        ParserProfileOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Merchant Id */
+            merchant_id: string | null;
+            /** Merchant Name */
+            merchant_name?: string | null;
+            /** Name */
+            name: string;
+            /** Parser Key */
+            parser_key: string;
+            /** Document Kinds */
+            document_kinds: unknown[];
+            /** Detection Patterns */
+            detection_patterns: unknown[];
+            /** Field Hints */
+            field_hints: Record<string, never>;
+            /** Priority */
+            priority: number;
+            /** Success Rate */
+            success_rate: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Is Generic
+             * @default false
+             */
+            is_generic: boolean;
+        };
+        /** ParserProfileUpdate */
+        ParserProfileUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Parser Key */
+            parser_key?: string | null;
+            /** Document Kinds */
+            document_kinds?: string[] | null;
+            /** Detection Patterns */
+            detection_patterns?: string[] | null;
+            /** Field Hints */
+            field_hints?: Record<string, never> | null;
+            /** Priority */
+            priority?: number | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PriceHistoryOut */
+        PriceHistoryOut: {
+            /**
+             * Master Product Id
+             * Format: uuid
+             */
+            master_product_id: string;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Sold By Weight */
+            sold_by_weight: boolean;
+            /** Points */
+            points: components["schemas"]["PricePointOut"][];
+            /** Shrinkflation */
+            shrinkflation: components["schemas"]["ShrinkflationOut"][];
+        };
+        /** PricePointOut */
+        PricePointOut: {
+            /**
+             * Observed On
+             * Format: date
+             */
+            observed_on: string;
+            /**
+             * Merchant Id
+             * Format: uuid
+             */
+            merchant_id: string;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Is Fs */
+            is_fs: boolean;
+            /** Weight Kg */
+            weight_kg: string | null;
+            /** List Price Eur */
+            list_price_eur: string;
+            /** Paid Price Eur */
+            paid_price_eur: string;
+            /** List Price Per Kg Eur */
+            list_price_per_kg_eur: string | null;
+            /** Paid Price Per Kg Eur */
+            paid_price_per_kg_eur: string | null;
+        };
+        /** ProductAliasOut */
+        ProductAliasOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Master Product Id
+             * Format: uuid
+             */
+            master_product_id: string;
+            /**
+             * Merchant Id
+             * Format: uuid
+             */
+            merchant_id: string;
+            /** Merchant Name */
+            merchant_name?: string | null;
+            /** Merchant Description */
+            merchant_description: string;
+            /** Confidence */
+            confidence: string;
+            /** Correction Count */
+            correction_count: number;
+            /** Last Used At */
+            last_used_at: string | null;
+        };
+        /** ProductOccurrence */
+        ProductOccurrence: {
+            /**
+             * Receipt Item Id
+             * Format: uuid
+             */
+            receipt_item_id: string;
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /** Purchase Date */
+            purchase_date: string | null;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Description Raw */
+            description_raw: string;
+            /** Quantity */
+            quantity: string;
+            /** Unit */
+            unit: string;
+            /** Unit Price Pvp Eur */
+            unit_price_pvp_eur: string;
+            /** Paid Price Eur */
+            paid_price_eur: string;
+            /** Price Per Kg Final Eur */
+            price_per_kg_final_eur: string | null;
+            /** Is Fs */
+            is_fs: boolean;
+        };
+        /**
+         * ProductSearchResult
+         * @description What every picker pre-fills from: identity, category and last known price.
+         */
+        ProductSearchResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Brand */
+            brand: string | null;
+            /** Category Id */
+            category_id: string | null;
+            /** Category Path */
+            category_path: string | null;
+            /** Sold By Weight */
+            sold_by_weight: boolean;
+            /** Score */
+            score: number;
+            last_known_price?: components["schemas"]["LastKnownPrice"] | null;
+        };
+        /**
+         * ProfileTestResult
+         * @description Re-parse a stored document with a chosen profile and diff the result.
+         */
+        ProfileTestResult: {
+            /** Parser Key */
+            parser_key: string;
+            /** Item Count */
+            item_count: number;
+            /** Total Eur */
+            total_eur: string | null;
+            /** Computed Total Eur */
+            computed_total_eur: string;
+            /** Is Reconciled */
+            is_reconciled: boolean;
+            /** Confidence */
+            confidence: string;
+            /** Decision Reasons */
+            decision_reasons: unknown[];
+            /** Items */
+            items: Record<string, never>[];
+            /** Diff Vs Current */
+            diff_vs_current: Record<string, never>;
         };
         /** ProfileUpdate */
         ProfileUpdate: {
@@ -1463,6 +2884,362 @@ export interface components {
             locale?: string | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /** QueueEntry */
+        QueueEntry: {
+            /** Receipt Id */
+            receipt_id: string | null;
+            /**
+             * Processing Job Id
+             * Format: uuid
+             */
+            processing_job_id: string;
+            /** Status */
+            status: string;
+            /** Job Status */
+            job_status: string;
+            /** Attempts */
+            attempts: number;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Last Error */
+            last_error: string | null;
+            /** Parser Profile Name */
+            parser_profile_name: string | null;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Filename */
+            filename: string | null;
+            /** Confidence */
+            confidence: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Completed At */
+            completed_at: string | null;
+        };
+        /** ReceiptDerived */
+        ReceiptDerived: {
+            /** Computed Total Eur */
+            computed_total_eur: string;
+            /** Subtotal Eur */
+            subtotal_eur: string;
+            /** Fs Value Eur */
+            fs_value_eur: string;
+            /** Fs Item Count */
+            fs_item_count: number;
+            /** Fs Share Pct */
+            fs_share_pct: string | null;
+            /** Notional Total Eur */
+            notional_total_eur: string;
+            /** Printed Item Count */
+            printed_item_count: number;
+            /** Refund Item Count */
+            refund_item_count: number;
+            /** Is Return */
+            is_return: boolean;
+            /** Is Reconciled */
+            is_reconciled: boolean;
+            /** Reconciliation Delta Eur */
+            reconciliation_delta_eur: string;
+            /** Invoice Discount Ratio */
+            invoice_discount_ratio: string | null;
+            /** Item Count Matches */
+            item_count_matches: boolean;
+            /** Is Complete */
+            is_complete: boolean;
+        };
+        /** ReceiptDetail */
+        ReceiptDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Merchant Id */
+            merchant_id: string | null;
+            /** Merchant Name */
+            merchant_name?: string | null;
+            /** Purchase Date */
+            purchase_date: string | null;
+            /** Purchased At */
+            purchased_at: string | null;
+            /** Total Eur */
+            total_eur: string;
+            /** Total Discount Eur */
+            total_discount_eur: string;
+            /** Item Count */
+            item_count: number | null;
+            /** Status */
+            status: string;
+            /** Confidence */
+            confidence: string | null;
+            /** Atcud Code */
+            atcud_code: string | null;
+            /** Document Id */
+            document_id: string | null;
+            /** Loyalty Scheme */
+            loyalty_scheme: string | null;
+            /**
+             * Fs Value Eur
+             * @default 0.00
+             */
+            fs_value_eur: string;
+            /**
+             * Fs Item Count
+             * @default 0
+             */
+            fs_item_count: number;
+            /**
+             * Notional Total Eur
+             * @default 0.00
+             */
+            notional_total_eur: string;
+            /**
+             * Is Reconciled
+             * @default true
+             */
+            is_reconciled: boolean;
+            /** Parser Profile Name */
+            parser_profile_name?: string | null;
+            /** Parser Profile Id */
+            parser_profile_id: string | null;
+            /** Processing Job Id */
+            processing_job_id: string | null;
+            /** Import Batch Id */
+            import_batch_id: string | null;
+            /** Atcud Valid */
+            atcud_valid: boolean | null;
+            /** Atcud Reason */
+            atcud_reason: string | null;
+            /** Parsed Payment Methods */
+            parsed_payment_methods: unknown[];
+            /** Loyalty Card Masked */
+            loyalty_card_masked: string | null;
+            /** Loyalty Accrued Eur */
+            loyalty_accrued_eur: string;
+            /** Loyalty Discount Eur */
+            loyalty_discount_eur: string;
+            /** Decision Reasons */
+            decision_reasons: unknown[];
+            /** Notes */
+            notes: string | null;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Document Url */
+            document_url?: string | null;
+            /** Document Mime Type */
+            document_mime_type?: string | null;
+            /** Document Filename */
+            document_filename?: string | null;
+            /** Items */
+            items: components["schemas"]["ReceiptItemOut"][];
+            derived: components["schemas"]["ReceiptDerived"];
+        };
+        /** ReceiptItemOut */
+        ReceiptItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /** Line No */
+            line_no: number | null;
+            /** Merchant Section */
+            merchant_section: string | null;
+            /** Description Raw */
+            description_raw: string;
+            /** Master Product Id */
+            master_product_id: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Unit */
+            unit: string;
+            /** Quantity Canonical */
+            quantity_canonical: string;
+            /** Unit Canonical */
+            unit_canonical: string;
+            /** Weight Listed Kg */
+            weight_listed_kg: string | null;
+            /** Weight Observed Kg */
+            weight_observed_kg: string | null;
+            /** Is Bulk Weighed */
+            is_bulk_weighed: boolean;
+            /** Unit Price Pvp Eur */
+            unit_price_pvp_eur: string;
+            /** Promo Discount Eur */
+            promo_discount_eur: string;
+            /** Promo Type */
+            promo_type: string | null;
+            /** Invoice Allocated Discount Eur */
+            invoice_allocated_discount_eur: string;
+            /** Paid Price Eur */
+            paid_price_eur: string;
+            /** Iva Class Raw */
+            iva_class_raw: string | null;
+            /** Is Fs */
+            is_fs: boolean;
+            /** Notional Value Source */
+            notional_value_source: string | null;
+            /** Product Flag */
+            product_flag: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Confidence */
+            confidence: string | null;
+            /** Decision Reasons */
+            decision_reasons: unknown[];
+            /** Weight Kg */
+            weight_kg?: string | null;
+            /** Price Per Kg Pvp Eur */
+            price_per_kg_pvp_eur?: string | null;
+            /** Price Per Kg Promo Eur */
+            price_per_kg_promo_eur?: string | null;
+            /** Price Per Kg Final Eur */
+            price_per_kg_final_eur?: string | null;
+            /** Price Per Kg Unavailable Reason */
+            price_per_kg_unavailable_reason?: string | null;
+            /** Notional Value Eur */
+            notional_value_eur?: string | null;
+            /** Display Name */
+            display_name?: string | null;
+        };
+        /** ReceiptItemUpdate */
+        ReceiptItemUpdate: {
+            /** Description Raw */
+            description_raw?: string | null;
+            /** Quantity */
+            quantity?: number | string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Unit Price Pvp Eur */
+            unit_price_pvp_eur?: number | string | null;
+            /** Promo Discount Eur */
+            promo_discount_eur?: number | string | null;
+            /** Promo Type */
+            promo_type?: string | null;
+            /** Weight Observed Kg */
+            weight_observed_kg?: number | string | null;
+            /** Weight Listed Kg */
+            weight_listed_kg?: number | string | null;
+            /** Is Bulk Weighed */
+            is_bulk_weighed?: boolean | null;
+            /** Product Flag */
+            product_flag?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
+         * ReceiptLinkOut
+         * @description The receipt↔transaction edge, and whether a ledger exists to link to.
+         */
+        ReceiptLinkOut: {
+            /** Ledger Available */
+            ledger_available: boolean;
+            /** Message */
+            message?: string | null;
+            /** Link Id */
+            link_id?: string | null;
+            /** Transaction Id */
+            transaction_id?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Confidence */
+            confidence?: string | null;
+            /** Decision Reasons */
+            decision_reasons?: unknown[];
+        };
+        /** ReceiptSummary */
+        ReceiptSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Merchant Id */
+            merchant_id: string | null;
+            /** Merchant Name */
+            merchant_name?: string | null;
+            /** Purchase Date */
+            purchase_date: string | null;
+            /** Purchased At */
+            purchased_at: string | null;
+            /** Total Eur */
+            total_eur: string;
+            /** Total Discount Eur */
+            total_discount_eur: string;
+            /** Item Count */
+            item_count: number | null;
+            /** Status */
+            status: string;
+            /** Confidence */
+            confidence: string | null;
+            /** Atcud Code */
+            atcud_code: string | null;
+            /** Document Id */
+            document_id: string | null;
+            /** Loyalty Scheme */
+            loyalty_scheme: string | null;
+            /**
+             * Fs Value Eur
+             * @default 0.00
+             */
+            fs_value_eur: string;
+            /**
+             * Fs Item Count
+             * @default 0
+             */
+            fs_item_count: number;
+            /**
+             * Notional Total Eur
+             * @default 0.00
+             */
+            notional_total_eur: string;
+            /**
+             * Is Reconciled
+             * @default true
+             */
+            is_reconciled: boolean;
+            /** Parser Profile Name */
+            parser_profile_name?: string | null;
+        };
+        /** ReceiptUpdate */
+        ReceiptUpdate: {
+            /** Merchant Id */
+            merchant_id?: string | null;
+            /** Purchase Date */
+            purchase_date?: string | null;
+            /** Total Eur */
+            total_eur?: number | string | null;
+            /** Total Discount Eur */
+            total_discount_eur?: number | string | null;
+            /** Item Count */
+            item_count?: number | null;
+            /** Loyalty Scheme */
+            loyalty_scheme?: string | null;
+            /** Loyalty Discount Eur */
+            loyalty_discount_eur?: number | string | null;
+            /** Loyalty Accrued Eur */
+            loyalty_accrued_eur?: number | string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** ReviewResolution */
         ReviewResolution: {
@@ -1579,6 +3356,65 @@ export interface components {
             /** Needs Setup */
             needs_setup: boolean;
         };
+        /**
+         * ShrinkflationOut
+         * @description ``(current_weight / avg_weight_12m) - (current_price / avg_price_12m)``.
+         */
+        ShrinkflationOut: {
+            /**
+             * Master Product Id
+             * Format: uuid
+             */
+            master_product_id: string;
+            /** Canonical Name */
+            canonical_name: string;
+            /**
+             * Merchant Id
+             * Format: uuid
+             */
+            merchant_id: string;
+            /** Merchant Name */
+            merchant_name: string | null;
+            /** Observations */
+            observations: number;
+            /** Current Weight Kg */
+            current_weight_kg: string;
+            /** Average Weight Kg */
+            average_weight_kg: string;
+            /** Current Price Eur */
+            current_price_eur: string;
+            /** Average Price Eur */
+            average_price_eur: string;
+            /** Margin Signal */
+            margin_signal: string;
+            /**
+             * Observed On
+             * Format: date
+             */
+            observed_on: string;
+        };
+        /**
+         * StatusBoard
+         * @description UX-1.5 «Estado» — every figure links to the list that resolves it.
+         */
+        StatusBoard: {
+            /** To Process */
+            to_process: number;
+            /** Failed Jobs */
+            failed_jobs: number;
+            /** To Validate */
+            to_validate: number;
+            /** Unresolved Lines */
+            unresolved_lines: number;
+            /** Uncategorized Products */
+            uncategorized_products: number;
+            /** Merge Candidates */
+            merge_candidates: number;
+            /** Observed Auto Accept Rate */
+            observed_auto_accept_rate: number | null;
+            /** Decided Receipts */
+            decided_receipts: number;
+        };
         /** StorageLocationCreate */
         StorageLocationCreate: {
             /** Area */
@@ -1671,6 +3507,14 @@ export interface components {
             /** Color */
             color: string | null;
         };
+        /**
+         * TagsUpdate
+         * @description Open user labels with **no effect on any total** (FR-1.5).
+         */
+        TagsUpdate: {
+            /** Tags */
+            tags: string[];
+        };
         /** ThemeBreakdown */
         ThemeBreakdown: {
             /** Theme */
@@ -1723,6 +3567,30 @@ export interface components {
             /** Score */
             score: number;
         };
+        /** UploadResponse */
+        UploadResponse: {
+            /** Items */
+            items: components["schemas"]["UploadedReceipt"][];
+        };
+        /** UploadedReceipt */
+        UploadedReceipt: {
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /**
+             * Processing Job Id
+             * Format: uuid
+             */
+            processing_job_id: string;
+            /** Filename */
+            filename: string | null;
+            /** Created */
+            created: boolean;
+            /** Message */
+            message?: string | null;
+        };
         /** UserOut */
         UserOut: {
             /**
@@ -1758,6 +3626,11 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VoidRequest */
+        VoidRequest: {
+            /** Reason */
+            reason: string;
         };
     };
     responses: never;
@@ -2372,6 +4245,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySearchResult"];
                 };
             };
             /** @description Validation Error */
@@ -3276,6 +5182,1657 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_receipts_api_receipts_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                merchant_id?: string | null;
+                status?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                fs?: "all" | "only" | "exclude";
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ReceiptSummary_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_receipts_post: {
+        parameters: {
+            query?: {
+                entity_id?: string | null;
+            };
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_api_receipts_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    queue_api_receipts_queue_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_board_api_receipts_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusBoard"];
+                };
+            };
+        };
+    };
+    get_receipt_api_receipts__receipt_id__get: {
+        parameters: {
+            query?: {
+                fs?: "all" | "only" | "exclude";
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_receipt_api_receipts__receipt_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_api_receipts__receipt_id__items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_receipts__receipt_id__items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_fs_item_api_receipts__receipt_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FsItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reparse_api_receipts__receipt_id__reparse_post: {
+        parameters: {
+            query?: {
+                parser_profile_id?: string | null;
+            };
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_receipts__receipt_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_categories_api_receipts__receipt_id__confirm_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_api_receipts__receipt_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_api_parser_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParserProfileOut"][];
+                };
+            };
+        };
+    };
+    create_profile_api_parser_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParserProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParserProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_parsers_api_parser_profiles_parsers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParserOption"][];
+                };
+            };
+        };
+    };
+    delete_profile_api_parser_profiles__profile_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_profile_api_parser_profiles__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParserProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParserProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_profile_api_parser_profiles__profile_id__test_post: {
+        parameters: {
+            query: {
+                receipt_id: string;
+            };
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileTestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_items_api_receipt_items_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                merchant_id?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                fs?: "all" | "only" | "exclude";
+                product_flag?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ReceiptItemOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_master_products_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                category_id?: string | null;
+                category_status?: string | null;
+                sold_by_weight?: boolean | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_MasterProductOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_api_master_products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MasterProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_products_api_master_products_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_merge_candidates_api_master_products_merge_candidates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeCandidate"][];
+                };
+            };
+        };
+    };
+    get_product_api_master_products__product_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_product_api_master_products__product_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_product_api_master_products__product_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MasterProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_category_api_master_products__product_id__validate_category_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    product_aliases_api_master_products__product_id__aliases_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAliasOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    product_occurrences_api_master_products__product_id__occurrences_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOccurrence"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_products_api_master_products__product_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    learn_alias_api_product_aliases_learn_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearnAliasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAliasOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_categories_api_categories_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                domain?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    category_tree_api_categories_tree_get: {
+        parameters: {
+            query?: {
+                domain?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryTreeNode"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    category_impact_api_categories__category_id__impact_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryImpactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retire_category_api_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_category_api_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySearchResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reparent_category_api_categories__category_id__reparent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryReparent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOperationResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_categories_api_categories__category_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryMerge"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOperationResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_legacy_api_receipts_import_legacy_post: {
+        parameters: {
+            query?: {
+                entity_id?: string | null;
+                include_non_grocery?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_legacy_api_receipts_import_legacy_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    shrinkflation_api_receipts_analytics_shrinkflation_get: {
+        parameters: {
+            query?: {
+                fs?: "all" | "only" | "exclude";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShrinkflationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    category_spend_api_receipts_analytics_category_spend_get: {
+        parameters: {
+            query?: {
+                level?: number;
+                fs?: "all" | "only" | "exclude";
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySpendOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    loyalty_api_receipts_analytics_loyalty_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoyaltyGroupOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    loyalty_receipts_api_receipts_analytics_loyalty_receipts_get: {
+        parameters: {
+            query?: {
+                scheme?: string | null;
+                card_masked?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoyaltyAllocationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    price_history_api_master_products__product_id__price_history_get: {
+        parameters: {
+            query?: {
+                fs?: "all" | "only" | "exclude";
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceHistoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    price_history_csv_api_master_products__product_id__price_history_csv_get: {
+        parameters: {
+            query?: {
+                fs?: "all" | "only" | "exclude";
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_link_api_receipts__receipt_id__link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_link_api_receipts__receipt_id__link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_link_api_receipts__receipt_id__link_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_receipt_tags_api_receipts__receipt_id__tags_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_item_tags_api_receipts__receipt_id__items__item_id__tags_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

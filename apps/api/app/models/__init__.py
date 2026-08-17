@@ -25,6 +25,9 @@ from app.models.household import (
     User,
 )
 from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
+from app.models.prices import ProductPriceHistory
+from app.models.products import MasterProduct, ProductAlias
+from app.models.receipts import MerchantParserProfile, Receipt, ReceiptItem
 
 __all__ = [
     "ROLES",
@@ -41,8 +44,14 @@ __all__ = [
     "LegoSetInstance",
     "LegoSetModel",
     "Link",
+    "MasterProduct",
     "Merchant",
+    "MerchantParserProfile",
     "ProcessingJob",
+    "ProductAlias",
+    "ProductPriceHistory",
+    "Receipt",
+    "ReceiptItem",
     "ReviewTask",
     "Session",
     "Setting",

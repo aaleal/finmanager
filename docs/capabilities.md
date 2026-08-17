@@ -70,6 +70,7 @@ lives here, where it can be corrected when code moves.
 | Tag CRUD | `apps/api/app/api/routers/reference.py` | Phase 0 |
 | pt-PT grocery taxonomy seeded from the canonical JSON (27 L1 nodes) | `apps/api/app/seed/__init__.py` | Phase 0 |
 | Portuguese merchant seed (Continente, Pingo Doce, Auchan, Galp, EDP, …) | `apps/api/app/seed/__init__.py` | Phase 0 |
+| Merchant NIFs (Continente, Pingo Doce, Lidl, Piquete da Fruta) and the five parser profiles seeded | `apps/api/app/seed/__init__.py` | Phase 3 (M1a) |
 
 ## LEGO collection (M9)
 
@@ -88,6 +89,53 @@ lives here, where it can be corrected when code moves.
 | Sort on every grid column, incl. derived `copies` and `roi`, ordinal `condition` | `apps/api/app/services/lego_service.py` | Phase 1 (M9.3) |
 | Set image gallery + carousel (box shot plus extra views) | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/set-carousel.tsx` | Phase 1 (M9.3) |
 | Real Brickset box art downloaded once into the seed | `apps/api/app/seed/__init__.py` | Phase 1 (M9.3) |
+
+## Supermarket & receipts (M1)
+
+| Capability | Where | Shipped by |
+| :--- | :--- | :--- |
+| `Receipt`, `ReceiptItem`, `MerchantParserProfile` | `apps/api/app/models/receipts.py` | Phase 3 (M1a) |
+| Ingestion pipeline — detect merchant, select profile, extract, normalize, resolve product (seam), reconcile, score | `apps/api/app/services/receipts/pipeline.py` | Phase 3 (M1a) |
+| `ExtractionProvider` / `OcrProvider` seams — `pdfplumber` word boxes, `pytesseract`, PDF-page OCR fallback | `apps/api/app/services/receipts/extraction.py` | Phase 3 (M1a) |
+| Five merchant parsers behind a registry — `continente_v1`, `pingodoce_v1`, `lidl_v1`, `piquete_v1`, `generic_v1` | `apps/api/app/services/receipts/parsers/` | Phase 3 (M1a) |
+| Confidence engine — pure `(status, confidence, decision_reasons)`, unavailable stages redistribute weight rather than scoring zero | `apps/api/app/services/receipts/confidence.py` | Phase 3 (M1a) |
+| Fiscal QR / ATCUD reader — `pyzbar` decode, printed-ATCUD fallback, NIF checksum and merchant-vs-buyer disambiguation | `apps/api/app/services/receipts/fiscal.py` | Phase 3 (M1a) |
+| Merchant resolution — NIF → profile → fuzzy-name (`rapidfuzz`) | `apps/api/app/services/receipts/merchants.py` | Phase 3 (M1a) |
+| Fs valuation and the three €/kg variants (PVP, promo-adjusted, final) | `apps/api/app/services/receipts/arithmetic.py` | Phase 3 (M1a) |
+| Receipt status machine — `UPLOADED → PARSING → AUTO_ACCEPTED/NEEDS_REVIEW → CONFIRMED → VOID`, with `FAILED` retry | `apps/api/app/models/receipts.py` | Phase 3 (M1a) |
+| `/api/receipts`, `/api/receipt-items`, `/api/parser-profiles` | `apps/api/app/api/routers/receipts.py` | Phase 3 (M1a) |
+| Parsing queue and batch upload (Carregar, Fila) | `apps/web/src/features/receipts/upload-panel.tsx`, `queue-table.tsx` | Phase 3 (M1a) |
+| Review split-pane — document alongside extracted fields, «Porquê?» reasons | `apps/web/src/features/receipts/review-pane.tsx`, `why-popover.tsx` | Phase 3 (M1a) |
+| Estado status board — auto-accept rate, queue depth, failures | `apps/web/src/features/receipts/status-panel.tsx` | Phase 3 (M1a) |
+| Faturas — receipts list | `apps/web/src/features/receipts/receipts-table.tsx` | Phase 3 (M1a) |
+| Artigos — line-level item explorer across every invoice | `apps/web/src/features/receipts/items-table.tsx` | Phase 3 (M1a) |
+| Perfis de leitura — parser-profile administration | `apps/web/src/features/receipts/parser-profiles-panel.tsx` | Phase 3 (M1a) |
+| Golden extraction fixtures — committed word boxes for all eleven real *talões* | `apps/api/tests/fixtures/golden/` | Phase 3 (M1a) |
+| `MasterProduct` / `ProductAlias` — canonical product identity and learned merchant vocabulary | `apps/api/app/models/products.py` | Phase 3 (M1b) |
+| Product resolution and the alias learning loop — alias-exact → fuzzy ≥ 0.78 (review band 0.70–0.78), `learn()` correction loop, `CatalogueResolver` registered as the pipeline's `ProductResolver` | `apps/api/app/services/receipts/catalogue.py` | Phase 3 (M1b) |
+| Local category classifier — `VocabularyClassifier` over the pt-PT L3 vocabulary, fed by description and `merchant_section`; `register_classifier()` seam for a remote one | `apps/api/app/services/receipts/classify.py` | Phase 3 (M1b) |
+| Category administration — rename, reparent, merge, retire, each with impact counts | `apps/api/app/api/routers/products.py`, `apps/api/app/services/receipts/products_service.py` | Phase 3 (M1b) |
+| Whole-tree endpoint for the taxonomy editor | `GET /api/categories/tree` | Phase 3 (M1b) |
+| Product merge and merge-candidate detection | `apps/api/app/services/receipts/products_service.py` | Phase 3 (M1b) |
+| Master product manager UI («Produtos» tab) | `apps/web/src/features/receipts/products-panel.tsx` | Phase 3 (M1b) |
+| Taxonomy editor UI («Categorias» tab) | `apps/web/src/features/receipts/categories-panel.tsx` | Phase 3 (M1b) |
+| Product and category autocomplete pickers | `apps/web/src/features/receipts/product-picker.tsx`, `category-picker.tsx` | Phase 3 (M1b) |
+| Legacy spreadsheet importer — the `SUPERMARKET_YYYY` migration («Importar folha» tab) | `apps/api/app/services/receipts/legacy_import.py`, `apps/web/src/features/receipts/legacy-import-panel.tsx` | Phase 3 (M1b) |
+| `confirm-categories` and line-level product reassignment | `POST /api/receipts/{id}/confirm-categories`, `PATCH /api/receipt-items/{id}/product`, `apps/web/src/features/receipts/review-pane.tsx` | Phase 3 (M1b) |
+| `ProductPriceHistory` — append-only price observation, frozen on parse-time decision and again on confirm | `apps/api/app/models/prices.py` | Phase 3 (M1c) |
+| Append-only observation recording — `record_observations()`, idempotent on unchanged date/prices/weight, a correction appends rather than rewrites | `apps/api/app/services/receipts/prices_service.py` | Phase 3 (M1c) |
+| Derived last-known price — pre-fills manual entry and Fs valuation, never stored | `apps/api/app/services/receipts/prices_service.py::last_known_price` | Phase 3 (M1c) |
+| €/kg list and paid trends, filterable by `fs` (`all`/`only`/`exclude`) | `apps/api/app/services/receipts/prices_service.py::price_history` | Phase 3 (M1c) |
+| Shrinkflation detection — `margin_signal` over a rolling 365-day window, ≥ 3 prior observations, fires at ≤ −0.05 | `apps/api/app/services/receipts/prices_service.py::shrinkflation` | Phase 3 (M1c) |
+| Category spend over both measures (`paid_eur`/`notional_eur`), outer-joined so an unresolved line still counts under «Sem categoria» | `apps/api/app/services/receipts/prices_service.py::category_spend` | Phase 3 (M1c) |
+| Loyalty `GROUP BY` view and per-receipt allocation | `apps/api/app/services/receipts/prices_service.py::loyalty_summary`, `apps/api/app/api/routers/prices.py` | Phase 3 (M1c) |
+| Receipt↔transaction `Link` behind a `LedgerProvider` seam, `AbsentLedger` the honest placeholder | `apps/api/app/services/receipts/ledger.py` | Phase 3 (M1c) |
+| Receipt and item tagging | `PUT /api/receipts/{id}/tags`, `PUT /api/receipts/{id}/items/{itemId}/tags` | Phase 3 (M1c) |
+| Price-history, spend and loyalty endpoints, plus CSV export of a price series | `apps/api/app/api/routers/prices.py` | Phase 3 (M1c) |
+| Price-evolution, spend and loyalty UI panels («Preços», «Despesa», «Fidelização» tabs) | `apps/web/src/features/receipts/{price-evolution-panel,spend-panel,loyalty-panel}.tsx` | Phase 3 (M1c) |
+| Receipt link panel and `fs` tri-state filter in the review pane | `apps/web/src/features/receipts/link-panel.tsx`, `apps/web/src/features/receipts/review-pane.tsx` | Phase 3 (M1c) |
+| Demo supermarket receipt in the seed — `seed_supermarket()`, one reconciling receipt carrying an appended Fs article, a prorated loyalty discount, a refund and a deposit return together | `apps/api/app/seed/__init__.py` | Phase 3 (M1c) |
+| Legacy importer now records a price observation for every imported group (2,386 observations from the real 2025 sheet) | `apps/api/app/services/receipts/legacy_import.py` | Phase 3 (M1b) |
 
 ## Household administration (M7)
 
@@ -112,6 +160,6 @@ lives here, where it can be corrected when code moves.
 | :--- | :--- |
 | `Transaction` ledger, `CsvMapping`, statement import | M2 — Banking |
 | `/api/transactions/suggest` currently answers `ledger_available: false` | M2 — Banking |
-| Receipt ingestion, OCR, master products, price history | M1 — Supermarket |
+| `receipts` already writes `Link(RECEIPT_TRANSACTION)` edges through `register_provider()` (`apps/api/app/services/receipts/ledger.py`) — only the real `LedgerProvider` is missing | M2 — Banking |
 | Health claims, utilities, vehicles, assets, dashboards | M3–M6, M8 |
 | Playwright e2e tooling (`apps/web/tests/e2e/`) | first module that needs it |

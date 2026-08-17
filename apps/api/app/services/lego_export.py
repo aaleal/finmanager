@@ -75,7 +75,9 @@ def build_workbook(
     scope_ids = [active_entity_id] if active_entity_id else entity_ids
 
     workbook = Workbook()
-    workbook.remove(workbook.active)
+    default_sheet = workbook.active
+    if default_sheet is not None:
+        workbook.remove(default_sheet)
 
     _copies_sheet(db, workbook, scope_ids, entity_names)
     _sets_sheet(db, workbook, scope_ids, entity_names)

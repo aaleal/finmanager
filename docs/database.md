@@ -74,6 +74,57 @@ There is **no** valuation-history table, no image table and no external-listing
 table. Value history is recoverable from `audit_logs`; images reuse `documents`;
 marketplace links are built client-side from a template.
 
+### Supermarket & receipts (M1, `app/models/receipts.py` + `app/models/products.py`)
+
+- `merchant_parser_profiles` — how one merchant's layout is read. A partial
+  unique index, `uq_merchant_parser_profiles_generic` (`merchant_id`, where
+  `merchant_id IS NULL AND is_deleted = false`), keeps the generic fallback
+  single and undeletable — see [ADR 0016](decisions/0016-per-merchant-parsers-over-one-configurable-parser.md).
+- `receipts` — one payment transaction at one merchant. Two partial unique
+  indexes prevent duplicates rather than merely detecting them: `uq_receipts_entity_atcud`
+  (`entity_id, atcud_code`, where `atcud_code IS NOT NULL AND is_deleted = false`)
+  makes the fiscal document identity itself impossible to duplicate (see
+  [ADR 0017](decisions/0017-fiscal-qr-is-the-highest-confidence-anchor.md)), and
+  `uq_receipts_entity_document` (`entity_id, document_id`, same `is_deleted`
+  guard) stops one uploaded file from creating two receipts.
+- `receipt_items` — one row per printed line, or one appended Fs article. Two
+  `CHECK` constraints enforce [ADR 0015](decisions/0015-fs-articles-are-appended-not-flagged.md)
+  at the database level rather than in application code: `fs_pays_nothing`
+  (`is_fs = false OR paid_price_eur = 0`) and `fs_has_no_document_fields`
+  (`is_fs = false OR (line_no IS NULL AND merchant_section IS NULL AND
+  iva_class_raw IS NULL)`) — nothing the *document* supplied can exist on a row
+  the document never had. `master_product_id` was a plain nullable column with
+  no FK in M1a; migration `baf648f645a8` (M1b) adds the deferred foreign key to
+  `master_products.id` now that the table exists.
+- `master_products` — canonical product identity, household-level reference
+  data rather than entity-scoped (see [ADR 0019](decisions/0019-the-product-catalogue-is-shared-not-entity-scoped.md)).
+  A partial unique index, `uq_master_products_canonical_name_brand`
+  (`canonical_name, brand`, where `is_deleted = false`), stops two live products
+  answering to the same name and brand. `category_id` is the deepest assigned
+  category at any level, with `category_l1_id`/`_l2_id`/`_l3_id` maintained
+  alongside it (see [ADR 0020](decisions/0020-deepest-assigned-category-plus-maintained-ancestors.md)).
+  A `CHECK` constrains `category_status` to `AUTO`/`VALIDATED`/`MANUAL`, and
+  another constrains `category_confidence` to `0`–`1`.
+- `product_aliases` — learned merchant vocabulary. `UNIQUE (merchant_id,
+  description_norm)` (`uq_product_aliases_merchant_description`) — one alias
+  per merchant per normalised description — and a `CHECK` constrains
+  `confidence` to `0`–`1`.
+- `product_price_history` (M1c, `app/models/prices.py`) — one row per price
+  observation, append-only (see
+  [ADR 0022](decisions/0022-price-history-is-append-only-and-stores-no-quotient.md)).
+  Indexed on `(master_product_id, merchant_id, observed_on)` for the €/kg and
+  shrinkflation queries. The index on `source_receipt_item_id` is deliberately
+  **not** unique: the table has no `UPDATE` path for a correction, so a review
+  edit made after the observation was first frozen appends a new row beside
+  the old one rather than replacing it, and idempotency instead comes from
+  `record_observations()` skipping a row whose date, prices and weight are all
+  unchanged. A `CHECK` constrains `weight_kg` to `NULL` or strictly positive.
+  `list_price_eur`/`paid_price_eur` carry the notional value in both columns
+  on an Fs observation, never `0.00` (see
+  [ADR 0023](decisions/0023-fs-observations-carry-the-notional-value-in-both-price-columns.md)).
+  There is no €/kg column and no shrinkflation-flag column: both are derived
+  at query time from `list_price_eur`/`paid_price_eur` and `weight_kg`.
+
 ## Migrations
 
 ```bash
@@ -99,7 +150,37 @@ The indexes that matter today:
 - `ix_lego_set_instances_model_id` — copy grouping and `owned_copies_count`.
 - `ix_audit_logs_record (table_name, record_id, created_at)` — reconstructing an
   object's history.
+- `ix_receipts_entity_purchase_date_id (entity_id, purchase_date, id)` — the shape
+  of every receipt list and dashboard query.
+- `ix_receipt_items_receipt_id_line_no`, `ix_receipt_items_master_product_id` —
+  category spend joins through the product, which is a small table.
+- `ix_master_products_category_l1_id_l2_id_l3_id` — spend grouped by any level
+  without a recursive join (see ADR-0020).
+- `ix_product_price_history_product_merchant_observed` — the €/kg series and the
+  shrinkflation window. `is_fs` lives on the row itself, so the `fs` filter never
+  forces a join back to `receipt_items`.
 
-When the ledger arrives, validate with `EXPLAIN (ANALYZE, BUFFERS)` against a
-production-scale seed rather than assuming; the NFR is <800 ms p95 over ten years of
-data.
+### What has actually been measured
+
+Measured with `EXPLAIN (ANALYZE, BUFFERS)` after `ANALYZE`, against **one year of
+real household data** — 276 receipts, 2,406 lines, 1,494 products, 2,386 price
+observations, produced by importing the real 2025 spreadsheet:
+
+| Query | Execution time |
+| :--- | ---: |
+| Receipt list, one entity, newest 25 | 0.25 ms |
+| Line-level explorer, newest 50 across all invoices | 2.24 ms |
+| Category spend grouped by L1 | 2.21 ms |
+| Price observations in the 12-month shrinkflation window | 0.47 ms |
+
+At this size the planner prefers sequential scans over the indexes above, which is
+correct — the tables fit comfortably in a few pages, and an index lookup would cost
+more than reading them. The indexes are there for the shape the data takes later.
+
+**The NFR is <800 ms p95 over ten years of data, and that has not been measured.**
+Doing so needs a synthetic ten-year seed that does not exist yet. What is recorded
+above is the honest one-year figure; treat the ten-year claim as open until a
+production-scale seed exists to run it against.
+
+When the ledger arrives, validate the reconciliation queries the same way rather
+than assuming.

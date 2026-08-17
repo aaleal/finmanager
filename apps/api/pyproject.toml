@@ -15,6 +15,10 @@ select = ["E", "F", "I", "UP", "B", "SIM", "N", "C4", "RUF"]
 # N811/N818: `PgUUID` alias and the short HTTP-shaped error names are deliberate.
 # RUF001: pt-PT display strings legitimately use › and other typographic characters.
 ignore = ["B008", "N811", "N818", "RUF001", "RUF012"]
+# The same typographic characters appear in prose that quotes the UI — the `L1 › L2
+# › L3` category path above all. Allowing exactly these keeps RUF002/RUF003 useful
+# for the homoglyphs that really are mistakes.
+allowed-confusables = ["›", "—", "–", "º", "ª"]
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*" = ["E501"]

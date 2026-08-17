@@ -14,3 +14,10 @@ httpx==0.28.1
 filetype==1.2.0
 openpyxl==3.1.5
 python-dateutil==2.9.0.post0
+# M1 ingestion — every stage has a local engine that works offline (Decision #13)
+pdfplumber==0.11.4
+pypdfium2==4.30.0
+pytesseract==0.3.13
+pillow==11.0.0
+pyzbar==0.1.9
+rapidfuzz==3.11.0

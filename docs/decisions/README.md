@@ -19,3 +19,12 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0012](0012-lego-retirement-is-a-date.md) | LEGO retirement is a date, and it has to arrive |
 | [0013](0013-lego-set-gallery.md) | The LEGO set gallery is worth a fourth table |
 | [0014](0014-seed-creates-no-users.md) | The demo seed no longer creates users |
+| [0015](0015-fs-articles-are-appended-not-flagged.md) | An Fs article is appended, never a printed line reclassified |
+| [0016](0016-per-merchant-parsers-over-one-configurable-parser.md) | Per-merchant parsers over one configurable parser |
+| [0017](0017-fiscal-qr-is-the-highest-confidence-anchor.md) | The fiscal QR is the highest-confidence anchor |
+| [0018](0018-a-stage-that-did-not-run-is-not-a-stage-that-failed.md) | A stage that did not run is not a stage that failed |
+| [0019](0019-the-product-catalogue-is-shared-not-entity-scoped.md) | The product catalogue is shared, not entity-scoped |
+| [0020](0020-deepest-assigned-category-plus-maintained-ancestors.md) | Deepest assigned category, plus maintained ancestors |
+| [0021](0021-the-legacy-sheet-is-validated-not-trusted.md) | The legacy sheet is validated, not trusted |
+| [0022](0022-price-history-is-append-only-and-stores-no-quotient.md) | Price history is append-only and stores no quotient |
+| [0023](0023-fs-observations-carry-the-notional-value-in-both-price-columns.md) | Fs observations carry the notional value in both price columns |

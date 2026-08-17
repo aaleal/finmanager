@@ -29,9 +29,13 @@ it serves the hashed static bundle and proxies `/api/*` to `api:8000`. Only port
 instead, which proxies `/api` to `api:8000` itself — the browser origin never
 changes, so cookies behave identically in both modes.
 
-`worker` is provisioned in Phase 0 even though **M9 queues no jobs by design**. It
-already carries the `ProcessingJob` idempotency contract, so the ingestion-heavy
-modules land on a runtime that has been running since day one.
+`worker` is provisioned in Phase 0 even though **M9 queued no jobs by design**.
+M1 is the first module to use it in spirit: every parse writes a `ProcessingJob`
+row (`job_type="receipts.parse"`), which backs the parsing queue view and lets a
+`FAILED` receipt retry without a re-upload. The parse itself, however, still runs
+**inline in the request** (`receipts.service.parse_receipt`) — the job row exists
+for observability and retry today, not for asynchronous execution. Moving it
+onto Celery is a follow-up, not something already in place.
 
 ## Request flow
 
@@ -121,6 +125,113 @@ URL is kept purely as provenance and is never fetched at render time.
 Delivery is through `/api/documents/{id}/content?expires=…&signature=…`. The HMAC
 signature *is* the authorisation, because `<img src>` cannot send a CSRF header; the
 link expires in 15 minutes and grants access to exactly one document.
+
+## The ingestion pipeline (M1)
+
+M1a's parse runs in a fixed stage order, each stage a discrete function so a
+quality change is always traceable to the stage that caused it. Text comes off
+the document first because merchant detection needs something to read; from
+there, **merchant detection precedes field extraction, because it is what selects
+the parser**:
+
+```mermaid
+flowchart LR
+  read["Read text\n(word boxes)"]
+  detect["Detect merchant\n(NIF / alias / fuzzy name)"]
+  profile["Select MerchantParserProfile\n(or generic)"]
+  extract["Extract fields\n(per-merchant parser)"]
+  normalize["Normalize\n(description_norm, units, pack weight)"]
+  resolve["Resolve product\n(CatalogueResolver)"]
+  classify["Classify category\n(VocabularyClassifier)"]
+  reconcile["Reconcile arithmetic\n(vs printed total)"]
+  score["Score confidence"]
+
+  read --> detect --> profile --> extract --> normalize --> resolve --> classify --> reconcile --> score
+```
+
+Two stages sit behind a `Protocol` seam today; the rest are plain functions with
+no remote alternative planned:
+
+| Stage | Protocol | Local engine (ships enabled) | Remote alternative |
+| :--- | :--- | :--- | :--- |
+| Extract — digital PDF | `ExtractionProvider` | `pdfplumber` word boxes | Hosted OCR/LLM extraction, once configured |
+| Extract — photograph/scan | `OcrProvider` | `pytesseract` | Hosted OCR, once configured |
+| Resolve product | `ProductResolver` | `CatalogueResolver` — alias-exact → fuzzy ≥ 0.78 (review band 0.70–0.78) | External product database |
+| Classify category | `CategoryClassifier` | `VocabularyClassifier` — local pt-PT L3 vocabulary, fed by description and `merchant_section` | Remote classifier via `register_classifier()` |
+| Parser selection | registry, no seam | per-merchant classes + `generic_v1` | — layout parsing stays local |
+
+**Local ships enabled and works with no network and no subscription.** A remote
+engine is a per-stage `Setting`; enabling one requires a credential, and without
+one the stage silently stays local rather than failing — the same posture as
+Brickset in M9. `Resolve product` is no longer a seam-only placeholder: M1a
+registered nothing behind it, but M1b registers `CatalogueResolver` as the
+default `_product_resolver`, and `register_product_resolver(None)` still
+disables the stage entirely for a pipeline run that should skip it.
+
+Extraction works from **word boxes** (`x0`, `x1`, `top`, `bottom` per word,
+clustered into lines by vertical proximity) rather than flat text, because the
+differences between merchants are positional: Continente prints the IVA class
+token first, Lidl prints it last, Piquete prints quantity first. A parser built
+on split flat text breaks the moment the extractor's spacing changes; one built
+on positions reads the column that is actually there.
+
+The confidence engine (`app/services/receipts/confidence.py`) is deliberately
+**pure** — no clock, no randomness, no I/O — so identical input yields
+byte-identical output across runs. It returns `(status, confidence,
+decision_reasons)`: a signal of `None` means a stage did not run and has its
+weight redistributed over the ones that did; a signal of `0` means a stage ran
+and found nothing, which is scored as a genuine failure (see
+[ADR-0018](decisions/0018-a-stage-that-did-not-run-is-not-a-stage-that-failed.md)).
+
+### The taxonomy shape (M1b)
+
+`MasterProduct.category_id` is the **deepest assigned** category, at any level
+— not always L3, because the household's own sheet leaves L3 blank on
+roughly half its rows. The `category_l1_id` / `category_l2_id` /
+`category_l3_id` trio is maintained alongside it, recomputed on reparent and
+merge, so "spend by L2" stays a single-table group-by with no recursive walk
+of `parent_id`. See
+[ADR-0020](decisions/0020-deepest-assigned-category-plus-maintained-ancestors.md)
+for why a snapshot-per-row or derive-on-read shape was rejected.
+
+### Money over time (M1c)
+
+`product_price_history` is an **append-only** observation log, not a mutable
+"current price" per product/merchant. A row is frozen at the moment a receipt
+reaches a decided state during parsing, and again on confirm, so a correction
+made during review appends a fresh observation rather than rewriting the one
+it superseded. €/kg is never stored: price and weight sit on the same row, so
+the quotient is derived at read time and cannot drift from its own inputs.
+Shrinkflation is the same posture — computed over the trailing 12 months at
+query time, never frozen onto a row that cannot know its own future (see
+[ADR-0022](decisions/0022-price-history-is-append-only-and-stores-no-quotient.md)).
+
+Every observation carries two measures, identical on every non-Fs row:
+
+| Column | Answers | On an Fs row |
+| :--- | :--- | :--- |
+| `paid_price_eur` | "What did I spend?" | `0.00` — an Fs article costs nothing |
+| `notional_value_eur`* | "What was it worth?" | the catalogue/PVP value, never `0.00` |
+
+*`notional_value_eur` is the same figure written into both `list_price_eur` and
+`paid_price_eur` on the observation row, not a separate column — see
+[ADR-0023](decisions/0023-fs-observations-carry-the-notional-value-in-both-price-columns.md).
+`is_fs` also lives on the row, so the `fs` filter (`all`/`only`/`exclude`) used
+across the price, spend and loyalty endpoints never has to join back to
+`receipt_items` to know which rows to include.
+
+`category_spend()` outer-joins `MasterProduct` rather than inner-joining it, so
+a line that has not resolved to a product yet still counts towards spend,
+grouped under «Sem categoria», instead of silently vanishing from the total.
+
+The receipt↔transaction reconciliation (FR-1.14) is shipped as a contract, not
+a working link: `LedgerProvider` is a `Protocol` with one method,
+`candidates()`, and `AbsentLedger` — the default — always answers with none.
+`propose_link()` and the manual `link_manually()`/`unlink()` pair already
+write and remove `Link(RECEIPT_TRANSACTION)` rows; only `register_provider()`
+needs to be called with a real ledger once M2 exists. The same
+ship-the-contract-defer-the-implementation posture as
+[ADR-0005](decisions/0005-defer-transaction-fk.md).
 
 ## Configuration
 

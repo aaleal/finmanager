@@ -32,6 +32,7 @@ from app.core.errors import ValidationError
 from app.models.core import Category, Merchant, Tag
 from app.models.household import Entity, Household
 from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
+from app.models.receipts import MerchantParserProfile
 from app.seed.images import cover_for
 from app.services import documents, settings_service
 
@@ -122,6 +123,7 @@ PORTUGUESE_MERCHANTS = [
     ("Lidl", "RETAIL", "https://www.lidl.pt"),
     ("Aldi", "RETAIL", "https://www.aldi.pt"),
     ("El Corte Inglés", "RETAIL", None),
+    ("Piquete da Fruta", "RETAIL", None),
     ("Galp", "SERVICE_PROVIDER", "https://www.galp.pt"),
     ("BP", "SERVICE_PROVIDER", None),
     ("EDP Comercial", "UTILITY_PROVIDER", "https://www.edp.pt"),
@@ -132,12 +134,135 @@ PORTUGUESE_MERCHANTS = [
     ("Farmácia Central", "RETAIL", None),
 ]
 
+#: NIFs and spellings read off the eleven real *talões* under
+#: ``00.prompts/seed/supermarket/invoices/``. The NIF is what resolves a merchant
+#: exactly during parsing; the aliases are what the fuzzy fallback matches on.
+MERCHANT_FISCAL_DETAILS: dict[str, tuple[str | None, list[str]]] = {
+    "Continente": (
+        "501591109",
+        ["Continente Loures", "MCH Cascais", "CONTINENTE HIPERMERCADOS S.A.", "Modelo Continente"],
+    ),
+    "Pingo Doce": ("500829993", ["PD Ramada", "Pingo Doce - Distribuição Alimentar"]),
+    "Lidl": ("503340855", ["LIDL & Cia", "Lidl Alcobaça", "Lidl Loures-Frielas"]),
+    "Piquete da Fruta": (None, ["Frutastico", "Piquete da Fruta", "Frutastico Unipessoal"]),
+}
+
 
 def seed_merchants(db: DbSession) -> None:
     for name, kind, website in PORTUGUESE_MERCHANTS:
-        if db.scalar(select(Merchant).where(Merchant.name == name)):
+        merchant = db.scalar(select(Merchant).where(Merchant.name == name))
+        if merchant is None:
+            merchant = Merchant(name=name, kind=kind, website=website, aliases=[])
+            db.add(merchant)
+        nif, aliases = MERCHANT_FISCAL_DETAILS.get(name, (None, []))
+        if nif and not merchant.nif:
+            merchant.nif = nif
+        if aliases and not merchant.aliases:
+            merchant.aliases = aliases
+    db.flush()
+
+
+#: One profile per merchant plus **one generic fallback**, so a brand-new
+#: merchant is never a dead end (FR-1.15).
+PARSER_PROFILES: list[dict[str, Any]] = [
+    {
+        "merchant": "Continente",
+        "name": "Continente talão térmico",
+        "parser_key": "continente_v1",
+        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
+        "detection_patterns": [r"CONTINENTE\s+HIPERMERCADOS", r"Cartao cliente", r"MCH\s+\w+"],
+        # Continente's printed line value is already net of POUPANCA; Pingo
+        # Doce's is gross. One flag, two opposite worlds (Decision #28).
+        "field_hints": {
+            "line_value_is_net": True,
+            "section_heading": r"^[A-Za-zÀ-ÿ0-9&./ -]+:$",
+            "savings_line": "POUPANCA",
+            "decimal_separator": ",",
+            "date_format": "%d/%m/%Y",
+        },
+        "priority": 100,
+    },
+    {
+        "merchant": "Pingo Doce",
+        "name": "Pingo Doce fatura simplificada",
+        "parser_key": "pingodoce_v1",
+        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
+        "detection_patterns": [r"Pingo\s+Doce", r"500829993"],
+        "field_hints": {
+            "line_value_is_net": False,
+            "savings_line": "Poupança Imediata",
+            "decimal_separator": ",",
+            "date_format": "%d/%m/%Y",
+        },
+        "priority": 100,
+    },
+    {
+        "merchant": "Lidl",
+        "name": "Lidl fatura simplificada",
+        "parser_key": "lidl_v1",
+        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
+        "detection_patterns": [r"LIDL", r"503340855"],
+        "field_hints": {
+            "line_value_is_net": True,
+            "iva_class_position": "end",
+            "decimal_separator": ",",
+            "date_format": "%Y-%m-%d",
+        },
+        "priority": 100,
+    },
+    {
+        "merchant": "Piquete da Fruta",
+        "name": "Piquete da Fruta (fotografia)",
+        "parser_key": "piquete_v1",
+        "document_kinds": ["IMAGE_SCAN", "PDF_DIGITAL"],
+        "detection_patterns": [r"piquetedafruta", r"Frutastico", r"QTD\s+UNI\s+DESCRICAO"],
+        "field_hints": {
+            "line_value_is_net": True,
+            "quantity_first": True,
+            "iva_is_percentage": True,
+            "decimal_separator": ",",
+        },
+        "priority": 90,
+    },
+    {
+        "merchant": None,
+        "name": "Perfil genérico",
+        "parser_key": "generic_v1",
+        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
+        "detection_patterns": [],
+        "field_hints": {"line_value_is_net": True, "decimal_separator": ","},
+        "priority": 0,
+    },
+]
+
+
+def seed_parser_profiles(db: DbSession) -> None:
+    for spec in PARSER_PROFILES:
+        merchant_id = None
+        if spec["merchant"]:
+            merchant = db.scalar(select(Merchant).where(Merchant.name == spec["merchant"]))
+            if merchant is None:
+                continue
+            merchant_id = merchant.id
+        existing = db.scalar(
+            select(MerchantParserProfile).where(
+                MerchantParserProfile.parser_key == spec["parser_key"],
+                MerchantParserProfile.is_deleted.is_(False),
+            )
+        )
+        if existing is not None:
             continue
-        db.add(Merchant(name=name, kind=kind, website=website, aliases=[]))
+        db.add(
+            MerchantParserProfile(
+                merchant_id=merchant_id,
+                name=spec["name"],
+                parser_key=spec["parser_key"],
+                document_kinds=spec["document_kinds"],
+                detection_patterns=spec["detection_patterns"],
+                field_hints=spec["field_hints"],
+                priority=spec["priority"],
+            )
+        )
     db.flush()
 
 
@@ -566,6 +691,196 @@ def _storage_location(
     return location
 
 
+# --- Supermarket (M1) --------------------------------------------------------
+#: One hand-written receipt that exercises the cases the real fixtures do not all
+#: carry at once: an appended Fs article, a loyalty discount prorated across the
+#: lines, a refund with a negative quantity, and a deposit return.
+DEMO_RECEIPT_LINES: list[dict[str, Any]] = [
+    {
+        "description": "LEITE UHT GORD MIMOSA 1L",
+        "section": "Laticinios",
+        "pvp": "0.99",
+        "promo": "0.00",
+        "iva": "A",
+        "weight": "1.0000",
+        "quantity": "1",
+    },
+    {
+        "description": "ARROZ AGULHA SELECIONADO 1KG",
+        "section": "Bens Essenciais",
+        "pvp": "1.39",
+        "promo": "0.10",
+        "iva": "A",
+        "weight": "1.0000",
+        "quantity": "1",
+    },
+    {
+        "description": "BANANA",
+        "section": "Frutas e Legumes",
+        "pvp": "1.28",
+        "promo": "0.00",
+        "iva": "A",
+        "weight": "0.8600",
+        "quantity": "0.86",
+        "unit": "KG",
+        "bulk": True,
+    },
+    {
+        "description": "AGUA S/GAS 50CL",
+        "section": "Soft Drinks",
+        "pvp": "0.19",
+        "promo": "0.00",
+        "iva": "B",
+        "weight": "0.5000",
+        "quantity": "1",
+    },
+    {
+        "description": "VALOR DE DEPOSITO UN",
+        "section": "Taras e Valor de Deposito",
+        "pvp": "0.10",
+        "promo": "0.00",
+        "iva": "NS",
+        "flag": "DEPOSIT_RETURN",
+        "quantity": "1",
+    },
+    {
+        "description": "DEVOLUCAO IOGURTE NATURAL",
+        "section": "Laticinios",
+        "pvp": "-0.74",
+        "promo": "0.00",
+        "iva": "A",
+        "flag": "REFUND",
+        "quantity": "-2",
+    },
+]
+
+DEMO_FS_ARTICLE = {
+    "description": "Bolo de aniversário oferecido pela vizinha",
+    "value": Decimal("7.50"),
+}
+
+
+def _find_or_create_demo_product(db: DbSession, line: dict[str, Any]):  # type: ignore[no-untyped-def]
+    """Reuse whatever the legacy import already created — the seed never forks it."""
+    from app.models.products import MasterProduct
+    from app.services.receipts import products_service
+
+    name = str(line["description"]).title()
+    existing = db.scalar(
+        select(MasterProduct).where(
+            func.lower(MasterProduct.canonical_name) == name.lower(),
+            MasterProduct.is_deleted.is_(False),
+        )
+    )
+    if existing is not None:
+        return existing
+    return products_service.create_product(
+        db,
+        canonical_name=name,
+        category_status="AUTO",
+        sold_by_weight=bool(line.get("bulk")),
+    )
+
+
+def seed_supermarket(db: DbSession, entity: Entity) -> None:
+    """A demo receipt whose arithmetic is worth reading, plus its price history."""
+    from app.models.receipts import Receipt, ReceiptItem
+    from app.services.receipts import arithmetic, prices_service
+    from app.services.receipts import service as receipts_service
+    from app.services.receipts.normalize import normalize_description
+
+    merchant = db.scalar(select(Merchant).where(Merchant.name == "Continente"))
+    if merchant is None:
+        return
+    purchased_at = dt.datetime(2026, 8, 12, 18, 30)
+    if db.scalar(
+        select(Receipt).where(Receipt.entity_id == entity.id, Receipt.purchased_at == purchased_at)
+    ):
+        return
+
+    gross = sum(Decimal(line["pvp"]) for line in DEMO_RECEIPT_LINES)
+    promos = sum(Decimal(line["promo"]) for line in DEMO_RECEIPT_LINES)
+    loyalty_discount = Decimal("0.50")
+    total = gross - promos - loyalty_discount
+
+    receipt = Receipt(
+        entity_id=entity.id,
+        merchant_id=merchant.id,
+        purchased_at=purchased_at,
+        purchase_date=purchased_at.date(),
+        total_eur=total,
+        total_discount_eur=loyalty_discount,
+        item_count=len(DEMO_RECEIPT_LINES),
+        status="NEEDS_REVIEW",
+        confidence=Decimal("0.720"),
+        decision_reasons=[{"rule": "seed", "detail": "Fatura de demonstração.", "score": "0.720"}],
+        loyalty_scheme="Cartão Continente",
+        loyalty_card_masked="XXXXXXXX3394X",
+        loyalty_discount_eur=loyalty_discount,
+        loyalty_accrued_eur=Decimal("0.42"),
+        parsed_payment_methods=[{"method": "Multibanco", "amount_eur": str(total)}],
+    )
+    db.add(receipt)
+    db.flush()
+
+    allocations = arithmetic.prorate_invoice_discount(
+        [
+            arithmetic.ProrationInput(Decimal(line["pvp"]), Decimal(line["promo"]))
+            for line in DEMO_RECEIPT_LINES
+        ],
+        loyalty_discount,
+    )
+    for index, (line, allocated) in enumerate(
+        zip(DEMO_RECEIPT_LINES, allocations, strict=True), start=1
+    ):
+        product = _find_or_create_demo_product(db, line)
+        quantity = Decimal(line["quantity"])
+        unit = line.get("unit", "UN")
+        canonical, canonical_unit = arithmetic.canonical_quantity(quantity, unit)
+        db.add(
+            ReceiptItem(
+                receipt_id=receipt.id,
+                entity_id=entity.id,
+                line_no=index,
+                merchant_section=line["section"],
+                description_raw=line["description"],
+                description_norm=normalize_description(line["description"]),
+                master_product_id=product.id,
+                quantity=quantity,
+                unit=unit,
+                quantity_canonical=canonical,
+                unit_canonical=canonical_unit,
+                weight_observed_kg=Decimal(line["weight"]) if line.get("weight") else None,
+                is_bulk_weighed=bool(line.get("bulk")),
+                unit_price_pvp_eur=Decimal(line["pvp"]),
+                promo_discount_eur=Decimal(line["promo"]),
+                invoice_allocated_discount_eur=allocated,
+                paid_price_eur=arithmetic.paid_from_components(
+                    unit_price_pvp_eur=Decimal(line["pvp"]),
+                    promo_discount_eur=Decimal(line["promo"]),
+                    invoice_allocated_discount_eur=allocated,
+                ),
+                iva_class_raw=line["iva"],
+                product_flag=line.get("flag"),
+                confidence=Decimal("0.800"),
+                decision_reasons=[
+                    {"rule": "seed", "detail": "Linha de demonstração.", "score": "0.800"}
+                ],
+            )
+        )
+    db.flush()
+    db.refresh(receipt)
+
+    # Appended by hand afterwards: it changes no printed figure at all.
+    receipts_service.append_fs_item(
+        db,
+        receipt,
+        description_raw=str(DEMO_FS_ARTICLE["description"]),
+        unit_price_pvp_eur=Decimal(str(DEMO_FS_ARTICLE["value"])),
+    )
+    prices_service.record_observations(db, receipt)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Carrega os dados de demonstração.")
     parser.add_argument(
@@ -587,7 +902,9 @@ def main() -> None:
             seed_settings(db)
             seed_categories(db)
             seed_merchants(db)
+            seed_parser_profiles(db)
             seed_tags(db, household)
+            seed_supermarket(db, entity)
             seed_lego(db, entity, alts=max(0, args.alts), offline=args.offline)
     except ValidationError as exc:
         sys.exit(exc.detail)

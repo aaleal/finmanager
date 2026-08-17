@@ -7,6 +7,7 @@ import { LoginPage } from '@/routes/login';
 import { SetupPage } from '@/routes/setup';
 import { DashboardPage } from '@/routes/dashboard';
 import { LegoPage } from '@/routes/lego';
+import { SupermercadoPage } from '@/routes/supermercado';
 import { ReviewPage } from '@/routes/review';
 import { HouseholdPage } from '@/routes/household';
 import { SettingsPage } from '@/routes/settings';
@@ -48,6 +49,7 @@ export default function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/lego" element={<LegoPage />} />
+        <Route path="/supermercado" element={<SupermercadoPage />} />
         <Route path="/revisao" element={<ReviewPage />} />
         <Route path="/agregado" element={<HouseholdPage />} />
         <Route path="/definicoes" element={<SettingsPage />} />

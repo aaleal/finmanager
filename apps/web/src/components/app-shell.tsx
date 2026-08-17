@@ -45,12 +45,12 @@ interface NavItem {
 
 const PRIMARY_NAV: NavItem[] = [
   { to: '/', label: 'Painel', icon: Gauge },
+  { to: '/supermercado', label: 'Supermercado', icon: ShoppingCart },
   { to: '/lego', label: 'Coleção LEGO', icon: Blocks },
   { to: '/revisao', label: 'Fila de revisão', icon: Inbox },
 ];
 
 const PLANNED_NAV: NavItem[] = [
-  { to: '/supermercado', label: 'Supermercado', icon: ShoppingCart, planned: true },
   { to: '/banca', label: 'Banca', icon: CreditCard, planned: true },
   { to: '/saude', label: 'Saúde', icon: HeartPulse, planned: true },
   { to: '/utilidades', label: 'Utilidades', icon: Zap, planned: true },
