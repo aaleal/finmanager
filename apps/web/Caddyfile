@@ -11,18 +11,27 @@
 
 	header {
 		X-Content-Type-Options nosniff
-		X-Frame-Options DENY
 		Referrer-Policy same-origin
 		-Server
 	}
 
+	# Signed document content is embedded same-origin in the review pane's
+	# <iframe> (ADR-0004); a blanket DENY below would block that framing
+	# entirely, so this route gets SAMEORIGIN instead.
+	handle /api/documents/* {
+		header X-Frame-Options SAMEORIGIN
+		reverse_proxy api:8000
+	}
+
 	# API and signed attachment routes stay on the backend.
 	handle /api/* {
+		header X-Frame-Options DENY
 		reverse_proxy api:8000
 	}
 
 	# Single-page app: hashed assets cache hard, index.html never does.
 	handle {
+		header X-Frame-Options DENY
 		root * /srv
 		@assets path /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"

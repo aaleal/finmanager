@@ -173,7 +173,7 @@ def seed_merchants(db: DbSession) -> None:
 PARSER_PROFILES: list[dict[str, Any]] = [
     {
         "merchant": "Continente",
-        "name": "Continente talão térmico",
+        "name": "Continente talão PDF",
         "parser_key": "continente_v1",
         "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
         "detection_patterns": [r"CONTINENTE\s+HIPERMERCADOS", r"Cartao cliente", r"MCH\s+\w+"],
@@ -190,7 +190,7 @@ PARSER_PROFILES: list[dict[str, Any]] = [
     },
     {
         "merchant": "Pingo Doce",
-        "name": "Pingo Doce fatura simplificada",
+        "name": "Pingo Doce fatura",
         "parser_key": "pingodoce_v1",
         "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
         "detection_patterns": [r"Pingo\s+Doce", r"500829993"],
@@ -204,7 +204,7 @@ PARSER_PROFILES: list[dict[str, Any]] = [
     },
     {
         "merchant": "Lidl",
-        "name": "Lidl fatura simplificada",
+        "name": "Lidl fatura",
         "parser_key": "lidl_v1",
         "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
         "detection_patterns": [r"LIDL", r"503340855"],

@@ -61,7 +61,7 @@ export function ProductPicker({
           type="button"
           disabled={disabled}
           className={cn(
-            'flex h-9 w-full items-center gap-2 rounded-lg border border-input bg-card px-3 py-1 text-left text-sm shadow-soft transition-colors',
+            'flex w-full items-center gap-2 rounded-lg border border-input bg-card px-3 py-1.5 text-left text-[length:inherit] shadow-soft transition-colors',
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
         >

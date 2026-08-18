@@ -10,6 +10,18 @@ import { ApiError } from '@/lib/api';
 import App from './App';
 import './index.css';
 
+// This app registers no service worker, so anything controlling the origin is a
+// leftover from another project on the same host:port and will hijack our
+// requests (notably the signed document fetch in the review pane).
+if ('serviceWorker' in navigator) {
+  void navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) => registrations.forEach((registration) => void registration.unregister()))
+    .catch(() => {
+      /* unsupported or blocked — nothing to clean up */
+    });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

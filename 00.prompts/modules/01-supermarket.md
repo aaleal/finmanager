@@ -419,7 +419,7 @@ future.
 | :--- | :--- | :--- |
 | `id` | `UUID` | Primary key |
 | `merchant_id` | `UUID?` | FK → Core `Merchant`; **`NULL` = the generic fallback profile** |
-| `name` | `String` | e.g. `"Continente talão térmico"` |
+| `name` | `String` | e.g. `"Continente talão PDF"` |
 | `parser_key` | `String` | Registered parser implementation, e.g. `continente_v1` |
 | `document_kinds` | `JSONB` | Which inputs it handles: `PDF_DIGITAL` \| `IMAGE_SCAN` |
 | `detection_patterns` | `JSONB` | Regexes / anchor strings that identify this merchant's layout |

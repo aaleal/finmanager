@@ -42,7 +42,7 @@ _CARD = re.compile(r"Cartao cliente n[ºo°]?\s*([X\d]+)", re.IGNORECASE)
 
 class ContinenteParser:
     key = "continente_v1"
-    display_name = "Continente talão térmico"
+    display_name = "Continente talão PDF"
 
     def parse(self, extraction: Extraction, hints: dict) -> ParsedReceipt:
         lines = [normalize_line(line) for line in extraction.lines]

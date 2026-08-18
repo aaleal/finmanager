@@ -14,7 +14,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import type { FsFilter, ProductSearchResult, ReceiptItem } from '@/lib/types';
+import type { ProductSearchResult, ReceiptItem } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, Input, Textarea } from '@/components/ui/input';
@@ -46,7 +46,7 @@ import { Skeleton } from '@/components/ui/feedback';
 import { EM_DASH, date, eur, percent, quantity, weightKg } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
-import { FS_FILTER_OPTIONS, RECEIPT_STATUS_META } from './constants';
+import { RECEIPT_STATUS_META } from './constants';
 import { WhyPopover } from './why-popover';
 import { AddFsItemDialog } from './fs-item-dialog';
 import { ProductPicker } from './product-picker';
@@ -306,10 +306,56 @@ function ItemTableHead() {
   );
 }
 
+/**
+ * Fetch the signed document once and hand the frame a `blob:` URL.
+ *
+ * Framing the signed URL directly is at the mercy of whatever the origin sends
+ * back — a global `X-Frame-Options: DENY`, or a stale service worker answering
+ * with the SPA shell, both collapse the pane into "recusou-se a ligar". A blob
+ * has no response headers and no service worker in front of it.
+ */
+function useDocumentBlob(url: string | null) {
+  const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
+  const [failed, setFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!url) {
+      setObjectUrl(null);
+      setFailed(false);
+      return;
+    }
+    let revoked: string | null = null;
+    const controller = new AbortController();
+    setObjectUrl(null);
+    setFailed(false);
+
+    fetch(url, { credentials: 'same-origin', signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(String(response.status));
+        return response.blob();
+      })
+      .then((blob) => {
+        revoked = URL.createObjectURL(blob);
+        setObjectUrl(revoked);
+      })
+      .catch((error: unknown) => {
+        if ((error as Error)?.name !== 'AbortError') setFailed(true);
+      });
+
+    return () => {
+      controller.abort();
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [url]);
+
+  return { objectUrl, failed };
+}
+
 /** The original, narrow but zoomable — reading a thermal *talão* needs both. */
 function DocumentPane({ url }: { url: string | null }) {
   const [zoomIndex, setZoomIndex] = React.useState(2);
   const zoom = ZOOM_STEPS[zoomIndex] ?? 1;
+  const { objectUrl, failed } = useDocumentBlob(url);
 
   return (
     <div className="flex min-h-0 flex-col border-b border-border bg-muted lg:border-b-0 lg:border-r">
@@ -340,9 +386,9 @@ function DocumentPane({ url }: { url: string | null }) {
           <Button variant="ghost" size="icon-sm" aria-label="Repor" onClick={() => setZoomIndex(2)}>
             <Maximize2 />
           </Button>
-          {url ? (
+          {objectUrl ? (
             <a
-              href={url}
+              href={objectUrl}
               target="_blank"
               rel="noreferrer noopener"
               className="ml-1 flex items-center gap-1 text-xs text-primary hover:underline"
@@ -354,7 +400,21 @@ function DocumentPane({ url }: { url: string | null }) {
         </div>
       </div>
       <div className="min-h-[16rem] flex-1 overflow-auto">
-        {url ? (
+        {!url ? (
+          <div className="flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            Sem documento associado — esta fatura não veio de um carregamento, por isso não há
+            original para mostrar nem para reprocessar.
+          </div>
+        ) : failed ? (
+          <div className="flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            Não foi possível carregar o original. A ligação assinada expira ao fim de alguns
+            minutos — feche e reabra a fatura.
+          </div>
+        ) : !objectUrl ? (
+          <div className="p-3">
+            <Skeleton className="h-64" />
+          </div>
+        ) : (
           <div
             style={{
               width: `${100 / zoom}%`,
@@ -363,14 +423,7 @@ function DocumentPane({ url }: { url: string | null }) {
               transformOrigin: 'top left',
             }}
           >
-            {/* Signed and time-limited: an <iframe> cannot send a CSRF header, so
-                the signature in this URL *is* the authorisation (ADR-0004). */}
-            <iframe title="Documento original" src={url} className="size-full border-0" />
-          </div>
-        ) : (
-          <div className="flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-            Sem documento associado — esta fatura não veio de um carregamento, por isso não há
-            original para mostrar nem para reprocessar.
+            <iframe title="Documento original" src={objectUrl} className="size-full border-0" />
           </div>
         )}
       </div>
@@ -405,7 +458,8 @@ export function ReceiptReviewPane({
   const [drafts, setDrafts] = React.useState<
     Record<string, Partial<Record<EditableField, string>>>
   >({});
-  const [itemsFsFilter, setItemsFsFilter] = React.useState<FsFilter>('all');
+  const [tableDensity, setTableDensity] = React.useState<'comfortable' | 'compact'>('comfortable');
+  const [tableFontSize, setTableFontSize] = React.useState<'xs' | 'sm' | 'base'>('sm');
 
   const receipt = receiptQuery.data ?? null;
 
@@ -416,7 +470,6 @@ export function ReceiptReviewPane({
       setVoidOpen(false);
       setVoidReason('');
       setNewProduct(null);
-      setItemsFsFilter('all');
     }
   }, [receiptId]);
 
@@ -486,9 +539,6 @@ export function ReceiptReviewPane({
   const documentUrl = receipt?.document_url ?? null;
   const printedItems = receipt?.items.filter((item) => !item.is_fs) ?? [];
   const fsItems = receipt?.items.filter((item) => item.is_fs) ?? [];
-  // "Só Fs"/"Sem Fs" hide one of the two tables outright; filtering never refetches.
-  const visiblePrintedItems = itemsFsFilter === 'only' ? [] : printedItems;
-  const showFsSection = itemsFsFilter !== 'exclude';
 
   const itemRowProps = (item: ReceiptItem) => ({
     item,
@@ -597,37 +647,52 @@ export function ReceiptReviewPane({
                   ) : null}
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-4">
-                  <span className="text-xs font-medium text-muted-foreground">Artigos</span>
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-4">
                   <Select
-                    value={itemsFsFilter}
-                    onValueChange={(value) => setItemsFsFilter(value as FsFilter)}
+                    value={tableFontSize}
+                    onValueChange={(value) => setTableFontSize(value as 'xs' | 'sm' | 'base')}
+                  >
+                    <SelectTrigger className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="xs">Texto pequeno</SelectItem>
+                      <SelectItem value="sm">Texto normal</SelectItem>
+                      <SelectItem value="base">Texto grande</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={tableDensity}
+                    onValueChange={(value) => setTableDensity(value as 'comfortable' | 'compact')}
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {FS_FILTER_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="comfortable">Confortável</SelectItem>
+                      <SelectItem value="compact">Compacta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-4 pb-4">
+                <div
+                  className={cn(
+                    'space-y-4 pb-4',
+                    tableDensity === 'compact' && '[&_td]:py-1 [&_th]:h-7',
+                    tableFontSize === 'base' && '[&_table]:text-base',
+                    tableFontSize === 'xs' && '[&_table]:text-xs',
+                  )}
+                >
                   <Table>
                     <ItemTableHead />
                     <TableBody>
-                      {visiblePrintedItems.map((item, index) => (
+                      {printedItems.map((item, index) => (
                         <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
                       ))}
                     </TableBody>
                   </Table>
 
-                  {showFsSection ? (
-                    <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+                  <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-sm font-semibold">Artigos Fs</p>
                         <div className="flex items-center gap-3">
@@ -644,7 +709,7 @@ export function ReceiptReviewPane({
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Nunca estiveram na fatura: o pago é sempre 0,00 e o valor nocional é o PVP
-                        vezes a quantidade. Nenhum total impresso muda por causa deles.
+                        vezes a quantidade.
                       </p>
                       {fsItems.length ? (
                         <Table>
@@ -661,7 +726,6 @@ export function ReceiptReviewPane({
                         </p>
                       )}
                     </div>
-                  ) : null}
                 </div>
 
                 {canWrite ? (
