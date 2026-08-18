@@ -693,39 +693,39 @@ export function ReceiptReviewPane({
                   </Table>
 
                   <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold">Artigos Fs</p>
-                        <div className="flex items-center gap-3">
-                          <p className="numeric text-sm font-medium">
-                            {eur(receipt.derived.fs_value_eur)}
-                          </p>
-                          {canWrite ? (
-                            <Button size="sm" variant="outline" onClick={() => setAddFsOpen(true)}>
-                              <Plus />
-                              Adicionar artigo Fs
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Nunca estiveram na fatura: o pago é sempre 0,00 e o valor nocional é o PVP
-                        vezes a quantidade.
-                      </p>
-                      {fsItems.length ? (
-                        <Table>
-                          <ItemTableHead />
-                          <TableBody>
-                            {fsItems.map((item, index) => (
-                              <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
-                            ))}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <p className="py-2 text-sm text-muted-foreground">
-                          Nenhum artigo Fs nesta fatura.
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold">Artigos Fs</p>
+                      <div className="flex items-center gap-3">
+                        <p className="numeric text-sm font-medium">
+                          {eur(receipt.derived.fs_value_eur)}
                         </p>
-                      )}
+                        {canWrite ? (
+                          <Button size="sm" variant="outline" onClick={() => setAddFsOpen(true)}>
+                            <Plus />
+                            Adicionar artigo Fs
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Nunca estiveram na fatura: o pago é sempre 0,00 e o valor nocional é o PVP
+                      vezes a quantidade.
+                    </p>
+                    {fsItems.length ? (
+                      <Table>
+                        <ItemTableHead />
+                        <TableBody>
+                          {fsItems.map((item, index) => (
+                            <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="py-2 text-sm text-muted-foreground">
+                        Nenhum artigo Fs nesta fatura.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {canWrite ? (

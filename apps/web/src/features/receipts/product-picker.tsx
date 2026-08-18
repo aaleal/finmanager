@@ -66,7 +66,9 @@ export function ProductPicker({
           )}
         >
           <Search className="size-4 shrink-0 text-muted-foreground" />
-          <span className={cn('truncate', !value && 'text-placeholder')}>{value ?? placeholder}</span>
+          <span className={cn('truncate', !value && 'text-placeholder')}>
+            {value ?? placeholder}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-96 space-y-2 p-2" align="start">
