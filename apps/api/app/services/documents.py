@@ -11,7 +11,9 @@ never re-fetched at render time (§1a, M9 FR-9.11).
 from __future__ import annotations
 
 import hashlib
+import os
 import uuid
+from contextlib import suppress
 from pathlib import Path
 
 import filetype
@@ -32,6 +34,14 @@ ALLOWED_MIME_TYPES = {
 }
 
 _MAX_REMOTE_BYTES = 15 * 1024 * 1024
+
+#: The storage volume is shared by containers running as two different users —
+#: the API serves as `finmanager`, while seeding, tests and the dev overlay run
+#: as root. Both are in the `finmanager` group, so everything written here is
+#: group-writable and every directory is setgid; otherwise whichever container
+#: created a shard first locks the other one out (ADR-0024).
+_DIR_MODE = 0o2775
+_FILE_MODE = 0o664
 
 
 def _detect_mime(data: bytes) -> str:
@@ -56,6 +66,24 @@ def _storage_path(sha256_hash: str, mime: str) -> Path:
     return Path(sha256_hash[:2]) / sha256_hash[2:4] / f"{sha256_hash}{suffix}"
 
 
+def _mkdir_shared(directory: Path) -> None:
+    """Create the shard directory, then force the mode the umask would have eaten.
+
+    The mode is re-applied even to a directory that already exists: a shard
+    created before this rule, or by a container with a stricter umask, would
+    otherwise stay locked to whoever created it first.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    root = settings.storage_root
+    for path in (*reversed(directory.parents), directory):
+        if path != root and root not in path.parents:
+            continue
+        if path.stat().st_mode & _DIR_MODE == _DIR_MODE:
+            continue
+        with suppress(OSError):  # another container owns it; nothing to repair from here
+            os.chmod(path, _DIR_MODE)
+
+
 def store_bytes(
     db: DbSession,
     data: bytes,
@@ -78,8 +106,10 @@ def store_bytes(
 
     relative = _storage_path(sha256_hash, mime)
     absolute = settings.storage_root / relative
-    absolute.parent.mkdir(parents=True, exist_ok=True)
+    _mkdir_shared(absolute.parent)
     absolute.write_bytes(data)
+    with suppress(OSError):
+        os.chmod(absolute, _FILE_MODE)
 
     document = Document(
         sha256_hash=sha256_hash,

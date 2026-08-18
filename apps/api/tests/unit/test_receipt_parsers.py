@@ -16,9 +16,10 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from app.seed import INVOICES_DIR
 from app.services.receipts import arithmetic, extraction, fiscal, parsers
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "receipts"
+FIXTURES = INVOICES_DIR
 GOLDEN = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
 
 # (fixture, parser_key, printed total, invoice-level credit, article count)

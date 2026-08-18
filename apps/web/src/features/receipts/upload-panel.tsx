@@ -1,14 +1,35 @@
 import * as React from 'react';
 import { Camera, FileText, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Field } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useUploadReceipts } from './api';
+import { useParserProfiles, useUploadReceipts } from './api';
+import { ReceiptQueueTable } from './queue-table';
 
 const ACCEPT = 'application/pdf,image/*';
+/** Detection picks the profile unless the household overrides it. */
+const AUTO_PROFILE = '__auto__';
 
-export function ReceiptUploadPanel() {
+export function ReceiptUploadPanel({ onUploaded }: { onUploaded?: () => void }) {
   const upload = useUploadReceipts();
+  const profiles = useParserProfiles();
   const [files, setFiles] = React.useState<File[]>([]);
+  const [profileId, setProfileId] = React.useState(AUTO_PROFILE);
   const [dragging, setDragging] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const cameraRef = React.useRef<HTMLInputElement>(null);
@@ -24,8 +45,12 @@ export function ReceiptUploadPanel() {
 
   async function submit() {
     if (!files.length) return;
-    await upload.mutateAsync(files);
+    await upload.mutateAsync({
+      files,
+      parserProfileId: profileId === AUTO_PROFILE ? undefined : profileId,
+    });
     setFiles([]);
+    onUploaded?.();
   }
 
   return (
@@ -42,7 +67,7 @@ export function ReceiptUploadPanel() {
           addFiles(event.dataTransfer.files);
         }}
         className={cn(
-          'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/50 px-6 py-14 text-center transition-colors',
+          'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/50 px-6 py-12 text-center transition-colors',
           dragging && 'border-primary bg-primary/5',
         )}
       >
@@ -52,8 +77,7 @@ export function ReceiptUploadPanel() {
         <div className="space-y-1">
           <p className="font-medium">Arraste as faturas para aqui</p>
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-            Pode largar várias faturas de uma vez — cada uma é processada de forma
-            independente.
+            Pode largar várias faturas de uma vez — cada uma é processada de forma independente.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -90,6 +114,27 @@ export function ReceiptUploadPanel() {
         />
       </div>
 
+      <Field
+        label="Perfil de leitura"
+        hint="Por omissão o comerciante é detetado no documento e escolhe o perfil. Force um perfil quando a deteção falhar — fica gravado na fatura."
+      >
+        <Select value={profileId} onValueChange={setProfileId}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={AUTO_PROFILE}>Detetar automaticamente</SelectItem>
+            {(profiles.data ?? [])
+              .filter((profile) => profile.is_active)
+              .map((profile) => (
+                <SelectItem key={profile.id} value={profile.id}>
+                  {profile.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
       {files.length ? (
         <div className="space-y-2 rounded-xl border border-border bg-card p-4">
           <ul className="space-y-1.5">
@@ -120,5 +165,40 @@ export function ReceiptUploadPanel() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Carregar is an action, not a place (ADR-0026): the drop zone and the live
+ * processing queue live in a modal opened from the invoice list, so uploading
+ * never costs the household its position in the list it was looking at.
+ */
+export function ReceiptUploadDialog() {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <UploadCloud />
+          Carregar faturas
+        </Button>
+      </DialogTrigger>
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UploadCloud className="size-4" />
+            Carregar faturas
+          </DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-6">
+          <ReceiptUploadPanel />
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Em processamento</p>
+            <ReceiptQueueTable compact />
+          </div>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }

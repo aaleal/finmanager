@@ -15,7 +15,7 @@ import { useDebounced, useUrlFilters } from '@/lib/filters';
 import { FS_FILTER_OPTIONS, RECEIPT_STATUS_OPTIONS } from '@/features/receipts/constants';
 import { useReceiptItems, useReceipts } from '@/features/receipts/api';
 import { ReceiptStatusPanel } from '@/features/receipts/status-panel';
-import { ReceiptUploadPanel } from '@/features/receipts/upload-panel';
+import { ReceiptUploadDialog } from '@/features/receipts/upload-panel';
 import { ReceiptQueueTable } from '@/features/receipts/queue-table';
 import { ReceiptsTable } from '@/features/receipts/receipts-table';
 import { ReceiptItemsTable } from '@/features/receipts/items-table';
@@ -40,6 +40,9 @@ const DEFAULTS = {
   fs: 'all',
   page: '1',
   page_size: '25',
+  //: Which invoice the review pane is open on, so the shared Review Queue can
+  //: deep-link straight into it (ADR-0025) and the screen stays bookmarkable.
+  receipt: undefined,
 } satisfies Record<string, string | undefined>;
 
 function FilterBar({
@@ -63,8 +66,8 @@ function FilterBar({
   }, [debouncedSearch, filters.search, setFilters]);
 
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="relative">
+    <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="relative min-w-0">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           className="pl-9"
@@ -81,7 +84,7 @@ function FilterBar({
             setFilters({ status: value === ALL ? undefined : value, page: '1' })
           }
         >
-          <SelectTrigger>
+          <SelectTrigger className="min-w-0">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +102,7 @@ function FilterBar({
         value={filters.fs ?? 'all'}
         onValueChange={(value) => setFilters({ fs: value, page: '1' })}
       >
-        <SelectTrigger>
+        <SelectTrigger className="min-w-0">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -111,17 +114,23 @@ function FilterBar({
         </SelectContent>
       </Select>
 
-      <div className="flex items-center gap-2">
+      {/* Two date inputs in one grid cell used to overflow the card on narrow
+          viewports: they now wrap onto their own row instead of spilling out. */}
+      <div className="flex min-w-0 flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-1">
         <Input
           type="date"
           aria-label="De"
+          className="min-w-0 flex-1 basis-36"
           value={filters.date_from ?? ''}
-          onChange={(event) => setFilters({ date_from: event.target.value || undefined, page: '1' })}
+          onChange={(event) =>
+            setFilters({ date_from: event.target.value || undefined, page: '1' })
+          }
         />
-        <span className="text-muted-foreground">–</span>
+        <span className="shrink-0 text-muted-foreground">–</span>
         <Input
           type="date"
           aria-label="Até"
+          className="min-w-0 flex-1 basis-36"
           value={filters.date_to ?? ''}
           onChange={(event) => setFilters({ date_to: event.target.value || undefined, page: '1' })}
         />
@@ -133,9 +142,9 @@ function FilterBar({
 export function SupermercadoPage() {
   const { canWrite } = useSession();
   const [filters, setFilters] = useUrlFilters(DEFAULTS);
-  const [selectedReceiptId, setSelectedReceiptId] = React.useState<string | null>(null);
 
   const tab = filters.tab ?? 'estado';
+  const selectedReceiptId = filters.receipt ?? null;
 
   const receipts = useReceipts({
     search: filters.search,
@@ -156,9 +165,10 @@ export function SupermercadoPage() {
     page_size: filters.page_size,
   });
 
-  function openReceipt(receiptId: string) {
-    setSelectedReceiptId(receiptId);
-  }
+  const openReceipt = React.useCallback(
+    (receiptId: string) => setFilters({ receipt: receiptId }, { resetPage: false }),
+    [setFilters],
+  );
 
   return (
     <div className="space-y-6">
@@ -170,8 +180,7 @@ export function SupermercadoPage() {
       <Tabs value={tab} onValueChange={(value) => setFilters({ tab: value })}>
         <TabsList>
           <TabsTrigger value="estado">Estado</TabsTrigger>
-          {canWrite ? <TabsTrigger value="carregar">Carregar</TabsTrigger> : null}
-          <TabsTrigger value="fila">Fila</TabsTrigger>
+          <TabsTrigger value="processamento">Processamento</TabsTrigger>
           <TabsTrigger value="faturas">Faturas</TabsTrigger>
           <TabsTrigger value="artigos">Artigos</TabsTrigger>
           <TabsTrigger value="precos">Preços</TabsTrigger>
@@ -189,17 +198,18 @@ export function SupermercadoPage() {
           />
         </TabsContent>
 
-        {canWrite ? (
-          <TabsContent value="carregar">
-            <ReceiptUploadPanel />
-          </TabsContent>
-        ) : null}
-
-        <TabsContent value="fila">
+        {/* The *processing* queue: one row per parse job. Everything a human has
+            to decide lives in the single shared Review Queue at /revisao. */}
+        <TabsContent value="processamento">
           <ReceiptQueueTable onOpen={openReceipt} />
         </TabsContent>
 
         <TabsContent value="faturas" className="space-y-4">
+          {canWrite ? (
+            <div className="flex justify-end">
+              <ReceiptUploadDialog />
+            </div>
+          ) : null}
           <FilterBar filters={filters} setFilters={setFilters} showStatus />
           <ReceiptsTable
             data={receipts.data}
@@ -252,7 +262,10 @@ export function SupermercadoPage() {
         </TabsContent>
       </Tabs>
 
-      <ReceiptReviewPane receiptId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
+      <ReceiptReviewPane
+        receiptId={selectedReceiptId}
+        onClose={() => setFilters({ receipt: undefined }, { resetPage: false })}
+      />
     </div>
   );
 }

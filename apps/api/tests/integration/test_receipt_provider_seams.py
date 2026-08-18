@@ -13,20 +13,19 @@ import socket
 import uuid
 from collections.abc import Iterator
 from decimal import Decimal
-from pathlib import Path
 from typing import Any
 
 import pytest
 from app.models import Entity, User
 from app.models.receipts import ReceiptItem
-from app.seed import seed_categories, seed_merchants, seed_parser_profiles
+from app.seed import INVOICES_DIR, seed_categories, seed_merchants, seed_parser_profiles
 from app.services.receipts import pipeline
 from app.services.receipts import service as receipts
 from sqlalchemy.orm import Session
 
 pytestmark = pytest.mark.integration
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "receipts"
+FIXTURES = INVOICES_DIR
 
 
 @pytest.fixture

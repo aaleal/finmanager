@@ -39,7 +39,20 @@ function ReceiptStatusBadge({ status }: { status: string }) {
   );
 }
 
-export function ReceiptQueueTable({ onOpen }: { onOpen: (receiptId: string) => void }) {
+/**
+ * The **processing** queue (UX-1.1): one row per `ProcessingJob`, with the
+ * parser profile that ran and retry from the stored document.
+ *
+ * This is not a review queue and must never become one — everything a human has
+ * to decide lives in the single shared Review Queue (`components/review-queue`).
+ */
+export function ReceiptQueueTable({
+  onOpen,
+  compact = false,
+}: {
+  onOpen?: (receiptId: string) => void;
+  compact?: boolean;
+}) {
   const queue = useReceiptQueue();
   const reparse = useReparse();
   const { canWrite } = useSession();
@@ -47,7 +60,7 @@ export function ReceiptQueueTable({ onOpen }: { onOpen: (receiptId: string) => v
   if (queue.isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 4 }).map((_, index) => (
+        {Array.from({ length: compact ? 2 : 4 }).map((_, index) => (
           <Skeleton key={index} className="h-12 rounded-lg" />
         ))}
       </div>
@@ -58,6 +71,8 @@ export function ReceiptQueueTable({ onOpen }: { onOpen: (receiptId: string) => v
     return <EmptyState title="Nada em processamento." />;
   }
 
+  const entries = compact ? queue.data.slice(0, 10) : queue.data;
+
   return (
     <Table>
       <TableHeader>
@@ -66,64 +81,66 @@ export function ReceiptQueueTable({ onOpen }: { onOpen: (receiptId: string) => v
           <TableHead>Comerciante</TableHead>
           <TableHead>Perfil de leitura</TableHead>
           <TableHead>Estado</TableHead>
-          <TableHead>Tentativas</TableHead>
+          {compact ? null : <TableHead>Tentativas</TableHead>}
           <TableHead>Confiança</TableHead>
           <TableHead>Motivo da falha</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {queue.data.map((entry: QueueEntry) => {
+        {entries.map((entry: QueueEntry) => {
           const receiptId = entry.receipt_id;
           return (
-          <TableRow key={entry.processing_job_id}>
-            <TableCell className="max-w-[14rem] truncate" title={entry.filename ?? undefined}>
-              {entry.filename ?? '—'}
-            </TableCell>
-            <TableCell>{entry.merchant_name ?? '—'}</TableCell>
-            <TableCell>{entry.parser_profile_name ?? '—'}</TableCell>
-            <TableCell>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <JobStatusBadge status={entry.job_status} />
-                <ReceiptStatusBadge status={entry.status} />
-              </div>
-            </TableCell>
-            <TableCell className="numeric">
-              {entry.attempts}/{entry.max_attempts}
-            </TableCell>
-            <TableCell className="numeric">
-              {percent(entry.confidence !== null ? Number(entry.confidence) * 100 : null)}
-            </TableCell>
-            <TableCell
-              className="max-w-[16rem] truncate text-muted-foreground"
-              title={entry.last_error ?? undefined}
-            >
-              {entry.last_error ?? '—'}
-            </TableCell>
-            <TableCell>
-              <div className="flex justify-end gap-2">
-                {canWrite ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    title="Reprocessa a partir do documento guardado — nunca pede um novo carregamento."
-                    loading={reparse.isPending}
-                    disabled={!receiptId}
-                    onClick={() => receiptId && reparse.mutate({ receiptId })}
-                  >
-                    <RotateCcw />
-                    Reprocessar
-                  </Button>
-                ) : null}
-                {receiptId ? (
-                  <Button size="sm" variant="ghost" onClick={() => onOpen(receiptId)}>
-                    <Search />
-                    Rever
-                  </Button>
-                ) : null}
-              </div>
-            </TableCell>
-          </TableRow>
+            <TableRow key={entry.processing_job_id}>
+              <TableCell className="max-w-[14rem] truncate" title={entry.filename ?? undefined}>
+                {entry.filename ?? '—'}
+              </TableCell>
+              <TableCell>{entry.merchant_name ?? '—'}</TableCell>
+              <TableCell>{entry.parser_profile_name ?? '—'}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <JobStatusBadge status={entry.job_status} />
+                  <ReceiptStatusBadge status={entry.status} />
+                </div>
+              </TableCell>
+              {compact ? null : (
+                <TableCell className="numeric">
+                  {entry.attempts}/{entry.max_attempts}
+                </TableCell>
+              )}
+              <TableCell className="numeric">
+                {percent(entry.confidence !== null ? Number(entry.confidence) * 100 : null)}
+              </TableCell>
+              <TableCell
+                className="max-w-[16rem] truncate text-muted-foreground"
+                title={entry.last_error ?? undefined}
+              >
+                {entry.last_error ?? '—'}
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-2">
+                  {canWrite ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      title="Reprocessa a partir do documento guardado — nunca pede um novo carregamento."
+                      loading={reparse.isPending}
+                      disabled={!receiptId}
+                      onClick={() => receiptId && reparse.mutate({ receiptId })}
+                    >
+                      <RotateCcw />
+                      Reprocessar
+                    </Button>
+                  ) : null}
+                  {receiptId && onOpen ? (
+                    <Button size="sm" variant="ghost" onClick={() => onOpen(receiptId)}>
+                      <Search />
+                      Rever
+                    </Button>
+                  ) : null}
+                </div>
+              </TableCell>
+            </TableRow>
           );
         })}
       </TableBody>

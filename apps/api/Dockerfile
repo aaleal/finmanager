@@ -22,8 +22,17 @@ COPY requirements.txt requirements-dev.txt ./
 RUN pip install -r requirements.txt
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+# The app user is created in *base* so dev and runtime agree on uid/gid: both
+# stages mount the same `storage-data` volume, and a document written by one has
+# to stay writable by the other. `2775` makes the group sticky, so a file created
+# by the root dev container is still group-writable by the runtime user.
 RUN chmod +x /app/docker-entrypoint.sh \
- && mkdir -p /var/lib/finmanager/storage
+ && groupadd --gid 10001 finmanager \
+ && useradd --uid 10001 --gid 10001 --create-home --shell /usr/sbin/nologin finmanager \
+ && mkdir -p /var/lib/finmanager/storage \
+ && chown -R root:finmanager /var/lib/finmanager \
+ && chmod -R 2775 /var/lib/finmanager
 
 # ---------------------------------------------------------------------------
 # dev — adds the tooling needed by `make check`; source is bind-mounted
@@ -34,12 +43,12 @@ COPY . /app
 CMD ["/app/docker-entrypoint.sh", "api-dev"]
 
 # ---------------------------------------------------------------------------
-# runtime — non-root, no dev tooling
+# runtime — no dev tooling. The container starts as root only long enough to
+# reconcile the storage volume's ownership; the entrypoint drops to `finmanager`
+# before anything that serves a request runs (ADR-0024).
 # ---------------------------------------------------------------------------
 FROM base AS runtime
 COPY . /app
-RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin finmanager \
- && chown -R finmanager:finmanager /app /var/lib/finmanager
-USER finmanager
+RUN chown -R finmanager:finmanager /app
 EXPOSE 8000
 CMD ["/app/docker-entrypoint.sh", "api"]

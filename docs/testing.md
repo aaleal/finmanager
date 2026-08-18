@@ -45,12 +45,13 @@ development data.
 | `integration/test_receipt_price_history.py` | The M1c exit criterion, 14 tests: observations are frozen on confirm; recording twice writes nothing; a correction appends and never rewrites; an Fs observation carries the notional value in **both** price columns and never `0.00`; €/kg trends across merchants; the `fs` filter redraws the series; a missing weight leaves €/kg `NULL`; last known price pre-fills manual entry; shrinkflation fires on a seeded 250 g → 200 g case at the same price (`margin_signal = −0.2000`); a stable pack fires nothing; fewer than three priors fires nothing; an Fs article moves the notional measure and nothing else; loyalty is a `GROUP BY`; the ledger link degrades honestly. Also covers a pack-variant case: a 500 g and a 1 kg bag of one product yield directly comparable €/kg (13,96 and 13,60), with the weight read from the size token in the description |
 | `integration/test_receipt_provider_seams.py` | Protects the rubric bullets *«the full pipeline completes with egress blocked, at default settings»* and *«the provider seam is exercised by a fake remote engine, proving a stage can be swapped without touching the pipeline»*: monkeypatches `socket.socket.connect` to raise on anything other than Postgres and Redis, then parses a real Continente PDF end to end; registers a `FakeRemoteResolver` through `pipeline.register_product_resolver()` and asserts every line resolves through it, and that passing `None` reports `product_match_unavailable` rather than scoring a failure |
 | `integration/test_receipt_api_surface.py` | Protects the Module 1 HTTP surface — see below |
+| `integration/test_document_storage_permissions.py` | Protects the P0 that blocked every upload: the `storage-data` volume is mounted by containers running as two different users, so a stored document must stay group-writable and its hash shards setgid, whichever container created them first ([ADR-0024](decisions/0024-attachment-storage-is-group-owned.md)) |
 
 ### Golden extraction fixtures
 
 `apps/api/tests/fixtures/golden/` pins the **extraction** stage, not the parse:
  one committed JSON of word boxes (`engine`, `document_kind`, per-page `lines`)
-per real *talão* under `apps/api/tests/fixtures/receipts/` — four Continente,
+per real *talão* under `apps/api/app/seed/data/invoices/` — four Continente,
 four Pingo Doce, two Lidl PDFs and the one Piquete photograph. With the word
 boxes committed, a parser change shows up as a diff in parsed output alone, and
 an extractor upgrade (a `pdfplumber`/`pytesseract` version bump, say) shows up

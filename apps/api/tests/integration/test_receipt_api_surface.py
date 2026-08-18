@@ -10,16 +10,15 @@ from __future__ import annotations
 
 import contextlib
 import uuid
-from pathlib import Path
 
 import pytest
-from app.seed import seed_categories, seed_merchants, seed_parser_profiles
+from app.seed import INVOICES_DIR, seed_categories, seed_merchants, seed_parser_profiles
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 pytestmark = pytest.mark.integration
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "receipts"
+FIXTURES = INVOICES_DIR
 
 SETUP = {
     "household_name": "Casa de Teste",

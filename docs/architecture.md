@@ -23,6 +23,15 @@ flowchart LR
   worker --> storage
 ```
 
+The `storage-data` volume is the one piece of state shared between containers
+that run as different users: `api` and `worker` serve as `finmanager` (uid
+10001), while one-shot commands (`./fm seed`, `./fm check`) and the dev overlay
+run as root against the bind-mounted source. Both are in the `finmanager` group
+and the tree is setgid and group-writable, so neither can lock the other out —
+see [ADR-0024](decisions/0024-attachment-storage-is-group-owned.md). The API
+container starts as root only long enough to reconcile that volume, then drops
+privileges before `alembic` or `uvicorn` run.
+
 In production the `web` image is a multi-stage build whose final stage **is** Caddy:
 it serves the hashed static bundle and proxies `/api/*` to `api:8000`. Only port
 8080 is published. In development (`make dev`) `web` runs the Vite dev server

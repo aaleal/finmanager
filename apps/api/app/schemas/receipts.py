@@ -56,6 +56,12 @@ class ReceiptItemOut(ApiModel):
     price_per_kg_unavailable_reason: str | None = None
     notional_value_eur: Decimal | None = None
     display_name: str | None = None
+    #: ``L1 › L2 › L3`` off the resolved product — a category lives on
+    #: ``MasterProduct`` and nowhere else (Decision #34), so an unresolved line
+    #: has none and that is the truth.
+    category_path: str | None = None
+    #: Priced per kg at the counter, so the printed quantity is meaningless.
+    sold_by_weight: bool = False
 
 
 class ReceiptItemUpdate(BaseModel):
@@ -120,13 +126,16 @@ class ReceiptSummary(ApiModel):
     loyalty_scheme: str | None
     fs_value_eur: Decimal = Decimal("0.00")
     fs_item_count: int = 0
+    #: Counted over non-Fs rows only — the figure the printed ``item_count`` is
+    #: checked against, and the left-hand side of the `5/2` reading in the list.
+    printed_item_count: int = 0
     notional_total_eur: Decimal = Decimal("0.00")
     is_reconciled: bool = True
+    parser_profile_id: uuid.UUID | None = None
     parser_profile_name: str | None = None
 
 
 class ReceiptDetail(ReceiptSummary):
-    parser_profile_id: uuid.UUID | None
     processing_job_id: uuid.UUID | None
     import_batch_id: uuid.UUID | None
     atcud_valid: bool | None

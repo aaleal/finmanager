@@ -19,6 +19,7 @@ import datetime as dt
 import json
 import re
 import sys
+import time
 import unicodedata
 from decimal import Decimal
 from pathlib import Path
@@ -39,6 +40,11 @@ from app.services import documents, settings_service
 DATA_DIR = Path(__file__).parent / "data"
 TAXONOMY_FILE = DATA_DIR / "supermarket-categories.pt-PT.json"
 INVENTORY_FILE = DATA_DIR / "lego-inventory.json"
+#: The eleven real *talões* — four Continente, four Pingo Doce, two Lidl and one
+#: Piquete photograph. They are seed data, not test scaffolding: the household's
+#: own invoices are what the module is judged on, and the parser tests read the
+#: very same files so a fixture and a demo can never drift apart.
+INVOICES_DIR = DATA_DIR / "invoices"
 
 
 def slugify(value: str) -> str:
@@ -542,7 +548,7 @@ def inventory_sets() -> tuple[list[tuple[str, str | None]], list[dict[str, Any]]
     return storage, specs
 
 
-def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3, offline: bool = False) -> None:
+def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3) -> None:
     inventory_storage, inventory_specs = inventory_sets()
 
     locations: dict[tuple[str, str | None], StorageLocation] = {}
@@ -558,7 +564,9 @@ def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3, offline: bool = F
         )
 
     today = dt.date.today()
-    for spec in SETS + inventory_specs:
+    all_specs = SETS + inventory_specs
+    total = len(all_specs)
+    for index, spec in enumerate(all_specs, start=1):
         # A set number is unique per entity; a MOC has none, so it falls back to
         # its name. Either way, re-running the seed adds nothing twice.
         criterion = (
@@ -571,6 +579,11 @@ def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3, offline: bool = F
         )
         if existing is not None:
             continue
+
+        # Downloading box/gallery images is the slow part (one HTTP round-trip per
+        # set, up to a 20s timeout each on a miss), so this is the one loop worth
+        # a progress line.
+        print(f"  [{index}/{total}] {spec.get('set_number') or '—'} {spec['name']}", flush=True)
 
         value_age = spec.get("value_age_days")
         model = LegoSetModel(
@@ -593,7 +606,7 @@ def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3, offline: bool = F
         )
         db.add(model)
         db.flush()
-        _seed_images(db, model, alts=alts, offline=offline)
+        _seed_images(db, model, alts=alts)
 
         for copy_spec in spec["copies"]:
             storage_key = copy_spec.get("storage")
@@ -619,30 +632,26 @@ def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3, offline: bool = F
     db.flush()
 
 
-# Brickset publishes both at predictable paths. They are fetched once and stored
-# locally like any other web image (§1a Document); nothing is ever hotlinked.
-BOX_URL = "https://images.brickset.com/sets/images/{number}-1.jpg"
-ALT_URL = "https://images.brickset.com/sets/AdditionalImages/{number}-1/{number}_alt{index}.jpg"
+#: Box shot + gallery, fetched once by ``download_images.py`` and committed to the
+#: repo. The seed itself never touches the network — a NAS with no internet, a set
+#: Brickset never photographed and a MOC all just end up on the placeholder instead.
+IMAGES_DIR = DATA_DIR / "lego-images"
 
 
-def _seed_images(db: DbSession, model: LegoSetModel, *, alts: int, offline: bool) -> None:
-    """Box shot as the cover, then whatever extra views exist, as the gallery.
-
-    Every download is best-effort: a NAS with no internet, a set Brickset has never
-    photographed and a MOC all end up on the generated placeholder instead.
-    """
+def _seed_images(db: DbSession, model: LegoSetModel, *, alts: int) -> None:
+    """Box shot as the cover, then whatever extra views were downloaded, as the gallery."""
     number = model.set_number
-    if number and not offline:
-        # Any failure just means "no box shot": offline NAS, a set Brickset never
-        # photographed, a MOC. The placeholder below picks it up.
-        with contextlib.suppress(Exception):
-            model.image_document_id = documents.store_from_url(db, BOX_URL.format(number=number)).id
-
+    folder = IMAGES_DIR / number if number else None
+    box_path = folder / "box.jpg" if folder else None
+    if box_path is not None and box_path.exists():
+        model.image_document_id = documents.store_bytes(
+            db, box_path.read_bytes(), original_filename=box_path.name
+        ).id
         for index in range(1, alts + 1):
-            try:
-                document = documents.store_from_url(db, ALT_URL.format(number=number, index=index))
-            except Exception:
+            alt_path = folder / f"alt{index}.jpg"  # type: ignore[union-attr]
+            if not alt_path.exists():
                 break  # the set simply has no further views
+            document = documents.store_bytes(db, alt_path.read_bytes(), original_filename=alt_path.name)
             db.add(
                 LegoSetImage(
                     lego_set_model_id=model.id,
@@ -881,13 +890,46 @@ def seed_supermarket(db: DbSession, entity: Entity) -> None:
     prices_service.record_observations(db, receipt)
 
 
+def seed_supermarket_invoices(db: DbSession, entity: Entity) -> int:
+    """Ingest the real *talões* the way an upload would — document and all.
+
+    Going through ``create_from_upload`` + ``parse_receipt`` rather than writing
+    rows directly is the whole point: each receipt ends up with a stored
+    ``Document``, a ``ProcessingJob`` and the parser profile that actually ran,
+    so the review pane has something to show and FR-1.16's *retry from the stored
+    document* works on seeded data too. Re-running is idempotent — the same bytes
+    resolve to the same document and return the receipt already held.
+    """
+    from app.services.receipts import service as receipts_service
+
+    if not INVOICES_DIR.is_dir():
+        return 0
+
+    ingested = 0
+    for path in sorted(INVOICES_DIR.iterdir()):
+        if path.suffix.lower() not in {".pdf", ".jpg", ".jpeg", ".png"}:
+            continue
+        receipt, _job, created = receipts_service.create_from_upload(
+            db,
+            data=path.read_bytes(),
+            filename=path.name,
+            entity_id=entity.id,
+            actor_user_id=None,
+            idempotency_key=f"seed:invoices:{path.name}",
+        )
+        if not created:
+            continue
+        # A parse failure is a FAILED job row the queue can retry, never a seed
+        # that refuses to finish.
+        with contextlib.suppress(ValidationError):
+            receipts_service.parse_receipt(db, receipt, actor_user_id=None)
+        ingested += 1
+    db.flush()
+    return ingested
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Carrega os dados de demonstração.")
-    parser.add_argument(
-        "--offline",
-        action="store_true",
-        help="Não contacta a rede: as capas ficam com o marcador gerado localmente.",
-    )
     parser.add_argument(
         "--alts",
         type=int,
@@ -896,20 +938,29 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    def step(label, fn, /, **fn_kwargs):
+        started = time.monotonic()
+        print(f"-> {label}...", flush=True)
+        result = fn(**fn_kwargs)
+        print(f"   done in {time.monotonic() - started:.1f}s", flush=True)
+        return result
+
     try:
         with session_scope() as db:
             household, entity = resolve_target(db)
-            seed_settings(db)
-            seed_categories(db)
-            seed_merchants(db)
-            seed_parser_profiles(db)
-            seed_tags(db, household)
-            seed_supermarket(db, entity)
-            seed_lego(db, entity, alts=max(0, args.alts), offline=args.offline)
+            step("settings", seed_settings, db=db)
+            step("categories", seed_categories, db=db)
+            step("merchants", seed_merchants, db=db)
+            step("parser profiles", seed_parser_profiles, db=db)
+            step("tags", seed_tags, db=db, household=household)
+            step("supermarket demo receipt", seed_supermarket, db=db, entity=entity)
+            invoices = step("supermarket invoices", seed_supermarket_invoices, db=db, entity=entity)
+            step("LEGO collection", seed_lego, db=db, entity=entity, alts=max(0, args.alts))
     except ValidationError as exc:
         sys.exit(exc.detail)
 
     print(f"Seed concluído em «{household.name}», atribuído a «{entity.name}».")
+    print(f"Faturas reais carregadas: {invoices}.")
 
 
 if __name__ == "__main__":

@@ -4,14 +4,17 @@ import {
   Ban,
   CheckCircle2,
   ExternalLink,
+  Maximize2,
   Plus,
   RotateCcw,
   ShieldCheck,
   ShieldX,
   Tags,
   XCircle,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
-import type { FsFilter, ReceiptItem } from '@/lib/types';
+import type { FsFilter, ProductSearchResult, ReceiptItem } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, Input, Textarea } from '@/components/ui/input';
@@ -29,7 +32,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  SheetContent,
+  FullscreenContent,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -40,13 +43,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/feedback';
-import { EM_DASH, date, eur, percent } from '@/lib/format';
+import { EM_DASH, date, eur, percent, quantity, weightKg } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
 import { FS_FILTER_OPTIONS, RECEIPT_STATUS_META } from './constants';
 import { WhyPopover } from './why-popover';
 import { AddFsItemDialog } from './fs-item-dialog';
 import { ProductPicker } from './product-picker';
+import { ProductCreateDialog } from './product-create-dialog';
 import { ReceiptLinkPanel } from './link-panel';
 import { useConfirmReceiptCategories, useReassignItemProduct } from './catalogue-api';
 import { useConfirmReceipt, useReceipt, useReparse, useUpdateItem, useVoidReceipt } from './api';
@@ -54,6 +58,7 @@ import { useConfirmReceipt, useReceipt, useReparse, useUpdateItem, useVoidReceip
 type EditableField = 'unit_price_pvp_eur' | 'promo_discount_eur' | 'quantity';
 
 const LOW_CONFIDENCE = 0.6;
+const ZOOM_STEPS = [0.6, 0.75, 1, 1.25, 1.5, 2, 3];
 
 function isLowConfidence(confidence: string | null): boolean {
   if (confidence === null) return false;
@@ -114,27 +119,41 @@ function EditableNumberCell({
         'numeric rounded px-1.5 py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent',
       )}
     >
-      {eur(item[field])}
+      {/* A quantity is a count, not money — formatting it as EUR made `1` read
+          as `1,00 €`. Weight is the separate column beside it. */}
+      {field === 'quantity' ? quantity(item.quantity) : eur(item[field])}
     </button>
   );
 }
 
-function ProductCell({ item, disabled }: { item: ReceiptItem; disabled: boolean }) {
+function ProductCell({
+  item,
+  disabled,
+  onCreateProduct,
+}: {
+  item: ReceiptItem;
+  disabled: boolean;
+  onCreateProduct: (item: ReceiptItem, name: string) => void;
+}) {
   const reassign = useReassignItemProduct();
   return (
     <div className="flex items-center gap-1.5">
-      <div className="max-w-[10rem]">
+      <div className="min-w-0 flex-1">
         <ProductPicker
           value={item.display_name ?? item.description_raw}
           merchantDescription={item.description_raw}
           disabled={disabled}
-          onSelect={(product) =>
+          onSelect={(product: ProductSearchResult) =>
             reassign.mutate({ itemId: item.id, masterProductId: product.id })
           }
+          onCreate={disabled ? undefined : (name) => onCreateProduct(item, name)}
         />
       </div>
       {!item.master_product_id ? (
-        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-warning">
+        <span
+          className="flex shrink-0 items-center gap-1 text-xs font-medium text-warning"
+          title="Esta linha ainda não resolveu para um produto — sem produto não há categoria."
+        >
           <AlertTriangle className="size-3.5" />
           por resolver
         </span>
@@ -154,6 +173,7 @@ function ItemRow({
   onStart,
   onCommit,
   onCancel,
+  onCreateProduct,
 }: {
   item: ReceiptItem;
   index: number;
@@ -165,34 +185,46 @@ function ItemRow({
   onStart: (field: EditableField) => void;
   onCommit: () => void;
   onCancel: () => void;
+  onCreateProduct: (item: ReceiptItem, name: string) => void;
 }) {
   const low = isLowConfidence(item.confidence);
   return (
     <TableRow>
       <TableCell className="text-muted-foreground">{index}</TableCell>
-      <TableCell className="max-w-[12rem]">
+      <TableCell className="max-w-[14rem]">
         <span className="truncate" title={item.description_raw}>
           {item.display_name ?? item.description_raw}
         </span>
       </TableCell>
-      <TableCell>
-        <ProductCell item={item} disabled={!canReassignProduct} />
+      <TableCell className="w-64">
+        <ProductCell item={item} disabled={!canReassignProduct} onCreateProduct={onCreateProduct} />
       </TableCell>
-      <TableCell>{item.merchant_section ?? EM_DASH}</TableCell>
-      <TableCell className="numeric whitespace-nowrap">
-        <EditableNumberCell
-          item={item}
-          field="quantity"
-          editing={editing === 'quantity'}
-          editValue={editValue}
-          disabled={!canEdit}
-          onEditValueChange={onEditValueChange}
-          onStart={() => onStart('quantity')}
-          onCommit={onCommit}
-          onCancel={onCancel}
-        />
-        <span className="ml-1 text-xs text-muted-foreground">{item.unit}</span>
+      {/* The category lives on the product and nowhere else, so it is shown as
+          the full `L1 › L2 › L3` path: the same leaf name under two parents is
+          never ambiguous (FR-1.3, Decision #34). */}
+      <TableCell className="max-w-[13rem]">
+        <span className="block truncate text-xs" title={item.category_path ?? undefined}>
+          {item.category_path ?? EM_DASH}
+        </span>
       </TableCell>
+      <TableCell className="numeric whitespace-nowrap" title={`${item.quantity} ${item.unit}`}>
+        {item.sold_by_weight ? (
+          EM_DASH
+        ) : (
+          <EditableNumberCell
+            item={item}
+            field="quantity"
+            editing={editing === 'quantity'}
+            editValue={editValue}
+            disabled={!canEdit}
+            onEditValueChange={onEditValueChange}
+            onStart={() => onStart('quantity')}
+            onCommit={onCommit}
+            onCancel={onCancel}
+          />
+        )}
+      </TableCell>
+      <TableCell className="numeric whitespace-nowrap">{weightKg(item.weight_kg)}</TableCell>
       <TableCell>
         <EditableNumberCell
           item={item}
@@ -228,19 +260,121 @@ function ItemRow({
           <span title={item.price_per_kg_unavailable_reason ?? undefined}>{EM_DASH}</span>
         )}
       </TableCell>
+      {/* Only the icon: the percentage cost a whole column and said less than
+          the reasons behind it. Uncertainty is still flagged by icon and label,
+          never by colour alone. */}
       <TableCell>
-        <div className="flex items-center gap-1.5">
-          <span className="numeric">{percent(confidencePct(item.confidence))}</span>
+        <div className="flex items-center gap-1">
           {low ? (
-            <span className="flex items-center gap-1 text-xs font-medium text-warning">
-              <AlertTriangle className="size-3.5" />
-              incerto
-            </span>
+            <AlertTriangle className="size-3.5 shrink-0 text-warning" aria-label="Valor incerto" />
           ) : null}
-          <WhyPopover reasons={item.decision_reasons} />
+          <WhyPopover
+            reasons={item.decision_reasons}
+            label={null}
+            title={`Confiança ${percent(confidencePct(item.confidence))} — porquê?`}
+          />
         </div>
       </TableCell>
     </TableRow>
+  );
+}
+
+const ITEM_COLUMNS = [
+  '#',
+  'Descrição',
+  'Produto',
+  'Categoria',
+  'Qtd',
+  'Peso',
+  'PVP',
+  'Promo',
+  'Desconto fatura',
+  'Pago',
+  '€/kg',
+  '?',
+];
+
+function ItemTableHead() {
+  return (
+    <TableHeader>
+      <TableRow>
+        {ITEM_COLUMNS.map((column) => (
+          <TableHead key={column}>{column}</TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+  );
+}
+
+/** The original, narrow but zoomable — reading a thermal *talão* needs both. */
+function DocumentPane({ url }: { url: string | null }) {
+  const [zoomIndex, setZoomIndex] = React.useState(2);
+  const zoom = ZOOM_STEPS[zoomIndex] ?? 1;
+
+  return (
+    <div className="flex min-h-0 flex-col border-b border-border bg-muted lg:border-b-0 lg:border-r">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-3 py-2">
+        <p className="text-sm font-medium">Documento original</p>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Reduzir"
+            disabled={zoomIndex === 0}
+            onClick={() => setZoomIndex((index) => Math.max(0, index - 1))}
+          >
+            <ZoomOut />
+          </Button>
+          <span className="numeric w-12 text-center text-xs text-muted-foreground">
+            {Math.round(zoom * 100)} %
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Ampliar"
+            disabled={zoomIndex === ZOOM_STEPS.length - 1}
+            onClick={() => setZoomIndex((index) => Math.min(ZOOM_STEPS.length - 1, index + 1))}
+          >
+            <ZoomIn />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Repor" onClick={() => setZoomIndex(2)}>
+            <Maximize2 />
+          </Button>
+          {url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="ml-1 flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              Abrir
+              <ExternalLink className="size-3.5" />
+            </a>
+          ) : null}
+        </div>
+      </div>
+      <div className="min-h-[16rem] flex-1 overflow-auto">
+        {url ? (
+          <div
+            style={{
+              width: `${100 / zoom}%`,
+              height: `${100 / zoom}%`,
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top left',
+            }}
+          >
+            {/* Signed and time-limited: an <iframe> cannot send a CSRF header, so
+                the signature in this URL *is* the authorisation (ADR-0004). */}
+            <iframe title="Documento original" src={url} className="size-full border-0" />
+          </div>
+        ) : (
+          <div className="flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            Sem documento associado — esta fatura não veio de um carregamento, por isso não há
+            original para mostrar nem para reprocessar.
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -258,17 +392,19 @@ export function ReceiptReviewPane({
   const voidReceipt = useVoidReceipt();
   const reparse = useReparse();
   const updateItem = useUpdateItem();
+  const reassign = useReassignItemProduct();
 
   const [addFsOpen, setAddFsOpen] = React.useState(false);
   const [voidOpen, setVoidOpen] = React.useState(false);
   const [voidReason, setVoidReason] = React.useState('');
+  const [newProduct, setNewProduct] = React.useState<{ itemId: string; name: string } | null>(null);
   const [editing, setEditing] = React.useState<{ itemId: string; field: EditableField } | null>(
     null,
   );
   const [editValue, setEditValue] = React.useState('');
-  const [drafts, setDrafts] = React.useState<Record<string, Partial<Record<EditableField, string>>>>(
-    {},
-  );
+  const [drafts, setDrafts] = React.useState<
+    Record<string, Partial<Record<EditableField, string>>>
+  >({});
   const [itemsFsFilter, setItemsFsFilter] = React.useState<FsFilter>('all');
 
   const receipt = receiptQuery.data ?? null;
@@ -279,6 +415,7 @@ export function ReceiptReviewPane({
       setDrafts({});
       setVoidOpen(false);
       setVoidReason('');
+      setNewProduct(null);
       setItemsFsFilter('all');
     }
   }, [receiptId]);
@@ -332,7 +469,11 @@ export function ReceiptReviewPane({
       [item.id]: { ...previous[item.id], [field]: editValue },
     }));
     try {
-      await updateItem.mutateAsync({ receiptId: receipt.id, itemId: item.id, patch: { [field]: numeric } });
+      await updateItem.mutateAsync({
+        receiptId: receipt.id,
+        itemId: item.id,
+        patch: { [field]: numeric },
+      });
     } finally {
       setDrafts((previous) => {
         const next = { ...previous };
@@ -342,51 +483,41 @@ export function ReceiptReviewPane({
     }
   }
 
-  // Signed and time-limited: an <iframe> cannot send a CSRF header, so the
-  // signature in this URL *is* the authorisation (ADR-0004).
   const documentUrl = receipt?.document_url ?? null;
   const printedItems = receipt?.items.filter((item) => !item.is_fs) ?? [];
   const fsItems = receipt?.items.filter((item) => item.is_fs) ?? [];
   // "Só Fs"/"Sem Fs" hide one of the two tables outright; filtering never refetches.
   const visiblePrintedItems = itemsFsFilter === 'only' ? [] : printedItems;
-  const visibleFsItems = itemsFsFilter === 'exclude' ? [] : fsItems;
+  const showFsSection = itemsFsFilter !== 'exclude';
+
+  const itemRowProps = (item: ReceiptItem) => ({
+    item,
+    canEdit: canEditItems,
+    canReassignProduct: canWrite,
+    editing: editing?.itemId === item.id ? editing.field : null,
+    editValue,
+    onEditValueChange: setEditValue,
+    onStart: (field: EditableField) => startEdit(item, field),
+    onCommit: () => commitEdit(item),
+    onCancel: cancelEdit,
+    onCreateProduct: (target: ReceiptItem, name: string) =>
+      setNewProduct({ itemId: target.id, name }),
+  });
 
   return (
     <>
       <Dialog open={Boolean(receiptId)} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent width="lg" className="max-w-full p-0 sm:max-w-5xl">
+        <FullscreenContent>
           {receiptQuery.isLoading || !receipt ? (
             <div className="space-y-3 p-6">
               <Skeleton className="h-8" />
               <Skeleton className="h-64" />
             </div>
           ) : (
-            <div className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-2">
-              <div className="flex min-h-0 flex-col border-b border-border bg-muted lg:border-b-0 lg:border-r">
-                <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-4 py-2">
-                  <p className="text-sm font-medium">Documento original</p>
-                  {documentUrl ? (
-                    <a
-                      href={documentUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="flex items-center gap-1 text-xs text-primary hover:underline"
-                    >
-                      Abrir original
-                      <ExternalLink className="size-3.5" />
-                    </a>
-                  ) : null}
-                </div>
-                <div className="min-h-[16rem] flex-1">
-                  {documentUrl ? (
-                    <iframe title="Documento original" src={documentUrl} className="size-full border-0" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
-                      Sem documento associado.
-                    </div>
-                  )}
-                </div>
-              </div>
+            // The crown-jewel flow gets the whole screen: a narrow but zoomable
+            // document column beside a wide line-item column (UX-1.2).
+            <div className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(18rem,26rem)_1fr]">
+              <DocumentPane url={documentUrl} />
 
               <div className="flex min-h-0 flex-col overflow-y-auto px-6 py-5 pr-12">
                 <div className="space-y-2 border-b border-border pb-4">
@@ -395,7 +526,8 @@ export function ReceiptReviewPane({
                       {receipt.merchant_name ?? 'Comerciante desconhecido'}
                     </h2>
                     {(() => {
-                      const meta = RECEIPT_STATUS_META[receipt.status as keyof typeof RECEIPT_STATUS_META];
+                      const meta =
+                        RECEIPT_STATUS_META[receipt.status as keyof typeof RECEIPT_STATUS_META];
                       const Icon = meta?.icon ?? CheckCircle2;
                       return (
                         <Badge variant={meta?.variant ?? 'muted'}>
@@ -427,9 +559,9 @@ export function ReceiptReviewPane({
                       Confiança: {percent(confidencePct(receipt.confidence))}
                       <WhyPopover reasons={receipt.decision_reasons} />
                     </span>
-                    {receipt.parser_profile_name ? (
-                      <Badge variant="outline">{receipt.parser_profile_name}</Badge>
-                    ) : null}
+                    <Badge variant="outline">
+                      {receipt.parser_profile_name ?? 'Sem perfil de leitura'}
+                    </Badge>
                   </div>
                 </div>
 
@@ -441,7 +573,9 @@ export function ReceiptReviewPane({
                   <div className="flex items-baseline justify-between text-sm">
                     <span className="text-muted-foreground">Soma das linhas</span>
                     <span className="numeric font-medium">
-                      {liveTotal !== null ? eur(liveTotal) : eur(receipt.derived.computed_total_eur)}
+                      {liveTotal !== null
+                        ? eur(liveTotal)
+                        : eur(receipt.derived.computed_total_eur)}
                     </span>
                   </div>
                   {receipt.derived.is_reconciled === false ? (
@@ -484,96 +618,54 @@ export function ReceiptReviewPane({
 
                 <div className="space-y-4 pb-4">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>#</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Produto</TableHead>
-                        <TableHead>Secção</TableHead>
-                        <TableHead>Qtd</TableHead>
-                        <TableHead>PVP</TableHead>
-                        <TableHead>Promo</TableHead>
-                        <TableHead>Desconto fatura</TableHead>
-                        <TableHead>Pago</TableHead>
-                        <TableHead>€/kg</TableHead>
-                        <TableHead>Confiança</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <ItemTableHead />
                     <TableBody>
                       {visiblePrintedItems.map((item, index) => (
-                        <ItemRow
-                          key={item.id}
-                          item={item}
-                          index={index + 1}
-                          canEdit={canEditItems}
-                          canReassignProduct={canWrite}
-                          editing={editing?.itemId === item.id ? editing.field : null}
-                          editValue={editValue}
-                          onEditValueChange={setEditValue}
-                          onStart={(field) => startEdit(item, field)}
-                          onCommit={() => commitEdit(item)}
-                          onCancel={cancelEdit}
-                        />
+                        <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
                       ))}
                     </TableBody>
                   </Table>
 
-                  {visibleFsItems.length ? (
+                  {showFsSection ? (
                     <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-sm font-semibold">Artigos Fs</p>
-                        <p className="numeric text-sm font-medium">
-                          {eur(receipt.derived.fs_value_eur)}
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <p className="numeric text-sm font-medium">
+                            {eur(receipt.derived.fs_value_eur)}
+                          </p>
+                          {canWrite ? (
+                            <Button size="sm" variant="outline" onClick={() => setAddFsOpen(true)}>
+                              <Plus />
+                              Adicionar artigo Fs
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Nunca estiveram na fatura: o pago é sempre 0,00 e o valor nocional é o
-                        PVP vezes a quantidade. Nenhum total impresso muda por causa deles.
+                        Nunca estiveram na fatura: o pago é sempre 0,00 e o valor nocional é o PVP
+                        vezes a quantidade. Nenhum total impresso muda por causa deles.
                       </p>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>#</TableHead>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead>Produto</TableHead>
-                            <TableHead>Secção</TableHead>
-                            <TableHead>Qtd</TableHead>
-                            <TableHead>PVP</TableHead>
-                            <TableHead>Promo</TableHead>
-                            <TableHead>Desconto fatura</TableHead>
-                            <TableHead>Pago</TableHead>
-                            <TableHead>€/kg</TableHead>
-                            <TableHead>Confiança</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {visibleFsItems.map((item, index) => (
-                            <ItemRow
-                              key={item.id}
-                              item={item}
-                              index={index + 1}
-                              canEdit={canEditItems}
-                              canReassignProduct={canWrite}
-                              editing={editing?.itemId === item.id ? editing.field : null}
-                              editValue={editValue}
-                              onEditValueChange={setEditValue}
-                              onStart={(field) => startEdit(item, field)}
-                              onCommit={() => commitEdit(item)}
-                              onCancel={cancelEdit}
-                            />
-                          ))}
-                        </TableBody>
-                      </Table>
+                      {fsItems.length ? (
+                        <Table>
+                          <ItemTableHead />
+                          <TableBody>
+                            {fsItems.map((item, index) => (
+                              <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <p className="py-2 text-sm text-muted-foreground">
+                          Nenhum artigo Fs nesta fatura.
+                        </p>
+                      )}
                     </div>
                   ) : null}
                 </div>
 
                 {canWrite ? (
                   <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                    <Button variant="outline" onClick={() => setAddFsOpen(true)}>
-                      <Plus />
-                      Adicionar artigo Fs
-                    </Button>
                     <Button
                       disabled={locked}
                       loading={confirmReceipt.isPending}
@@ -584,12 +676,12 @@ export function ReceiptReviewPane({
                     </Button>
                     <Button
                       variant="outline"
-                      title="Promove todas as categorias sugeridas desta fatura a confirmadas."
+                      title="Marca como verificadas as categorias que o sistema sugeriu (AUTO) para os produtos desta fatura. É uma confirmação por produto, não por linha: vale para todas as compras passadas e futuras do mesmo produto."
                       loading={confirmCategories.isPending}
                       onClick={() => confirmCategories.mutate(receipt.id)}
                     >
                       <Tags />
-                      Confirmar categorias
+                      Confirmar categorias sugeridas
                     </Button>
                     <Button
                       variant="outline"
@@ -601,6 +693,8 @@ export function ReceiptReviewPane({
                     </Button>
                     <Button
                       variant="outline"
+                      title="Reprocessa a partir do documento guardado — nunca pede um novo carregamento."
+                      disabled={!receipt.document_id}
                       loading={reparse.isPending}
                       onClick={() => reparse.mutate({ receiptId: receipt.id })}
                     >
@@ -620,12 +714,26 @@ export function ReceiptReviewPane({
               </div>
             </div>
           )}
-        </SheetContent>
+        </FullscreenContent>
       </Dialog>
 
       {receipt ? (
         <AddFsItemDialog receiptId={receipt.id} open={addFsOpen} onOpenChange={setAddFsOpen} />
       ) : null}
+
+      {/* Creating a product mid-review resolves the line that prompted it, so the
+          reviewer never has to leave the invoice to visit the catalogue. */}
+      <ProductCreateDialog
+        open={newProduct !== null}
+        initialName={newProduct?.name ?? ''}
+        onOpenChange={(open) => !open && setNewProduct(null)}
+        onCreated={(product) => {
+          if (newProduct) {
+            reassign.mutate({ itemId: newProduct.itemId, masterProductId: product.id });
+          }
+          setNewProduct(null);
+        }}
+      />
 
       <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
         <DialogContent size="sm">

@@ -141,10 +141,17 @@ function report(error: unknown) {
 export function useUploadReceipts() {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: (files: File[]) => {
+    mutationFn: ({ files, parserProfileId }: { files: File[]; parserProfileId?: string }) => {
       const form = new FormData();
       files.forEach((file) => form.append('files', file));
-      return api.upload<UploadResponse>('/receipts', form, undefined, 'POST');
+      // Forcing a profile is the escape hatch for a layout detection missed; the
+      // profile that ran is recorded on the receipt either way (UX-1.1).
+      return api.upload<UploadResponse>(
+        '/receipts',
+        form,
+        parserProfileId ? { parser_profile_id: parserProfileId } : undefined,
+        'POST',
+      );
     },
     onSuccess: (result) => {
       const created = result.items.filter((item) => item.created).length;

@@ -13,11 +13,31 @@ function isReason(value: unknown): value is Reason {
   return typeof value === 'object' && value !== null;
 }
 
-export function WhyPopover({ reasons, label = 'Porquê?' }: { reasons: unknown[]; label?: string }) {
+/**
+ * The «Porquê?» affordance: every auto-filled value can show the reasons and
+ * scores behind it.
+ *
+ * Passing `label={null}` renders just the `?` icon — in a dense line-item grid
+ * the reasons are worth a column and the word is not.
+ */
+export function WhyPopover({
+  reasons,
+  label = 'Porquê?',
+  title,
+}: {
+  reasons: unknown[];
+  label?: string | null;
+  title?: string;
+}) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button
+          variant="ghost"
+          size={label === null ? 'icon-sm' : 'sm'}
+          title={title ?? 'Porquê?'}
+          aria-label={title ?? 'Porquê?'}
+        >
           <HelpCircle />
           {label}
         </Button>
@@ -39,7 +59,11 @@ export function WhyPopover({ reasons, label = 'Porquê?' }: { reasons: unknown[]
                     <p className="font-mono text-xs text-muted-foreground">
                       {typeof reason.rule === 'string' ? reason.rule : '—'}
                     </p>
-                    <p>{typeof reason.detail === 'string' ? reason.detail : String(reason.detail ?? '')}</p>
+                    <p>
+                      {typeof reason.detail === 'string'
+                        ? reason.detail
+                        : String(reason.detail ?? '')}
+                    </p>
                   </div>
                   {score !== null && !Number.isNaN(score) ? (
                     <span className="numeric shrink-0 text-right text-xs text-muted-foreground">

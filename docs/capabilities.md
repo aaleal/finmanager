@@ -38,6 +38,7 @@ lives here, where it can be corrected when code moves.
 | Fixed-window rate limiting (fails open) | `apps/api/app/core/ratelimit.py` | Phase 0 |
 | Security headers middleware | `apps/api/app/main.py` | Phase 0 |
 | Signed, time-limited document URLs (HMAC, 15 min) | `apps/api/app/core/security.py`, `apps/api/app/api/routers/documents.py` | Phase 0 |
+| Attachment storage shared by the root and non-root containers — setgid, group-writable shards; entrypoint reconciles the volume then drops privileges | `apps/api/app/services/documents.py`, `apps/api/docker-entrypoint.sh`, `apps/api/Dockerfile` | M1 fixes (ADR-0024) |
 | OpenAPI → TypeScript contract generation | `apps/api/app/openapi_export.py`, `apps/web/src/api/schema.d.ts` | Phase 0 |
 
 ## Identity, household and access (M7)
@@ -56,7 +57,7 @@ lives here, where it can be corrected when code moves.
 | :--- | :--- | :--- |
 | App shell — sidebar, nav, theme toggle, mobile drawer | `apps/web/src/components/app-shell.tsx` | Phase 0 |
 | UI primitives — button, card, dialog/sheet, select, table, dropdown, tabs, slider, tooltip, popover | `apps/web/src/components/ui/` | Phase 0 |
-| Generic **Review Queue** (Confirm / Fix / Dismiss) | `apps/api/app/api/routers/review.py`, `apps/web/src/routes/review.tsx` | Phase 0 |
+| Generic **Review Queue** (Confirm / Dismiss, cross-module, deep-links into the owning module) | `apps/api/app/api/routers/review.py`, `apps/web/src/components/review-queue.tsx`, `apps/web/src/routes/review.tsx` | Phase 0, wired up in M1 fixes (ADR-0025) |
 | Shared **transaction picker** — proposes ledger lines near a date and amount | `apps/web/src/components/transaction-picker.tsx` | Phase 1 (M9) |
 | URL-backed filter state feeding TanStack Query keys | `apps/web/src/lib/filters.ts` | Phase 1 (M9) |
 | API client with CSRF handling and typed errors | `apps/web/src/lib/api.ts` | Phase 0 |
@@ -105,12 +106,19 @@ lives here, where it can be corrected when code moves.
 | Receipt status machine — `UPLOADED → PARSING → AUTO_ACCEPTED/NEEDS_REVIEW → CONFIRMED → VOID`, with `FAILED` retry | `apps/api/app/models/receipts.py` | Phase 3 (M1a) |
 | `/api/receipts`, `/api/receipt-items`, `/api/parser-profiles` | `apps/api/app/api/routers/receipts.py` | Phase 3 (M1a) |
 | Parsing queue and batch upload (Carregar, Fila) | `apps/web/src/features/receipts/upload-panel.tsx`, `queue-table.tsx` | Phase 3 (M1a) |
+| Upload as a button + modal on the invoice list, with a parser-profile override carried into `Receipt.parser_profile_id` | `apps/web/src/features/receipts/upload-panel.tsx::ReceiptUploadDialog`, `POST /api/receipts?parser_profile_id=` | M1 fixes (ADR-0026) |
+| «Processamento» — the processing queue, explicitly not a review queue; reusable compactly inside the upload modal | `apps/web/src/features/receipts/queue-table.tsx` | M1 fixes (ADR-0025) |
 | Review split-pane — document alongside extracted fields, «Porquê?» reasons | `apps/web/src/features/receipts/review-pane.tsx`, `why-popover.tsx` | Phase 3 (M1a) |
+| Full-screen review split pane with a zoomable document column, URL-addressable (`?tab=faturas&receipt=`) | `apps/web/src/features/receipts/review-pane.tsx`, `apps/web/src/components/ui/dialog.tsx::FullscreenContent` | M1 fixes (UX-1.2) |
+| Line grid — `L1 › L2 › L3` category column, 3-decimal weights, integer quantity (`—` when sold by weight), icon-only confidence | `apps/web/src/features/receipts/{review-pane,items-table}.tsx`, `apps/web/src/lib/format.ts` | M1 fixes (ADR-0028) |
+| Create a `MasterProduct` inline, from the review pane or the catalogue | `apps/web/src/features/receipts/product-create-dialog.tsx` | M1 fixes (FR-1.2) |
 | Estado status board — auto-accept rate, queue depth, failures | `apps/web/src/features/receipts/status-panel.tsx` | Phase 3 (M1a) |
 | Faturas — receipts list | `apps/web/src/features/receipts/receipts-table.tsx` | Phase 3 (M1a) |
+| Faturas — parser-profile column and an `impressos/Fs` article count (`5/2`) | `apps/web/src/features/receipts/receipts-table.tsx` | M1 fixes (UX-1.3) |
 | Artigos — line-level item explorer across every invoice | `apps/web/src/features/receipts/items-table.tsx` | Phase 3 (M1a) |
 | Perfis de leitura — parser-profile administration | `apps/web/src/features/receipts/parser-profiles-panel.tsx` | Phase 3 (M1a) |
 | Golden extraction fixtures — committed word boxes for all eleven real *talões* | `apps/api/tests/fixtures/golden/` | Phase 3 (M1a) |
+| The eleven real *talões* as seed data, ingested through the upload path so each has a `Document` and stays reprocessable | `apps/api/app/seed/data/invoices/`, `apps/api/app/seed/__init__.py::seed_supermarket_invoices` | M1 fixes (ADR-0027) |
 | `MasterProduct` / `ProductAlias` — canonical product identity and learned merchant vocabulary | `apps/api/app/models/products.py` | Phase 3 (M1b) |
 | Product resolution and the alias learning loop — alias-exact → fuzzy ≥ 0.78 (review band 0.70–0.78), `learn()` correction loop, `CatalogueResolver` registered as the pipeline's `ProductResolver` | `apps/api/app/services/receipts/catalogue.py` | Phase 3 (M1b) |
 | Local category classifier — `VocabularyClassifier` over the pt-PT L3 vocabulary, fed by description and `merchant_section`; `register_classifier()` seam for a remote one | `apps/api/app/services/receipts/classify.py` | Phase 3 (M1b) |

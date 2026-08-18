@@ -61,11 +61,17 @@ make seed                     # optional: deterministic Portuguese demo data
 
 The demo dataset is a **developer convenience**, not an installation step. It
 creates no users: it attaches reference data and the LEGO collection to the
-household and entity you just created, and refuses to run before you have. Add
-`ARGS=--offline` to skip downloading box art. It also seeds one supermarket
-receipt carrying an appended Fs article, a prorated loyalty discount, a refund
-and a deposit return, so the Fs arithmetic on the Supermercado tabs is visible
-immediately after seeding, without importing anything.
+household and entity you just created, and refuses to run before you have. Set
+images ship pre-downloaded in the repo, so seeding never touches the network.
+
+It also loads the household's **eleven real invoices** — four Continente, four
+Pingo Doce, two Lidl and one photographed Piquete *talão* — through the ordinary
+upload path, so each arrives with its stored PDF, the parser profile that read
+it, a visible confidence and a working «Reprocessar»
+([ADR-0027](docs/decisions/0027-real-invoices-are-seed-data.md)). Alongside them
+it seeds one hand-written receipt carrying an appended Fs article, a prorated
+loyalty discount, a refund and a deposit return together, so the Fs arithmetic on
+the Supermercado tabs is visible immediately, without importing anything.
 
 Forgotten a password? An owner can set any member's from **Agregado**. If the
 owner's own password is the one lost, there is no email recovery — use the host:

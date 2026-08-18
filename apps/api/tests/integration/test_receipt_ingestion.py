@@ -9,20 +9,19 @@ from __future__ import annotations
 
 import uuid
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 from app.core.errors import Conflict, ValidationError
 from app.models import AuditLog, Entity, Merchant, ReviewTask, User
 from app.models.receipts import MerchantParserProfile, Receipt
-from app.seed import seed_merchants, seed_parser_profiles
+from app.seed import INVOICES_DIR, seed_merchants, seed_parser_profiles
 from app.services.receipts import service as receipts
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 pytestmark = pytest.mark.integration
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "receipts"
+FIXTURES = INVOICES_DIR
 
 
 @pytest.fixture

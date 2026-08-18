@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
-import { date, eur, num, percent } from '@/lib/format';
+import { EM_DASH, date, eur, num, percent } from '@/lib/format';
 import { RECEIPT_STATUS_META } from './constants';
 
 const PAGE_SIZES = ['10', '25', '50', '100'];
@@ -61,10 +61,13 @@ export function ReceiptsTable({
           <TableRow>
             <TableHead>Data</TableHead>
             <TableHead>Comerciante</TableHead>
+            <TableHead>Perfil de leitura</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Valor Fs</TableHead>
             <TableHead>Total nocional</TableHead>
-            <TableHead>Artigos</TableHead>
+            <TableHead title="Artigos impressos na fatura / artigos Fs acrescentados à mão">
+              Artigos
+            </TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Reconciliada</TableHead>
             <TableHead>Confiança</TableHead>
@@ -81,11 +84,22 @@ export function ReceiptsTable({
                 onClick={() => onOpen(receipt.id)}
               >
                 <TableCell>{date(receipt.purchase_date)}</TableCell>
-                <TableCell>{receipt.merchant_name ?? '—'}</TableCell>
+                <TableCell>{receipt.merchant_name ?? EM_DASH}</TableCell>
+                <TableCell
+                  className="max-w-[12rem] truncate"
+                  title={receipt.parser_profile_name ?? undefined}
+                >
+                  {receipt.parser_profile_name ?? EM_DASH}
+                </TableCell>
                 <TableCell className="numeric">{eur(receipt.total_eur)}</TableCell>
                 <TableCell className="numeric">{eur(receipt.fs_value_eur)}</TableCell>
                 <TableCell className="numeric">{eur(receipt.notional_total_eur)}</TableCell>
-                <TableCell className="numeric">{num(receipt.item_count)}</TableCell>
+                <TableCell
+                  className="numeric"
+                  title={`${receipt.printed_item_count} impressos + ${receipt.fs_item_count} Fs`}
+                >
+                  {receipt.printed_item_count}/{receipt.fs_item_count}
+                </TableCell>
                 <TableCell>
                   <Badge variant={meta?.variant ?? 'muted'}>
                     <StatusIcon />
@@ -117,7 +131,10 @@ export function ReceiptsTable({
       <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Linhas por página</span>
-          <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => onPageSizeChange(Number(value))}
+          >
             <SelectTrigger className="h-8 w-[4.5rem]">
               <SelectValue />
             </SelectTrigger>
@@ -146,7 +163,12 @@ export function ReceiptsTable({
           >
             <ChevronsLeft />
           </Button>
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+          >
             Anterior
           </Button>
           <span className="text-muted-foreground">

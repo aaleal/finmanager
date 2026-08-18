@@ -39,6 +39,7 @@ import { date, EM_DASH, eur, num, percent } from '@/lib/format';
 import { useDebounced } from '@/lib/filters';
 import { useSession } from '@/features/auth/session';
 import { CategoryPicker } from './category-picker';
+import { ProductCreateDialog } from './product-create-dialog';
 import {
   useMergeCandidates,
   useMergeProducts,
@@ -62,7 +63,10 @@ const CATEGORY_STATUS_OPTIONS = [
   { value: 'MANUAL', label: 'Manual' },
 ];
 
-const CATEGORY_STATUS_META: Record<string, { label: string; icon: typeof CheckCircle2; variant: 'warning' | 'success' | 'muted' }> = {
+const CATEGORY_STATUS_META: Record<
+  string,
+  { label: string; icon: typeof CheckCircle2; variant: 'warning' | 'success' | 'muted' }
+> = {
   AUTO: { label: 'por confirmar', icon: HelpCircle, variant: 'warning' },
   VALIDATED: { label: 'confirmada', icon: CheckCircle2, variant: 'success' },
   MANUAL: { label: 'manual', icon: Pencil, variant: 'muted' },
@@ -105,10 +109,14 @@ function MergeCandidatesSection() {
                       type="radio"
                       name={`survivor-${group.key}`}
                       checked={targetId === product.id}
-                      onChange={() => setTargets((previous) => ({ ...previous, [group.key]: product.id }))}
+                      onChange={() =>
+                        setTargets((previous) => ({ ...previous, [group.key]: product.id }))
+                      }
                     />
                     <span className="font-medium">{product.canonical_name}</span>
-                    <span className="text-xs text-muted-foreground">{product.brand ?? EM_DASH}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {product.brand ?? EM_DASH}
+                    </span>
                   </label>
                   {targetId !== product.id ? (
                     <Button
@@ -165,7 +173,12 @@ function PackVariantsEditor({
               onChange={(event) => update(index, { weight_kg: event.target.value })}
             />
           </Field>
-          <Button variant="ghost" size="icon-sm" onClick={() => remove(index)} aria-label="Remover formato">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => remove(index)}
+            aria-label="Remover formato"
+          >
             <Trash2 />
           </Button>
         </div>
@@ -208,10 +221,18 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
   return (
     <div className="space-y-4">
       <Field label="Nome canónico">
-        <Input value={name} onChange={(event) => setName(event.target.value)} disabled={!canWrite} />
+        <Input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          disabled={!canWrite}
+        />
       </Field>
       <Field label="Marca">
-        <Input value={brand} onChange={(event) => setBrand(event.target.value)} disabled={!canWrite} />
+        <Input
+          value={brand}
+          onChange={(event) => setBrand(event.target.value)}
+          disabled={!canWrite}
+        />
       </Field>
       <Field label="Categoria">
         <CategoryPicker value={categoryPath} onSelect={setCategory} disabled={!canWrite} />
@@ -266,7 +287,8 @@ function ProductAliasesTab({ productId }: { productId: string }) {
   const aliases = useProductAliases(productId);
 
   if (aliases.isLoading) return <Skeleton className="h-32 rounded-lg" />;
-  if (!aliases.data?.length) return <EmptyState title="Sem aliases aprendidos para este produto." />;
+  if (!aliases.data?.length)
+    return <EmptyState title="Sem aliases aprendidos para este produto." />;
 
   return (
     <Table>
@@ -306,7 +328,8 @@ function ProductOccurrencesTab({
   const occurrences = useProductOccurrences(productId);
 
   if (occurrences.isLoading) return <Skeleton className="h-32 rounded-lg" />;
-  if (!occurrences.data?.length) return <EmptyState title="Sem ocorrências deste produto em faturas." />;
+  if (!occurrences.data?.length)
+    return <EmptyState title="Sem ocorrências deste produto em faturas." />;
 
   return (
     <Table>
@@ -410,6 +433,7 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(50);
   const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
+  const [createOpen, setCreateOpen] = React.useState(false);
 
   React.useEffect(() => setPage(1), [debouncedSearch, categoryStatus, category]);
 
@@ -428,6 +452,15 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
 
   return (
     <div className="space-y-4">
+      {canWrite ? (
+        <div className="flex justify-end">
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus />
+            Novo produto
+          </Button>
+        </div>
+      ) : null}
+
       <MergeCandidatesSection />
 
       <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-3">
@@ -486,7 +519,8 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
             </TableHeader>
             <TableBody>
               {products.data.items.map((product) => {
-                const meta = CATEGORY_STATUS_META[product.category_status] ?? CATEGORY_STATUS_META.AUTO;
+                const meta =
+                  CATEGORY_STATUS_META[product.category_status] ?? CATEGORY_STATUS_META.AUTO;
                 const StatusIcon = meta.icon;
                 return (
                   <TableRow
@@ -496,7 +530,10 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
                   >
                     <TableCell className="font-medium">{product.canonical_name}</TableCell>
                     <TableCell>{product.brand ?? EM_DASH}</TableCell>
-                    <TableCell className="max-w-[12rem] truncate" title={product.category_path ?? undefined}>
+                    <TableCell
+                      className="max-w-[12rem] truncate"
+                      title={product.category_path ?? undefined}
+                    >
                       {product.category_path ?? EM_DASH}
                     </TableCell>
                     <TableCell>
@@ -544,7 +581,13 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
           <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Linhas por página</span>
-              <Select value={String(pageSize)} onValueChange={(value) => { setPageSize(Number(value)); setPage(1); }}>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setPage(1);
+                }}
+              >
                 <SelectTrigger className="h-8 w-[4.5rem]">
                   <SelectValue />
                 </SelectTrigger>
@@ -564,16 +607,32 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(1)} aria-label="Primeira página">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(1)}
+                aria-label="Primeira página"
+              >
                 <ChevronsLeft />
               </Button>
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
                 Anterior
               </Button>
               <span className="text-muted-foreground">
                 {page} / {totalPages}
               </span>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
                 Seguinte
               </Button>
               <Button
@@ -594,6 +653,12 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
         productId={selectedProductId}
         onClose={() => setSelectedProductId(null)}
         onOpenReceipt={onOpenReceipt}
+      />
+
+      <ProductCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(product) => setSelectedProductId(product.id)}
       />
     </div>
   );

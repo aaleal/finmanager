@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
-import { EM_DASH, eur, num } from '@/lib/format';
+import { EM_DASH, eur, num, quantity, weightKg } from '@/lib/format';
 
 const PAGE_SIZES = ['25', '50', '100', '200'];
 
@@ -59,9 +59,8 @@ export function ReceiptItemsTable({
         <TableHeader>
           <TableRow>
             <TableHead>Produto</TableHead>
-            <TableHead>Secção</TableHead>
+            <TableHead>Categoria</TableHead>
             <TableHead>Qtd</TableHead>
-            <TableHead>Unidade</TableHead>
             <TableHead>Peso</TableHead>
             <TableHead>PVP</TableHead>
             <TableHead>Promo</TableHead>
@@ -81,12 +80,13 @@ export function ReceiptItemsTable({
                   {item.is_fs ? <Badge variant="outline">Fs</Badge> : null}
                 </span>
               </TableCell>
-              <TableCell>{item.merchant_section ?? EM_DASH}</TableCell>
-              <TableCell className="numeric">{item.quantity}</TableCell>
-              <TableCell>{item.unit}</TableCell>
-              <TableCell className="numeric">
-                {item.weight_kg ? `${item.weight_kg} kg` : EM_DASH}
+              <TableCell className="max-w-[14rem] truncate" title={item.category_path ?? undefined}>
+                {item.category_path ?? EM_DASH}
               </TableCell>
+              <TableCell className="numeric" title={`${item.quantity} ${item.unit}`}>
+                {quantity(item.quantity, { soldByWeight: item.sold_by_weight })}
+              </TableCell>
+              <TableCell className="numeric">{weightKg(item.weight_kg)}</TableCell>
               <TableCell className="numeric">{eur(item.unit_price_pvp_eur)}</TableCell>
               <TableCell className="numeric">{eur(item.promo_discount_eur)}</TableCell>
               <TableCell className="numeric font-medium">{eur(item.paid_price_eur)}</TableCell>
@@ -115,7 +115,10 @@ export function ReceiptItemsTable({
       <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Linhas por página</span>
-          <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => onPageSizeChange(Number(value))}
+          >
             <SelectTrigger className="h-8 w-[4.5rem]">
               <SelectValue />
             </SelectTrigger>
@@ -144,7 +147,12 @@ export function ReceiptItemsTable({
           >
             <ChevronsLeft />
           </Button>
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+          >
             Anterior
           </Button>
           <span className="text-muted-foreground">

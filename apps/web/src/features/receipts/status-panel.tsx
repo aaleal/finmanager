@@ -86,7 +86,7 @@ export function ReceiptStatusPanel({
         label="Faturas por processar"
         value={num(data.to_process)}
         hint={data.failed_jobs > 0 ? `${data.failed_jobs} falhadas` : undefined}
-        onClick={() => onNavigate('fila')}
+        onClick={() => onNavigate('processamento')}
       />
       <StatusCard
         icon={ScanLine}
@@ -122,9 +122,9 @@ export function ReceiptStatusPanel({
           <>
             <span className="flex items-center gap-1">
               <AlertTriangle className="size-3" />
-              observada, não uma meta
+              observada sobre
             </span>
-            <span>sobre {num(data.decided_receipts)} faturas decididas</span>
+            <span>{num(data.decided_receipts)} faturas decididas</span>
           </>
         }
       />

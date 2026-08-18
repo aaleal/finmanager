@@ -28,3 +28,8 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0021](0021-the-legacy-sheet-is-validated-not-trusted.md) | The legacy sheet is validated, not trusted |
 | [0022](0022-price-history-is-append-only-and-stores-no-quotient.md) | Price history is append-only and stores no quotient |
 | [0023](0023-fs-observations-carry-the-notional-value-in-both-price-columns.md) | Fs observations carry the notional value in both price columns |
+| [0024](0024-attachment-storage-is-group-owned.md) | The attachment volume is shared by two users, so it is group-owned |
+| [0025](0025-one-review-queue-deep-linked-into-modules.md) | One Review Queue, deep-linked into the module that can resolve it |
+| [0026](0026-carregar-is-an-action-not-a-place.md) | Carregar is an action, not a place |
+| [0027](0027-real-invoices-are-seed-data.md) | The eleven real *talões* are seed data, not test fixtures |
+| [0028](0028-line-grid-shows-category-not-merchant-section.md) | The line grid shows the category, not the merchant's section heading |

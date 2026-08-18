@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, NamedTuple
 
 from fastapi import APIRouter, File, Header, Query, UploadFile
 from sqlalchemy import func, or_, select
@@ -39,7 +39,7 @@ from app.schemas.receipts import (
     VoidRequest,
 )
 from app.services import documents
-from app.services.receipts import arithmetic, parsers, pipeline
+from app.services.receipts import arithmetic, parsers, pipeline, products_service
 from app.services.receipts import service as receipts
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
@@ -68,27 +68,45 @@ def _profile_names(db: DbSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, str]:
     return {row[0]: row[1] for row in rows}
 
 
+class ProductDisplay(NamedTuple):
+    """What a line shows once it has resolved: the name, the path, the pricing basis."""
+
+    canonical_name: str
+    category_path: str | None
+    sold_by_weight: bool
+
+
 def item_out(
-    item: ReceiptItem, *, display_names: dict[uuid.UUID, str] | None = None
+    item: ReceiptItem, *, products: dict[uuid.UUID, ProductDisplay] | None = None
 ) -> ReceiptItemOut:
     payload = ReceiptItemOut.model_validate(item)
     for key, value in receipts.item_derived(item).items():
         setattr(payload, key, value)
     # The user sees the product's canonical name; `description_raw` is the audit
     # trail against paper, and `description_norm` is never displayed at all.
-    payload.display_name = (
-        (display_names or {}).get(item.master_product_id) if item.master_product_id else None
-    ) or item.description_raw
+    product = (products or {}).get(item.master_product_id) if item.master_product_id else None
+    payload.display_name = product.canonical_name if product else item.description_raw
+    payload.category_path = product.category_path if product else None
+    payload.sold_by_weight = bool(product and product.sold_by_weight)
     return payload
 
 
-def _product_names(db: DbSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, str]:
+def _product_display(db: DbSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, ProductDisplay]:
+    """One pass over the products a page of lines resolved to, paths memoized."""
     if not ids:
         return {}
-    rows = db.execute(
-        select(MasterProduct.id, MasterProduct.canonical_name).where(MasterProduct.id.in_(ids))
-    ).all()
-    return {row[0]: row[1] for row in rows}
+    paths: dict[uuid.UUID, str | None] = {}
+    display: dict[uuid.UUID, ProductDisplay] = {}
+    for product in db.scalars(select(MasterProduct).where(MasterProduct.id.in_(ids))):
+        category_id = product.category_id
+        if category_id is not None and category_id not in paths:
+            paths[category_id] = products_service.category_path(db, category_id)
+        display[product.id] = ProductDisplay(
+            canonical_name=product.canonical_name,
+            category_path=paths.get(category_id) if category_id is not None else None,
+            sold_by_weight=product.sold_by_weight,
+        )
+    return display
 
 
 def summary_out(
@@ -106,6 +124,7 @@ def summary_out(
     )
     payload.fs_value_eur = totals.fs_value_eur
     payload.fs_item_count = totals.fs_item_count
+    payload.printed_item_count = totals.printed_item_count
     payload.notional_total_eur = totals.notional_total_eur
     payload.is_reconciled = totals.is_reconciled
     return payload
@@ -123,10 +142,9 @@ def detail_out(db: DbSession, receipt: Receipt, *, fs: FsFilter = "all") -> Rece
         if not item.is_deleted and (fs == "all" or (fs == "only") == item.is_fs)
     ]
     document = db.get(Document, receipt.document_id) if receipt.document_id else None
-    display_names = _product_names(db, {i.master_product_id for i in items if i.master_product_id})
+    products = _product_display(db, {i.master_product_id for i in items if i.master_product_id})
     return ReceiptDetail(
         **base.model_dump(),
-        parser_profile_id=receipt.parser_profile_id,
         processing_job_id=receipt.processing_job_id,
         import_batch_id=receipt.import_batch_id,
         atcud_valid=receipt.atcud_valid,
@@ -141,7 +159,7 @@ def detail_out(db: DbSession, receipt: Receipt, *, fs: FsFilter = "all") -> Rece
         document_url=signed_document_url(document.id) if document else None,
         document_mime_type=document.mime_type if document else None,
         document_filename=document.original_filename if document else None,
-        items=[item_out(item, display_names=display_names) for item in items],
+        items=[item_out(item, products=products) for item in items],
         derived=ReceiptDerived(**receipts.derived(db, receipt)),
     )
 
@@ -160,13 +178,20 @@ def upload(
     files: Annotated[list[UploadFile], File()],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     entity_id: uuid.UUID | None = None,
+    parser_profile_id: uuid.UUID | None = None,
 ) -> UploadResponse:
     """Accept **one or many** invoices; each becomes its own job and receipt.
 
     One bad scan never blocks the batch — the failure is recorded on its own job
     row and is retryable from the stored document, without a re-upload.
+
+    ``parser_profile_id`` forces a profile instead of letting detection choose;
+    either way the profile that actually ran is recorded on the receipt and shown
+    in the queue (UX-1.1).
     """
     target_entity = resolve_write_entity(db, ctx, entity_id)
+    if parser_profile_id is not None:
+        receipts.get_profile(db, parser_profile_id)
     key = idempotency_key or uuid.uuid4().hex
     results: list[UploadedReceipt] = []
 
@@ -194,7 +219,9 @@ def upload(
             continue
 
         if created:
-            receipts.parse_receipt(db, receipt, actor_user_id=ctx.user.id)
+            receipts.parse_receipt(
+                db, receipt, actor_user_id=ctx.user.id, forced_profile_id=parser_profile_id
+            )
         results.append(
             UploadedReceipt(
                 receipt_id=receipt.id,
@@ -485,7 +512,13 @@ def list_items(
         .limit(page_size)
         .offset((page - 1) * page_size)
     ).all()
-    return Page(items=[item_out(row) for row in rows], total=total, page=page, page_size=page_size)
+    products = _product_display(db, {r.master_product_id for r in rows if r.master_product_id})
+    return Page(
+        items=[item_out(row, products=products) for row in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 # --- Parser profiles (UX-1.8) --------------------------------------------------

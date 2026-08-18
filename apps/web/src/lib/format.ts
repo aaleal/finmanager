@@ -27,6 +27,12 @@ const EUR_COMPACT = new Intl.NumberFormat('pt-PT', {
 
 const NUMBER = new Intl.NumberFormat('pt-PT', { useGrouping: 'always' });
 
+const WEIGHT = new Intl.NumberFormat('pt-PT', {
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+  useGrouping: 'always',
+});
+
 /** Force the group separator regardless of the ICU data the runtime ships with. */
 function spaced(formatter: Intl.NumberFormat, value: number): string {
   return formatter
@@ -92,6 +98,33 @@ export function signedEur(value: Money, fallback = EM_DASH): string {
 export function num(value: number | null | undefined, fallback = EM_DASH): string {
   if (value === null || value === undefined) return fallback;
   return spaced(NUMBER, value);
+}
+
+/**
+ * Weights are always three decimals — a receipt scale prints `0,302 kg`, and
+ * rounding it to two would silently move the €/kg it divides into.
+ */
+export function weightKg(value: Money, fallback = EM_DASH): string {
+  if (value === null || value === undefined || value === '') return fallback;
+  const numeric = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(numeric)) return fallback;
+  return `${spaced(WEIGHT, numeric)} kg`;
+}
+
+/**
+ * Quantity is a count, so it renders as an integer. A product priced at the
+ * counter has no meaningful count at all — the weight is the relevant field —
+ * so it renders as a dash rather than a fabricated `1`.
+ */
+export function quantity(
+  value: Money,
+  { soldByWeight = false }: { soldByWeight?: boolean } = {},
+): string {
+  if (soldByWeight) return EM_DASH;
+  if (value === null || value === undefined || value === '') return EM_DASH;
+  const numeric = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(numeric)) return EM_DASH;
+  return spaced(NUMBER, Math.round(numeric));
 }
 
 export function date(value: string | Date | null | undefined, fallback = EM_DASH): string {
