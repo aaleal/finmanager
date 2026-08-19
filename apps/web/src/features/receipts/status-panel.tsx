@@ -1,5 +1,15 @@
 import * as React from 'react';
-import { AlertTriangle, Inbox, ListChecks, Merge, Percent, ScanLine, Tags } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Inbox,
+  ListChecks,
+  Merge,
+  Package,
+  Percent,
+  ScanLine,
+  Tags,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/feedback';
 import { Tooltip } from '@/components/ui/primitives';
@@ -69,8 +79,8 @@ export function ReceiptStatusPanel({
 
   if (board.isLoading || !board.data) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, index) => (
+      <div className="grid gap-4 sm:grid-cols-2lg:grid-cols-3">
+        {Array.from({ length: 8 }).map((_, index) => (
           <Skeleton key={index} className="h-28 rounded-xl" />
         ))}
       </div>
@@ -101,6 +111,12 @@ export function ReceiptStatusPanel({
         onClick={() => onNavigate('artigos')}
       />
       <StatusCard
+        icon={CheckCircle2}
+        label="Linhas resolvidas"
+        value={num(data.resolved_lines)}
+        onClick={() => onNavigate('artigos')}
+      />
+      <StatusCard
         icon={Tags}
         label="Produtos por categorizar"
         value={num(data.uncategorized_products)}
@@ -113,6 +129,12 @@ export function ReceiptStatusPanel({
         onClick={() => onNavigate('produtos')}
       />
       <StatusCard
+        icon={Package}
+        label="# Produtos"
+        value={num(data.total_products)}
+        onClick={() => onNavigate('produtos')}
+      />
+      <StatusCard
         icon={Percent}
         label="Taxa de auto-aceitação observada"
         value={percent(
@@ -122,9 +144,8 @@ export function ReceiptStatusPanel({
           <>
             <span className="flex items-center gap-1">
               <AlertTriangle className="size-3" />
-              observada sobre
+              observada sobre {num(data.decided_receipts)} faturas
             </span>
-            <span>{num(data.decided_receipts)} faturas decididas</span>
           </>
         }
       />

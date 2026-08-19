@@ -570,5 +570,16 @@ def uncategorized_count(db: DbSession) -> int:
     )
 
 
+def total_count(db: DbSession) -> int:
+    return int(
+        db.scalar(
+            select(func.count())
+            .select_from(MasterProduct)
+            .where(MasterProduct.is_deleted.is_(False))
+        )
+        or 0
+    )
+
+
 def merge_candidate_count(db: DbSession) -> int:
     return len(merge_candidates(db, limit=1000))

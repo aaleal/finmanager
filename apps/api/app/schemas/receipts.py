@@ -210,7 +210,9 @@ class StatusBoard(BaseModel):
     failed_jobs: int
     to_validate: int
     unresolved_lines: int
+    resolved_lines: int
     uncategorized_products: int
+    total_products: int
     merge_candidates: int
     #: Reported as a trend and labelled *observed, never targeted* (Decision #41).
     observed_auto_accept_rate: float | None

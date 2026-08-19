@@ -692,6 +692,13 @@ def status_counts(db: DbSession, entity_ids: list[uuid.UUID]) -> dict[str, Any]:
             ReceiptItem.master_product_id.is_(None),
         )
     )
+    resolved_lines = count(
+        select(ReceiptItem.id).where(
+            ReceiptItem.entity_id.in_(entity_ids),
+            ReceiptItem.is_deleted.is_(False),
+            ReceiptItem.master_product_id.is_not(None),
+        )
+    )
 
     decided = db.execute(
         select(Receipt.status, func.count())
@@ -707,7 +714,9 @@ def status_counts(db: DbSession, entity_ids: list[uuid.UUID]) -> dict[str, Any]:
         "failed_jobs": failed,
         "to_validate": to_validate,
         "unresolved_lines": unresolved_lines,
+        "resolved_lines": resolved_lines,
         "uncategorized_products": products_service.uncategorized_count(db),
+        "total_products": products_service.total_count(db),
         "merge_candidates": products_service.merge_candidate_count(db),
         # Observed, never targeted (Decision #41).
         "observed_auto_accept_rate": (
