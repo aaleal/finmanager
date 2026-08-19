@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from sqlalchemy import func, or_, select
@@ -33,6 +34,11 @@ from app.services.receipts.normalize import normalize_description
 GROCERY = "GROCERY"
 PRODUCT_TABLE = "master_products"
 CATEGORY_TABLE = "categories"
+
+#: One gram. Finer than that is noise on a till receipt, and rounding both sides
+#: to the same quantum is what lets a parsed token and a curated format compare
+#: as equals without a foreign key between them.
+WEIGHT_QUANTUM = Decimal("0.001")
 
 
 # --- Category ancestry --------------------------------------------------------
@@ -72,6 +78,98 @@ def _apply_category(db: DbSession, product: MasterProduct, category_id: uuid.UUI
     product.category_id = category_id
     for field, value in ancestry(db, category_id).items():
         setattr(product, field, value)
+
+
+# --- Pack formats -------------------------------------------------------------
+
+
+def round_to_the_gram(value: Any) -> Decimal | None:
+    """The single normalisation every pack weight passes through, on both sides."""
+    if value is None or value == "":
+        return None
+    try:
+        weight = Decimal(str(value))
+    except (ArithmeticError, ValueError):
+        return None
+    if not weight.is_finite() or weight <= 0:
+        return None
+    return weight.quantize(WEIGHT_QUANTUM, rounding=ROUND_HALF_UP)
+
+
+def pack_variant_label(weight_kg: Decimal) -> str:
+    """``0,5`` reads as ``500 g`` and ``1`` as ``1 kg``.
+
+    Derived rather than typed so a label can never contradict the weight it names.
+    """
+    if weight_kg < 1:
+        return f"{(weight_kg * 1000).quantize(Decimal('1'), rounding=ROUND_HALF_UP):f} g"
+    return f"{weight_kg.normalize():f}".replace(".", ",") + " kg"
+
+
+def sanitize_pack_variants(variants: Iterable[Any] | None) -> list[dict[str, Any]]:
+    """One entry per weight, rounded to the gram, ordered, weights as strings.
+
+    Unique weights are what let a receipt line find its format **by value**: with
+    no two formats sharing a weight, "which format is this line?" always has one
+    answer and needs no foreign key. Strings because JSONB cannot hold a Decimal.
+    """
+    cleaned: dict[Decimal, dict[str, Any]] = {}
+    for variant in variants or []:
+        data = dict(variant)
+        weight = round_to_the_gram(data.get("weight_kg"))
+        if weight is None:
+            raise ValidationError("Cada formato precisa de um peso maior do que zero.")
+        if weight in cleaned:
+            raise ValidationError(f"O formato {pack_variant_label(weight)} está repetido.")
+        label = str(data.get("label") or "").strip()
+        cleaned[weight] = {
+            **data,
+            "label": label or pack_variant_label(weight),
+            "weight_kg": str(weight),
+        }
+    return [cleaned[weight] for weight in sorted(cleaned)]
+
+
+def pack_weights(product: MasterProduct) -> set[Decimal]:
+    weights = (round_to_the_gram(dict(v).get("weight_kg")) for v in product.pack_variants)
+    return {weight for weight in weights if weight is not None}
+
+
+def add_pack_variant(
+    db: DbSession,
+    product: MasterProduct,
+    *,
+    weight_kg: Decimal,
+    label: str | None = None,
+    barcode: str | None = None,
+    actor_user_id: uuid.UUID | None = None,
+) -> MasterProduct:
+    """Append one format, idempotent on the weight.
+
+    Idempotent rather than a read-modify-write of the whole list so the review
+    pane can add the format it just read off a line without knowing the others,
+    and so two people reviewing at once cannot drop each other's formats.
+    """
+    weight = round_to_the_gram(weight_kg)
+    if weight is None:
+        raise ValidationError("O formato precisa de um peso maior do que zero.")
+    if weight in pack_weights(product):
+        return product
+
+    variants = [dict(variant) for variant in product.pack_variants]
+    variants.append(
+        {
+            "label": (label or "").strip() or pack_variant_label(weight),
+            "weight_kg": str(weight),
+            "barcode": barcode,
+        }
+    )
+    return update_product(
+        db,
+        product,
+        {"pack_variants": sanitize_pack_variants(variants)},
+        actor_user_id=actor_user_id,
+    )
 
 
 # --- Products -----------------------------------------------------------------
@@ -117,7 +215,7 @@ def create_product(
         category_status=category_status,
         category_confidence=category_confidence,
         sold_by_weight=sold_by_weight,
-        pack_variants=pack_variants or [],
+        pack_variants=sanitize_pack_variants(pack_variants),
         **extra,
     )
     _apply_category(db, product, category_id)

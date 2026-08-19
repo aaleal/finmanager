@@ -19,13 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, Input, Textarea } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Dialog,
   DialogBody,
   DialogContent,
@@ -43,7 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/feedback';
-import { EM_DASH, date, eur, percent, quantity, weightKg } from '@/lib/format';
+import { EM_DASH, date, eur, packLabel, percent, quantity, weightKg } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
 import { RECEIPT_STATUS_META } from './constants';
@@ -52,10 +45,18 @@ import { AddFsItemDialog } from './fs-item-dialog';
 import { ProductPicker } from './product-picker';
 import { ProductCreateDialog } from './product-create-dialog';
 import { ReceiptLinkPanel } from './link-panel';
-import { useConfirmReceiptCategories, useReassignItemProduct } from './catalogue-api';
+import {
+  useAddPackVariant,
+  useConfirmReceiptCategories,
+  useReassignItemProduct,
+} from './catalogue-api';
 import { useConfirmReceipt, useReceipt, useReparse, useUpdateItem, useVoidReceipt } from './api';
 
-type EditableField = 'unit_price_pvp_eur' | 'promo_discount_eur' | 'quantity';
+type EditableField =
+  | 'unit_price_pvp_eur'
+  | 'promo_discount_eur'
+  | 'quantity'
+  | 'weight_listed_kg';
 
 const LOW_CONFIDENCE = 0.6;
 const ZOOM_STEPS = [0.6, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -155,8 +156,95 @@ function ProductCell({
           title="Esta linha ainda não resolveu para um produto — sem produto não há categoria."
         >
           <AlertTriangle className="size-3.5" />
-          por resolver
         </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The weight, and whether it is a format the product already knows about.
+ *
+ * The match is by value at the gram: with unique weights per product there is
+ * exactly one format a line can mean, so nothing has to be referenced. What the
+ * invoice printed is a **proposal** — the format only joins the catalogue when a
+ * human says so, which is what keeps the curated list curated.
+ */
+function WeightCell({
+  item,
+  canEdit,
+  editing,
+  editValue,
+  onEditValueChange,
+  onStart,
+  onCommit,
+  onCancel,
+}: {
+  item: ReceiptItem;
+  canEdit: boolean;
+  editing: boolean;
+  editValue: string;
+  onEditValueChange: (value: string) => void;
+  onStart: () => void;
+  onCommit: () => void;
+  onCancel: () => void;
+}) {
+  const addVariant = useAddPackVariant();
+  const productId = item.master_product_id;
+  const listed = item.weight_listed_kg;
+
+  // Weighed at the counter: the scale is the answer and there is no format.
+  if (item.sold_by_weight) {
+    return (
+      <span className="numeric" title="Pesado ao balcão — o peso vem da balança.">
+        {weightKg(item.weight_kg)}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      {editing ? (
+        <Input
+          autoFocus
+          className="h-7 w-24"
+          inputMode="decimal"
+          value={editValue}
+          onChange={(event) => onEditValueChange(event.target.value)}
+          onBlur={onCommit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') onCommit();
+            if (event.key === 'Escape') onCancel();
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          disabled={!canEdit}
+          onClick={onStart}
+          title="Peso da embalagem, em kg."
+          className="numeric rounded px-1.5 py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+        >
+          {weightKg(item.weight_kg)}
+        </button>
+      )}
+      {item.pack_weight_is_known === true ? (
+        <CheckCircle2
+          className="size-3.5 shrink-0 text-success"
+          aria-label={`${packLabel(listed)} é um formato deste produto`}
+        />
+      ) : null}
+      {item.pack_weight_is_known === false && productId && listed ? (
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          disabled={!canEdit || addVariant.isPending}
+          title={`${packLabel(listed)} ainda não é um formato de ${item.display_name} — adicionar`}
+          aria-label={`Adicionar o formato ${packLabel(listed)} a este produto`}
+          onClick={() => addVariant.mutate({ productId, weightKg: String(listed) })}
+        >
+          <Plus className="text-warning" />
+        </Button>
       ) : null}
     </div>
   );
@@ -224,7 +312,18 @@ function ItemRow({
           />
         )}
       </TableCell>
-      <TableCell className="numeric whitespace-nowrap">{weightKg(item.weight_kg)}</TableCell>
+      <TableCell className="numeric whitespace-nowrap">
+        <WeightCell
+          item={item}
+          canEdit={canEdit}
+          editing={editing === 'weight_listed_kg'}
+          editValue={editValue}
+          onEditValueChange={onEditValueChange}
+          onStart={() => onStart('weight_listed_kg')}
+          onCommit={onCommit}
+          onCancel={onCancel}
+        />
+      </TableCell>
       <TableCell>
         <EditableNumberCell
           item={item}
@@ -458,8 +557,6 @@ export function ReceiptReviewPane({
   const [drafts, setDrafts] = React.useState<
     Record<string, Partial<Record<EditableField, string>>>
   >({});
-  const [tableDensity, setTableDensity] = React.useState<'comfortable' | 'compact'>('comfortable');
-  const [tableFontSize, setTableFontSize] = React.useState<'xs' | 'sm' | 'base'>('sm');
 
   const receipt = receiptQuery.data ?? null;
 
@@ -504,7 +601,7 @@ export function ReceiptReviewPane({
   function startEdit(item: ReceiptItem, field: EditableField) {
     if (!canEditItems) return;
     setEditing({ itemId: item.id, field });
-    setEditValue(String(item[field]));
+    setEditValue(item[field] === null ? '' : String(item[field]));
   }
 
   function cancelEdit() {
@@ -514,9 +611,13 @@ export function ReceiptReviewPane({
   async function commitEdit(item: ReceiptItem) {
     if (!editing || !receipt) return;
     const { field } = editing;
-    const numeric = Number(editValue.replace(',', '.'));
+    const raw = editValue.trim();
     setEditing(null);
-    if (!Number.isFinite(numeric)) return;
+    // Clearing the pack weight is a real answer: nobody knows the size, and a
+    // fabricated one would silently move the €/kg it divides into.
+    const cleared = raw === '' && field === 'weight_listed_kg';
+    const numeric = Number(raw.replace(',', '.'));
+    if (!cleared && !Number.isFinite(numeric)) return;
     setDrafts((previous) => ({
       ...previous,
       [item.id]: { ...previous[item.id], [field]: editValue },
@@ -525,7 +626,7 @@ export function ReceiptReviewPane({
       await updateItem.mutateAsync({
         receiptId: receipt.id,
         itemId: item.id,
-        patch: { [field]: numeric },
+        patch: { [field]: cleared ? null : numeric },
       });
     } finally {
       setDrafts((previous) => {
@@ -647,42 +748,7 @@ export function ReceiptReviewPane({
                   ) : null}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-4">
-                  <Select
-                    value={tableFontSize}
-                    onValueChange={(value) => setTableFontSize(value as 'xs' | 'sm' | 'base')}
-                  >
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="xs">Texto pequeno</SelectItem>
-                      <SelectItem value="sm">Texto normal</SelectItem>
-                      <SelectItem value="base">Texto grande</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={tableDensity}
-                    onValueChange={(value) => setTableDensity(value as 'comfortable' | 'compact')}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="comfortable">Confortável</SelectItem>
-                      <SelectItem value="compact">Compacta</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div
-                  className={cn(
-                    'space-y-4 pb-4',
-                    tableDensity === 'compact' && '[&_td]:py-1 [&_th]:h-7',
-                    tableFontSize === 'base' && '[&_table]:text-base',
-                    tableFontSize === 'xs' && '[&_table]:text-xs',
-                  )}
-                >
+                <div className="space-y-4 pb-4 pt-4 [&_table]:text-xs [&_td]:py-1 [&_th]:h-7">
                   <Table>
                     <ItemTableHead />
                     <TableBody>

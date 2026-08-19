@@ -62,6 +62,10 @@ class ReceiptItemOut(ApiModel):
     category_path: str | None = None
     #: Priced per kg at the counter, so the printed quantity is meaningless.
     sold_by_weight: bool = False
+    #: Is ``weight_listed_kg`` already one of the product's curated formats?
+    #: ``None`` when the question does not apply — no product, no listed weight,
+    #: or sold by weight, where the scale answers and no format exists.
+    pack_weight_is_known: bool | None = None
 
 
 class ReceiptItemUpdate(BaseModel):
@@ -206,9 +210,11 @@ class QueueEntry(BaseModel):
 class StatusBoard(BaseModel):
     """UX-1.5 «Estado» — every figure links to the list that resolves it."""
 
+    total_receipts: int
     to_process: int
     failed_jobs: int
     to_validate: int
+    total_lines: int
     unresolved_lines: int
     resolved_lines: int
     uncategorized_products: int

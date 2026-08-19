@@ -950,6 +950,26 @@ export interface paths {
         patch: operations["update_product_api_master_products__product_id__patch"];
         trace?: never;
     };
+    "/api/master-products/{product_id}/pack-variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Pack Variant
+         * @description Curate the format a receipt line just showed us, without touching the rest.
+         */
+        post: operations["add_pack_variant_api_master_products__product_id__pack_variants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/master-products/{product_id}/validate-category": {
         parameters: {
             query?: never;
@@ -2586,6 +2606,19 @@ export interface components {
             /** Barcode */
             barcode?: string | null;
         };
+        /**
+         * PackVariantAdd
+         * @description Append one format to a product. Idempotent on the weight, so the review
+         *     pane can add what it just read off a line without knowing the other formats.
+         */
+        PackVariantAdd: {
+            /** Weight Kg */
+            weight_kg: number | string;
+            /** Label */
+            label?: string | null;
+            /** Barcode */
+            barcode?: string | null;
+        };
         /** Page[LegoSetModelOut] */
         Page_LegoSetModelOut_: {
             /** Items */
@@ -3131,6 +3164,8 @@ export interface components {
              * @default false
              */
             sold_by_weight: boolean;
+            /** Pack Weight Is Known */
+            pack_weight_is_known?: boolean | null;
         };
         /** ReceiptItemUpdate */
         ReceiptItemUpdate: {
@@ -3421,12 +3456,16 @@ export interface components {
          * @description UX-1.5 «Estado» — every figure links to the list that resolves it.
          */
         StatusBoard: {
+            /** Total Receipts */
+            total_receipts: number;
             /** To Process */
             to_process: number;
             /** Failed Jobs */
             failed_jobs: number;
             /** To Validate */
             to_validate: number;
+            /** Total Lines */
+            total_lines: number;
             /** Unresolved Lines */
             unresolved_lines: number;
             /** Resolved Lines */
@@ -6045,6 +6084,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MasterProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_pack_variant_api_master_products__product_id__pack_variants_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackVariantAdd"];
             };
         };
         responses: {

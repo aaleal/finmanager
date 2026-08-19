@@ -39,7 +39,7 @@ _WEIGHT_LINE = re.compile(
 
 class LidlParser:
     key = "lidl_v1"
-    display_name = "Lidl fatura"
+    display_name = "Lidl PDF"
 
     def parse(self, extraction: Extraction, hints: dict) -> ParsedReceipt:
         lines = [undouble(normalize_line(line)) for line in extraction.lines]

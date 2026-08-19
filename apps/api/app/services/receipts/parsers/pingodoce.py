@@ -44,7 +44,7 @@ _SECTION_STOP = ("RESUMO", "PAGAMENTOS", "TOTAL")
 
 class PingoDoceParser:
     key = "pingodoce_v1"
-    display_name = "Pingo Doce fatura"
+    display_name = "Pingo Doce PDF"
 
     def parse(self, extraction: Extraction, hints: dict) -> ParsedReceipt:
         lines = [normalize_line(line) for line in extraction.lines]

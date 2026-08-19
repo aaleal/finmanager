@@ -69,9 +69,9 @@ lives here, where it can be corrected when code moves.
 | Merchant CRUD + Portuguese NIF checksum validation | `apps/api/app/api/routers/reference.py` | Phase 0 |
 | Category read API (filter by domain, level, parent) | `apps/api/app/api/routers/reference.py` | Phase 0 |
 | Tag CRUD | `apps/api/app/api/routers/reference.py` | Phase 0 |
-| pt-PT grocery taxonomy seeded from the canonical JSON (27 L1 nodes) | `apps/api/app/seed/__init__.py` | Phase 0 |
-| Portuguese merchant seed (Continente, Pingo Doce, Auchan, Galp, EDP, …) | `apps/api/app/seed/__init__.py` | Phase 0 |
-| Merchant NIFs (Continente, Pingo Doce, Lidl, Piquete da Fruta) and the five parser profiles seeded | `apps/api/app/seed/__init__.py` | Phase 3 (M1a) |
+| pt-PT grocery taxonomy shipped with the release and ensured at every boot (27 L1 nodes) | `apps/api/app/services/reference_data.py`, `apps/api/app/data/supermarket-categories.pt-PT.json` | Phase 0, moved out of the seed (ADR-0029) |
+| Portuguese merchants (Continente, Pingo Doce, Auchan, Galp, EDP, …) ensured at every boot | `apps/api/app/services/reference_data.py` | Phase 0, moved out of the seed (ADR-0029) |
+| Merchant NIFs (Continente, Pingo Doce, Lidl, Piquete da Fruta) and the five parser profiles ensured at every boot | `apps/api/app/services/reference_data.py`, `apps/api/app/main.py::lifespan` | Phase 3 (M1a), moved out of the seed (ADR-0029) |
 
 ## LEGO collection (M9)
 
@@ -112,7 +112,8 @@ lives here, where it can be corrected when code moves.
 | Full-screen review split pane with a zoomable document column, URL-addressable (`?tab=faturas&receipt=`) | `apps/web/src/features/receipts/review-pane.tsx`, `apps/web/src/components/ui/dialog.tsx::FullscreenContent` | M1 fixes (UX-1.2) |
 | Line grid — `L1 › L2 › L3` category column, 3-decimal weights, integer quantity (`—` when sold by weight), icon-only confidence | `apps/web/src/features/receipts/{review-pane,items-table}.tsx`, `apps/web/src/lib/format.ts` | M1 fixes (ADR-0028) |
 | Create a `MasterProduct` inline, from the review pane or the catalogue | `apps/web/src/features/receipts/product-create-dialog.tsx` | M1 fixes (FR-1.2) |
-| Estado status board — auto-accept rate, queue depth, failures | `apps/web/src/features/receipts/status-panel.tsx` | Phase 3 (M1a) |
+| Estado status board — totals, queue depth, failures, auto-accept rate | `apps/web/src/features/receipts/status-panel.tsx` | Phase 3 (M1a) |
+| Supermercado tile on the Painel (despesa registada + n.º de faturas) | `apps/api/app/api/routers/dashboard.py` | Phase 3 |
 | Faturas — receipts list | `apps/web/src/features/receipts/receipts-table.tsx` | Phase 3 (M1a) |
 | Faturas — parser-profile column and an `impressos/Fs` article count (`5/2`) | `apps/web/src/features/receipts/receipts-table.tsx` | M1 fixes (UX-1.3) |
 | Artigos — line-level item explorer across every invoice | `apps/web/src/features/receipts/items-table.tsx` | Phase 3 (M1a) |

@@ -23,6 +23,15 @@ class PackVariant(BaseModel):
     barcode: str | None = None
 
 
+class PackVariantAdd(BaseModel):
+    """Append one format to a product. Idempotent on the weight, so the review
+    pane can add what it just read off a line without knowing the other formats."""
+
+    weight_kg: Decimal = Field(gt=0)
+    label: str | None = Field(default=None, max_length=60)
+    barcode: str | None = None
+
+
 class LastKnownPrice(BaseModel):
     """Derived from the newest price observation; never stored, never a second truth."""
 

@@ -12,7 +12,8 @@ import contextlib
 import uuid
 
 import pytest
-from app.seed import INVOICES_DIR, seed_categories, seed_merchants, seed_parser_profiles
+from app.seed import INVOICES_DIR
+from app.services.reference_data import ensure_all
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -42,9 +43,7 @@ def client(api_client: TestClient, db: Session) -> TestClient:
     response = api_client.post("/api/setup", json=SETUP)
     assert response.status_code == 201
     api_client.headers["X-CSRF-Token"] = response.json()["csrf_token"]
-    seed_categories(db)
-    seed_merchants(db)
-    seed_parser_profiles(db)
+    ensure_all(db)
     return api_client
 
 

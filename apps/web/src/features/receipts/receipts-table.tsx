@@ -61,10 +61,10 @@ export function ReceiptsTable({
           <TableRow>
             <TableHead>Data</TableHead>
             <TableHead>Comerciante</TableHead>
-            <TableHead>Perfil de leitura</TableHead>
+            <TableHead>Algoritmo</TableHead>
+            <TableHead>Despesa</TableHead>
+            <TableHead>Fs</TableHead>
             <TableHead>Total</TableHead>
-            <TableHead>Valor Fs</TableHead>
-            <TableHead>Total nocional</TableHead>
             <TableHead title="Artigos impressos na fatura / artigos Fs acrescentados à mão">
               Artigos
             </TableHead>

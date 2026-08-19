@@ -14,8 +14,9 @@ import pytest
 from app.core.errors import Conflict, ValidationError
 from app.models import AuditLog, Entity, Merchant, ReviewTask, User
 from app.models.receipts import MerchantParserProfile, Receipt
-from app.seed import INVOICES_DIR, seed_merchants, seed_parser_profiles
+from app.seed import INVOICES_DIR
 from app.services.receipts import service as receipts
+from app.services.reference_data import ensure_merchants, ensure_parser_profiles
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -26,8 +27,8 @@ FIXTURES = INVOICES_DIR
 
 @pytest.fixture
 def reference_data(db: Session) -> None:
-    seed_merchants(db)
-    seed_parser_profiles(db)
+    ensure_merchants(db)
+    ensure_parser_profiles(db)
 
 
 def upload(db: Session, entity: Entity, owner: User, name: str, key: str | None = None) -> Receipt:

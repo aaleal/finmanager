@@ -28,8 +28,8 @@ import pytest
 from app.models import Entity, Merchant, User
 from app.models.products import MasterProduct, ProductAlias
 from app.models.receipts import Receipt, ReceiptItem
-from app.seed import seed_categories, seed_merchants, seed_parser_profiles
 from app.services.receipts import catalogue, legacy_import
+from app.services.reference_data import ensure_all
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -45,9 +45,7 @@ def sheet_bytes() -> bytes:
 
 @pytest.fixture
 def reference_data(db: Session) -> None:
-    seed_categories(db)
-    seed_merchants(db)
-    seed_parser_profiles(db)
+    ensure_all(db)
 
 
 # --- The grouping algorithm, before anything is written ----------------------

@@ -39,6 +39,7 @@ from app.schemas.products import (
     MergeCandidate,
     MergeCandidateProduct,
     MergeRequest,
+    PackVariantAdd,
     ProductAliasOut,
     ProductOccurrence,
     ProductSearchResult,
@@ -215,8 +216,25 @@ def update_product(
     product = products_service.get_product(db, product_id)
     changes: dict[str, Any] = payload.model_dump(exclude_unset=True)
     if "pack_variants" in changes and changes["pack_variants"] is not None:
-        changes["pack_variants"] = [dict(variant) for variant in changes["pack_variants"]]
+        changes["pack_variants"] = products_service.sanitize_pack_variants(changes["pack_variants"])
     products_service.update_product(db, product, changes, actor_user_id=ctx.user.id)
+    return product_out(db, product)
+
+
+@products_router.post("/{product_id}/pack-variants", response_model=MasterProductOut)
+def add_pack_variant(
+    product_id: uuid.UUID, payload: PackVariantAdd, ctx: Writer, db: Db
+) -> MasterProductOut:
+    """Curate the format a receipt line just showed us, without touching the rest."""
+    product = products_service.get_product(db, product_id)
+    products_service.add_pack_variant(
+        db,
+        product,
+        weight_kg=payload.weight_kg,
+        label=payload.label,
+        barcode=payload.barcode,
+        actor_user_id=ctx.user.id,
+    )
     return product_out(db, product)
 
 

@@ -35,7 +35,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DetailRow, EmptyState, Skeleton } from '@/components/ui/feedback';
-import { date, EM_DASH, eur, num, percent } from '@/lib/format';
+import { date, EM_DASH, eur, num, packLabel, percent } from '@/lib/format';
 import { useDebounced } from '@/lib/filters';
 import { useSession } from '@/features/auth/session';
 import { CategoryPicker } from './category-picker';
@@ -76,6 +76,58 @@ function categoryConfidencePct(value: string | null): number | null {
   if (value === null) return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric * 100 : null;
+}
+
+type WeightUnit = 'g' | 'kg';
+
+/** A format as it is edited: the number and the unit the human chose to say it in. */
+type VariantRow = { value: string; unit: WeightUnit; label: string; barcode: string | null };
+
+function variantToRow(variant: PackVariant): VariantRow {
+  const kg = Number(variant.weight_kg ?? '');
+  const known = Number.isFinite(kg) && kg > 0;
+  const unit: WeightUnit = known && kg < 1 ? 'g' : 'kg';
+  return {
+    value: !known ? '' : unit === 'g' ? String(Math.round(kg * 1000)) : String(kg),
+    unit,
+    label: variant.label ?? '',
+    barcode: variant.barcode ?? null,
+  };
+}
+
+/** The gram is the smallest format anyone shops in, so kg never carries a fourth decimal. */
+function rowWeightKg(row: VariantRow): string | null {
+  const raw = row.value.trim().replace(',', '.');
+  if (!raw) return null;
+  const numeric = Number(raw);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  const grams = Math.round(row.unit === 'g' ? numeric : numeric * 1000);
+  return grams > 0 ? (grams / 1000).toFixed(3) : null;
+}
+
+function isBlankRow(row: VariantRow): boolean {
+  return !row.value.trim() && !row.label.trim();
+}
+
+function rowsToVariants(rows: VariantRow[]): PackVariant[] {
+  return rows.filter((row) => !isBlankRow(row)).map((row) => ({
+    label: row.label.trim() || null,
+    weight_kg: rowWeightKg(row),
+    barcode: row.barcode,
+  }));
+}
+
+/** Unique weights are what let a receipt line find its format by value alone. */
+function packVariantsError(rows: VariantRow[]): string | null {
+  const weights: string[] = [];
+  for (const row of rows) {
+    if (isBlankRow(row)) continue;
+    const weight = rowWeightKg(row);
+    if (weight === null) return 'Cada formato precisa de um peso maior do que zero.';
+    if (weights.includes(weight)) return `O formato ${packLabel(weight)} está repetido.`;
+    weights.push(weight);
+  }
+  return null;
 }
 
 function MergeCandidatesSection() {
@@ -142,56 +194,79 @@ function MergeCandidatesSection() {
 }
 
 function PackVariantsEditor({
-  variants,
+  rows,
+  disabled,
   onChange,
 }: {
-  variants: PackVariant[];
-  onChange: (variants: PackVariant[]) => void;
+  rows: VariantRow[];
+  disabled: boolean;
+  onChange: (rows: VariantRow[]) => void;
 }) {
-  function update(index: number, patch: Partial<PackVariant>) {
-    onChange(variants.map((variant, i) => (i === index ? { ...variant, ...patch } : variant)));
+  function update(index: number, patch: Partial<VariantRow>) {
+    onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
 
-  function remove(index: number) {
-    onChange(variants.filter((_, i) => i !== index));
-  }
+  const error = packVariantsError(rows);
 
   return (
     <div className="space-y-2">
-      {variants.map((variant, index) => (
-        <div key={index} className="flex items-end gap-2">
-          <Field label="Formato" className="flex-1">
-            <Input
-              value={variant.label ?? ''}
-              onChange={(event) => update(index, { label: event.target.value })}
-            />
-          </Field>
-          <Field label="Peso (kg)" className="w-28">
-            <Input
-              inputMode="decimal"
-              value={variant.weight_kg ?? ''}
-              onChange={(event) => update(index, { weight_kg: event.target.value })}
-            />
-          </Field>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => remove(index)}
-            aria-label="Remover formato"
-          >
-            <Trash2 />
-          </Button>
-        </div>
-      ))}
+      {rows.map((row, index) => {
+        const weight = rowWeightKg(row);
+        return (
+          <div key={index} className="flex items-end gap-2">
+            <Field label="Peso" className="w-28">
+              <Input
+                inputMode="decimal"
+                placeholder={row.unit === 'g' ? '500' : '1,5'}
+                value={row.value}
+                disabled={disabled}
+                onChange={(event) => update(index, { value: event.target.value })}
+              />
+            </Field>
+            <Select
+              value={row.unit}
+              disabled={disabled}
+              onValueChange={(unit) => update(index, { unit: unit as WeightUnit })}
+            >
+              <SelectTrigger className="w-20" aria-label="Unidade">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="g">g</SelectItem>
+                <SelectItem value="kg">kg</SelectItem>
+              </SelectContent>
+            </Select>
+            <Field label="Nome (opcional)" className="flex-1">
+              <Input
+                value={row.label}
+                placeholder={weight ? packLabel(weight, '') : 'derivado do peso'}
+                disabled={disabled}
+                onChange={(event) => update(index, { label: event.target.value })}
+              />
+            </Field>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={disabled}
+              onClick={() => onChange(rows.filter((_, i) => i !== index))}
+              aria-label="Remover formato"
+            >
+              <Trash2 />
+            </Button>
+          </div>
+        );
+      })}
       <Button
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => onChange([...variants, { label: '', weight_kg: '' }])}
+        disabled={disabled}
+        onClick={() => onChange([...rows, { value: '', unit: 'g', label: '', barcode: null }])}
       >
         <Plus />
         Adicionar formato
       </Button>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -203,8 +278,8 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
   const [brand, setBrand] = React.useState(product.brand ?? '');
   const [category, setCategory] = React.useState<CategoryResult | null>(null);
   const [soldByWeight, setSoldByWeight] = React.useState(product.sold_by_weight);
-  const [packVariants, setPackVariants] = React.useState<PackVariant[]>(
-    (product.pack_variants as PackVariant[]) ?? [],
+  const [packRows, setPackRows] = React.useState<VariantRow[]>(() =>
+    ((product.pack_variants as PackVariant[]) ?? []).map(variantToRow),
   );
 
   React.useEffect(() => {
@@ -212,11 +287,12 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
     setBrand(product.brand ?? '');
     setCategory(null);
     setSoldByWeight(product.sold_by_weight);
-    setPackVariants((product.pack_variants as PackVariant[]) ?? []);
+    setPackRows(((product.pack_variants as PackVariant[]) ?? []).map(variantToRow));
   }, [product]);
 
   const categoryPath = category?.path ?? product.category_path ?? null;
   const price = product.last_known_price;
+  const packError = packVariantsError(packRows);
 
   return (
     <div className="space-y-4">
@@ -244,8 +320,11 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
         </div>
         <Switch checked={soldByWeight} onCheckedChange={setSoldByWeight} disabled={!canWrite} />
       </div>
-      <Field label="Formatos de embalagem">
-        <PackVariantsEditor variants={packVariants} onChange={setPackVariants} />
+      <Field
+        label="Formatos de embalagem"
+        hint="Os pesos oficiais deste produto. O que a fatura trouxer é comparado com esta lista."
+      >
+        <PackVariantsEditor rows={packRows} disabled={!canWrite} onChange={setPackRows} />
       </Field>
 
       <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
@@ -263,6 +342,7 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
       {canWrite ? (
         <Button
           loading={update.isPending}
+          disabled={packError !== null}
           onClick={() =>
             update.mutate({
               productId: product.id,
@@ -271,7 +351,7 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
                 brand: brand.trim() || null,
                 category_id: category ? category.id : product.category_id,
                 sold_by_weight: soldByWeight,
-                pack_variants: packVariants,
+                pack_variants: rowsToVariants(packRows),
               },
             })
           }

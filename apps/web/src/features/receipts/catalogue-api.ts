@@ -138,7 +138,26 @@ export function useUpdateProduct() {
   return useMutation({
     mutationFn: ({ productId, patch }: { productId: string; patch: Record<string, unknown> }) =>
       api.patch<MasterProduct>(`/master-products/${productId}`, patch),
-    onSuccess: () => invalidate(),
+    onSuccess: () => {
+      toast.success('Produto atualizado.');
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Idempotent on the weight, so appending a format never has to send the others. */
+export function useAddPackVariant() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ productId, weightKg }: { productId: string; weightKg: string }) =>
+      api.post<MasterProduct>(`/master-products/${productId}/pack-variants`, {
+        weight_kg: weightKg,
+      }),
+    onSuccess: () => {
+      toast.success('Formato adicionado ao produto.');
+      invalidate();
+    },
     onError: report,
   });
 }

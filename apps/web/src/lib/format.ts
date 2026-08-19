@@ -112,6 +112,20 @@ export function weightKg(value: Money, fallback = EM_DASH): string {
 }
 
 /**
+ * A pack format reads in the unit a human would say it in: `0,5` is `500 g`,
+ * `1,5` is `1,5 kg`. Mirrors the label derived server-side so the two can never
+ * disagree, and stops at the gram because a till never resolves finer.
+ */
+export function packLabel(value: Money, fallback = EM_DASH): string {
+  if (value === null || value === undefined || value === '') return fallback;
+  const numeric = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isFinite(numeric) || numeric <= 0) return fallback;
+  const grams = Math.round(numeric * 1000);
+  if (grams < 1000) return `${grams} g`;
+  return `${String(grams / 1000).replace('.', ',')} kg`;
+}
+
+/**
  * Quantity is a count, so it renders as an integer. A product priced at the
  * counter has no meaningful count at all — the weight is the relevant field —
  * so it renders as a dash rather than a fabricated `1`.

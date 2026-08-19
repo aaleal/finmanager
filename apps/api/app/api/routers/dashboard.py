@@ -1,7 +1,7 @@
 """Cross-module home dashboard.
 
 Modules register a summary tile here as they ship, so the landing page grows with
-the product instead of being rewritten each phase. Sprint 1 registers LEGO.
+the product instead of being rewritten each phase. LEGO and Supermercado are live.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from sqlalchemy import desc, select
 from app.api.deps import CurrentAuth, Db, household_entity_ids
 from app.models.core import AuditLog
 from app.services import lego_service
+from app.services.receipts import service as receipts_service
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -48,7 +49,6 @@ class DashboardOut(BaseModel):
 
 
 PLANNED_MODULES = [
-    ("supermarket", "Supermercado"),
     ("banking", "Banca"),
     ("health", "Saúde"),
     ("utilities", "Utilidades"),
@@ -64,7 +64,9 @@ def _eur(value: Decimal) -> str:
 @router.get("", response_model=DashboardOut)
 def dashboard(ctx: CurrentAuth, db: Db) -> DashboardOut:
     entity_ids = household_entity_ids(db, ctx)
+    scope = [ctx.active_entity_id] if ctx.active_entity_id else entity_ids
     lego = lego_service.overview(db, entity_ids=entity_ids, active_entity_id=ctx.active_entity_id)
+    grocery_spend, grocery_receipts = receipts_service.dashboard_summary(db, scope)
 
     tiles = [
         ModuleTile(
@@ -76,7 +78,17 @@ def dashboard(ctx: CurrentAuth, db: Db) -> DashboardOut:
             secondary_value=str(lego.copies_owned),
             secondary_label="Cópias",
             href="/lego",
-        )
+        ),
+        ModuleTile(
+            key="supermarket",
+            label="Supermercado",
+            status="LIVE",
+            primary_value=_eur(grocery_spend),
+            primary_label="Despesa registada",
+            secondary_value=str(grocery_receipts),
+            secondary_label="Faturas",
+            href="/supermercado",
+        ),
     ]
     tiles += [ModuleTile(key=key, label=label, status="PLANNED") for key, label in PLANNED_MODULES]
 

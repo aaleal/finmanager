@@ -3,10 +3,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Inbox,
+  List,
   ListChecks,
   Merge,
   Package,
   Percent,
+  Receipt,
   ScanLine,
   Tags,
 } from 'lucide-react';
@@ -79,8 +81,8 @@ export function ReceiptStatusPanel({
 
   if (board.isLoading || !board.data) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2lg:grid-cols-3">
-        {Array.from({ length: 8 }).map((_, index) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 10 }).map((_, index) => (
           <Skeleton key={index} className="h-28 rounded-xl" />
         ))}
       </div>
@@ -91,6 +93,12 @@ export function ReceiptStatusPanel({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatusCard
+        icon={Receipt}
+        label="# Faturas"
+        value={num(data.total_receipts)}
+        onClick={() => onNavigate('faturas')}
+      />
       <StatusCard
         icon={Inbox}
         label="Faturas por processar"
@@ -105,6 +113,12 @@ export function ReceiptStatusPanel({
         onClick={() => onNavigate('faturas', { status: 'NEEDS_REVIEW' })}
       />
       <StatusCard
+        icon={List}
+        label="# Linhas"
+        value={num(data.total_lines)}
+        onClick={() => onNavigate('artigos')}
+      />
+      <StatusCard
         icon={ListChecks}
         label="Linhas por resolver"
         value={num(data.unresolved_lines)}
@@ -115,6 +129,12 @@ export function ReceiptStatusPanel({
         label="Linhas resolvidas"
         value={num(data.resolved_lines)}
         onClick={() => onNavigate('artigos')}
+      />
+      <StatusCard
+        icon={Package}
+        label="# Produtos"
+        value={num(data.total_products)}
+        onClick={() => onNavigate('produtos')}
       />
       <StatusCard
         icon={Tags}
@@ -128,27 +148,23 @@ export function ReceiptStatusPanel({
         value={num(data.merge_candidates)}
         onClick={() => onNavigate('produtos')}
       />
-      <StatusCard
-        icon={Package}
-        label="# Produtos"
-        value={num(data.total_products)}
-        onClick={() => onNavigate('produtos')}
-      />
-      <StatusCard
-        icon={Percent}
-        label="Taxa de auto-aceitação observada"
-        value={percent(
-          data.observed_auto_accept_rate !== null ? data.observed_auto_accept_rate * 100 : null,
-        )}
-        hint={
-          <>
-            <span className="flex items-center gap-1">
-              <AlertTriangle className="size-3" />
-              observada sobre {num(data.decided_receipts)} faturas
-            </span>
-          </>
-        }
-      />
+      <div className="sm:col-span-2 lg:col-span-3">
+        <StatusCard
+          icon={Percent}
+          label="Taxa de auto-aceitação observada"
+          value={percent(
+            data.observed_auto_accept_rate !== null ? data.observed_auto_accept_rate * 100 : null,
+          )}
+          hint={
+            <>
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="size-3" />
+                observada sobre {num(data.decided_receipts)} faturas
+              </span>
+            </>
+          }
+        />
+      </div>
     </div>
   );
 }

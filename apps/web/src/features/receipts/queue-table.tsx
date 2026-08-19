@@ -79,7 +79,7 @@ export function ReceiptQueueTable({
         <TableRow>
           <TableHead>Ficheiro</TableHead>
           <TableHead>Comerciante</TableHead>
-          <TableHead>Perfil de leitura</TableHead>
+          <TableHead>Algoritmo</TableHead>
           <TableHead>Estado</TableHead>
           {compact ? null : <TableHead>Tentativas</TableHead>}
           <TableHead>Confiança</TableHead>

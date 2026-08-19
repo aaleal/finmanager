@@ -18,9 +18,10 @@ from typing import Any
 import pytest
 from app.models import Entity, User
 from app.models.receipts import ReceiptItem
-from app.seed import INVOICES_DIR, seed_categories, seed_merchants, seed_parser_profiles
+from app.seed import INVOICES_DIR
 from app.services.receipts import pipeline
 from app.services.receipts import service as receipts
+from app.services.reference_data import ensure_all
 from sqlalchemy.orm import Session
 
 pytestmark = pytest.mark.integration
@@ -30,9 +31,7 @@ FIXTURES = INVOICES_DIR
 
 @pytest.fixture
 def reference_data(db: Session) -> None:
-    seed_categories(db)
-    seed_merchants(db)
-    seed_parser_profiles(db)
+    ensure_all(db)
 
 
 @pytest.fixture

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,12 +29,32 @@ from app.api.routers import (
     settings as settings_router,
 )
 from app.core.config import settings
-from app.core.db import engine
+from app.core.db import engine, session_scope
 from app.core.errors import AppError
 from app.core.ratelimit import RateLimitMiddleware
+from app.services import reference_data
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger("finmanager")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Reference data ships with the release, so every boot re-asserts it.
+
+    The entrypoint has already run ``alembic upgrade head`` by the time this
+    runs. A failure here is logged and swallowed: a missing category must not
+    keep the API from serving the rest of the household's data.
+    """
+    try:
+        with session_scope() as db:
+            created = reference_data.ensure_all(db)
+        if any(created.values()):
+            logger.info("bootstrap: reference data created %s", created)
+    except Exception:  # pragma: no cover - defensive, boot must not depend on it
+        logger.exception("bootstrap: could not ensure reference data")
+    yield
+
 
 app = FastAPI(
     title="FinManager API",
@@ -44,6 +66,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url=None,
     openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
 

@@ -6,7 +6,10 @@ hand-written sets that exist to exercise cases the spreadsheet has none of: a sa
 a gift, a MOC, a missing part and a retirement date still in the future.
 
 It creates **no users**: the household and its owner come from the first-run setup
-(ADR-0011), and this only fills reference data and the collection alongside them.
+(ADR-0011), and this only fills the collection alongside them. Reference data —
+grocery categories, merchants, parser profiles — is not demo data and lives in
+``app.services.reference_data``, ensured at every boot (ADR-0029); the seed only
+re-asserts it so it can run against a database the API has never started against.
 Run it after the first login, with ``make seed``. Idempotent — re-running only
 fills what is missing.
 """
@@ -17,10 +20,8 @@ import argparse
 import contextlib
 import datetime as dt
 import json
-import re
 import sys
 import time
-import unicodedata
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -30,27 +31,20 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.core.db import session_scope
 from app.core.errors import ValidationError
-from app.models.core import Category, Merchant, Tag
+from app.models.core import Merchant, Tag
 from app.models.household import Entity, Household
 from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
-from app.models.receipts import MerchantParserProfile
 from app.seed.images import cover_for
-from app.services import documents, settings_service
+from app.services import documents, reference_data, settings_service
+from app.services.reference_data import slugify
 
 DATA_DIR = Path(__file__).parent / "data"
-TAXONOMY_FILE = DATA_DIR / "supermarket-categories.pt-PT.json"
 INVENTORY_FILE = DATA_DIR / "lego-inventory.json"
 #: The eleven real *talões* — four Continente, four Pingo Doce, two Lidl and one
 #: Piquete photograph. They are seed data, not test scaffolding: the household's
 #: own invoices are what the module is judged on, and the parser tests read the
 #: very same files so a fixture and a demo can never drift apart.
 INVOICES_DIR = DATA_DIR / "invoices"
-
-
-def slugify(value: str) -> str:
-    normalized = unicodedata.normalize("NFKD", value)
-    ascii_only = normalized.encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z0-9]+", "_", ascii_only.lower()).strip("_")
 
 
 # --- Household ---------------------------------------------------------------
@@ -77,199 +71,6 @@ def resolve_target(db: DbSession) -> tuple[Household, Entity]:
     if entity is None:
         raise ValidationError("O agregado não tem nenhuma entidade para atribuir os dados.")
     return household, entity
-
-
-# --- Reference data ----------------------------------------------------------
-def seed_categories(db: DbSession) -> None:
-    if db.scalar(select(func.count()).select_from(Category).where(Category.domain == "GROCERY")):
-        return
-    if not TAXONOMY_FILE.exists():  # pragma: no cover
-        return
-
-    payload = json.loads(TAXONOMY_FILE.read_text(encoding="utf-8"))
-    brand_axis_l2 = {"Gelados", "Pastilhas"}
-
-    for l1_name, l2_map in payload["categories"].items():
-        l1 = Category(
-            code_en=slugify(l1_name),
-            display_name_pt=l1_name,
-            domain="GROCERY",
-            level=1,
-        )
-        db.add(l1)
-        db.flush()
-        for l2_name, l3_names in l2_map.items():
-            l2 = Category(
-                code_en=f"{slugify(l1_name)}__{slugify(l2_name)}",
-                display_name_pt=l2_name,
-                domain="GROCERY",
-                level=2,
-                parent_id=l1.id,
-                brand_axis=l2_name in brand_axis_l2,
-            )
-            db.add(l2)
-            db.flush()
-            for l3_name in l3_names:
-                db.add(
-                    Category(
-                        code_en=f"{slugify(l1_name)}__{slugify(l2_name)}__{slugify(l3_name)}",
-                        display_name_pt=l3_name,
-                        domain="GROCERY",
-                        level=3,
-                        parent_id=l2.id,
-                    )
-                )
-    db.flush()
-
-
-PORTUGUESE_MERCHANTS = [
-    ("Continente", "RETAIL", "https://www.continente.pt"),
-    ("Pingo Doce", "RETAIL", "https://www.pingodoce.pt"),
-    ("Auchan", "RETAIL", "https://www.auchan.pt"),
-    ("Lidl", "RETAIL", "https://www.lidl.pt"),
-    ("Aldi", "RETAIL", "https://www.aldi.pt"),
-    ("El Corte Inglés", "RETAIL", None),
-    ("Piquete da Fruta", "RETAIL", None),
-    ("Galp", "SERVICE_PROVIDER", "https://www.galp.pt"),
-    ("BP", "SERVICE_PROVIDER", None),
-    ("EDP Comercial", "UTILITY_PROVIDER", "https://www.edp.pt"),
-    ("Águas de Gaia", "UTILITY_PROVIDER", None),
-    ("Millennium bcp", "BANK", None),
-    ("Caixa Geral de Depósitos", "BANK", None),
-    ("Médis", "INSURER", None),
-    ("Farmácia Central", "RETAIL", None),
-]
-
-#: NIFs and spellings read off the eleven real *talões* under
-#: ``00.prompts/seed/supermarket/invoices/``. The NIF is what resolves a merchant
-#: exactly during parsing; the aliases are what the fuzzy fallback matches on.
-MERCHANT_FISCAL_DETAILS: dict[str, tuple[str | None, list[str]]] = {
-    "Continente": (
-        "501591109",
-        ["Continente Loures", "MCH Cascais", "CONTINENTE HIPERMERCADOS S.A.", "Modelo Continente"],
-    ),
-    "Pingo Doce": ("500829993", ["PD Ramada", "Pingo Doce - Distribuição Alimentar"]),
-    "Lidl": ("503340855", ["LIDL & Cia", "Lidl Alcobaça", "Lidl Loures-Frielas"]),
-    "Piquete da Fruta": (None, ["Frutastico", "Piquete da Fruta", "Frutastico Unipessoal"]),
-}
-
-
-def seed_merchants(db: DbSession) -> None:
-    for name, kind, website in PORTUGUESE_MERCHANTS:
-        merchant = db.scalar(select(Merchant).where(Merchant.name == name))
-        if merchant is None:
-            merchant = Merchant(name=name, kind=kind, website=website, aliases=[])
-            db.add(merchant)
-        nif, aliases = MERCHANT_FISCAL_DETAILS.get(name, (None, []))
-        if nif and not merchant.nif:
-            merchant.nif = nif
-        if aliases and not merchant.aliases:
-            merchant.aliases = aliases
-    db.flush()
-
-
-#: One profile per merchant plus **one generic fallback**, so a brand-new
-#: merchant is never a dead end (FR-1.15).
-PARSER_PROFILES: list[dict[str, Any]] = [
-    {
-        "merchant": "Continente",
-        "name": "Continente talão PDF",
-        "parser_key": "continente_v1",
-        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
-        "detection_patterns": [r"CONTINENTE\s+HIPERMERCADOS", r"Cartao cliente", r"MCH\s+\w+"],
-        # Continente's printed line value is already net of POUPANCA; Pingo
-        # Doce's is gross. One flag, two opposite worlds (Decision #28).
-        "field_hints": {
-            "line_value_is_net": True,
-            "section_heading": r"^[A-Za-zÀ-ÿ0-9&./ -]+:$",
-            "savings_line": "POUPANCA",
-            "decimal_separator": ",",
-            "date_format": "%d/%m/%Y",
-        },
-        "priority": 100,
-    },
-    {
-        "merchant": "Pingo Doce",
-        "name": "Pingo Doce fatura",
-        "parser_key": "pingodoce_v1",
-        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
-        "detection_patterns": [r"Pingo\s+Doce", r"500829993"],
-        "field_hints": {
-            "line_value_is_net": False,
-            "savings_line": "Poupança Imediata",
-            "decimal_separator": ",",
-            "date_format": "%d/%m/%Y",
-        },
-        "priority": 100,
-    },
-    {
-        "merchant": "Lidl",
-        "name": "Lidl fatura",
-        "parser_key": "lidl_v1",
-        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
-        "detection_patterns": [r"LIDL", r"503340855"],
-        "field_hints": {
-            "line_value_is_net": True,
-            "iva_class_position": "end",
-            "decimal_separator": ",",
-            "date_format": "%Y-%m-%d",
-        },
-        "priority": 100,
-    },
-    {
-        "merchant": "Piquete da Fruta",
-        "name": "Piquete da Fruta (fotografia)",
-        "parser_key": "piquete_v1",
-        "document_kinds": ["IMAGE_SCAN", "PDF_DIGITAL"],
-        "detection_patterns": [r"piquetedafruta", r"Frutastico", r"QTD\s+UNI\s+DESCRICAO"],
-        "field_hints": {
-            "line_value_is_net": True,
-            "quantity_first": True,
-            "iva_is_percentage": True,
-            "decimal_separator": ",",
-        },
-        "priority": 90,
-    },
-    {
-        "merchant": None,
-        "name": "Perfil genérico",
-        "parser_key": "generic_v1",
-        "document_kinds": ["PDF_DIGITAL", "IMAGE_SCAN"],
-        "detection_patterns": [],
-        "field_hints": {"line_value_is_net": True, "decimal_separator": ","},
-        "priority": 0,
-    },
-]
-
-
-def seed_parser_profiles(db: DbSession) -> None:
-    for spec in PARSER_PROFILES:
-        merchant_id = None
-        if spec["merchant"]:
-            merchant = db.scalar(select(Merchant).where(Merchant.name == spec["merchant"]))
-            if merchant is None:
-                continue
-            merchant_id = merchant.id
-        existing = db.scalar(
-            select(MerchantParserProfile).where(
-                MerchantParserProfile.parser_key == spec["parser_key"],
-                MerchantParserProfile.is_deleted.is_(False),
-            )
-        )
-        if existing is not None:
-            continue
-        db.add(
-            MerchantParserProfile(
-                merchant_id=merchant_id,
-                name=spec["name"],
-                parser_key=spec["parser_key"],
-                document_kinds=spec["document_kinds"],
-                detection_patterns=spec["detection_patterns"],
-                field_hints=spec["field_hints"],
-                priority=spec["priority"],
-            )
-        )
-    db.flush()
 
 
 def seed_tags(db: DbSession, household: Household) -> None:
@@ -648,10 +449,12 @@ def _seed_images(db: DbSession, model: LegoSetModel, *, alts: int) -> None:
             db, box_path.read_bytes(), original_filename=box_path.name
         ).id
         for index in range(1, alts + 1):
-            alt_path = folder / f"alt{index}.jpg"  # type: ignore[union-attr]
+            alt_path = folder / f"alt{index}.jpg"  # type: ignore[operator]
             if not alt_path.exists():
                 break  # the set simply has no further views
-            document = documents.store_bytes(db, alt_path.read_bytes(), original_filename=alt_path.name)
+            document = documents.store_bytes(
+                db, alt_path.read_bytes(), original_filename=alt_path.name
+            )
             db.add(
                 LegoSetImage(
                     lego_set_model_id=model.id,
@@ -949,9 +752,7 @@ def main() -> None:
         with session_scope() as db:
             household, entity = resolve_target(db)
             step("settings", seed_settings, db=db)
-            step("categories", seed_categories, db=db)
-            step("merchants", seed_merchants, db=db)
-            step("parser profiles", seed_parser_profiles, db=db)
+            step("reference data", reference_data.ensure_all, db=db)
             step("tags", seed_tags, db=db, household=household)
             step("supermarket demo receipt", seed_supermarket, db=db, entity=entity)
             invoices = step("supermarket invoices", seed_supermarket_invoices, db=db, entity=entity)

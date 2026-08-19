@@ -673,6 +673,7 @@ def status_counts(db: DbSession, entity_ids: list[uuid.UUID]) -> dict[str, Any]:
     live = Receipt.is_deleted.is_(False)
     in_scope = Receipt.entity_id.in_(entity_ids)
 
+    total_receipts = count(select(Receipt.id).where(in_scope, live))
     queued = count(
         select(ProcessingJob.id).where(
             ProcessingJob.job_type.like("receipts.%"),
@@ -710,9 +711,11 @@ def status_counts(db: DbSession, entity_ids: list[uuid.UUID]) -> dict[str, Any]:
     auto_accepted = by_status.get("AUTO_ACCEPTED", 0)
 
     return {
+        "total_receipts": total_receipts,
         "to_process": queued,
         "failed_jobs": failed,
         "to_validate": to_validate,
+        "total_lines": unresolved_lines + resolved_lines,
         "unresolved_lines": unresolved_lines,
         "resolved_lines": resolved_lines,
         "uncategorized_products": products_service.uncategorized_count(db),
@@ -724,6 +727,23 @@ def status_counts(db: DbSession, entity_ids: list[uuid.UUID]) -> dict[str, Any]:
         ),
         "decided_receipts": total_decided,
     }
+
+
+def dashboard_summary(db: DbSession, entity_ids: list[uuid.UUID]) -> tuple[Decimal, int]:
+    """What the home tile shows: money spent, and over how many *faturas*.
+
+    Voided receipts are excluded — an annulled *talão* never happened.
+    """
+    if not entity_ids:
+        return ZERO, 0
+    total, receipts = db.execute(
+        select(func.coalesce(func.sum(Receipt.total_eur), 0), func.count(Receipt.id)).where(
+            Receipt.entity_id.in_(entity_ids),
+            Receipt.is_deleted.is_(False),
+            Receipt.status != "VOID",
+        )
+    ).one()
+    return to_eur(Decimal(total)) or ZERO, int(receipts)
 
 
 # --- Parser profiles ----------------------------------------------------------

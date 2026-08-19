@@ -74,6 +74,7 @@ class ProductDisplay(NamedTuple):
     canonical_name: str
     category_path: str | None
     sold_by_weight: bool
+    pack_weights: frozenset[Decimal]
 
 
 def item_out(
@@ -88,6 +89,12 @@ def item_out(
     payload.display_name = product.canonical_name if product else item.description_raw
     payload.category_path = product.category_path if product else None
     payload.sold_by_weight = bool(product and product.sold_by_weight)
+
+    # Matched by value, at the gram: with unique weights per product there is
+    # exactly one format a line can mean, so no reference has to be stored.
+    listed = products_service.round_to_the_gram(item.weight_listed_kg)
+    if product is not None and listed is not None and not product.sold_by_weight:
+        payload.pack_weight_is_known = listed in product.pack_weights
     return payload
 
 
@@ -105,6 +112,7 @@ def _product_display(db: DbSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, Prod
             canonical_name=product.canonical_name,
             category_path=paths.get(category_id) if category_id is not None else None,
             sold_by_weight=product.sold_by_weight,
+            pack_weights=frozenset(products_service.pack_weights(product)),
         )
     return display
 
