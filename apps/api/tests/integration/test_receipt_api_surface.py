@@ -123,6 +123,36 @@ def test_the_ledger_link_endpoint_explains_itself(client: TestClient, receipt_id
     assert body["link_id"] is None
 
 
+def test_a_line_can_be_reassigned_to_another_product(client: TestClient, receipt_id: str) -> None:
+    """The correction the whole review flow hangs on: it once had no route at all."""
+    item_id = client.get(f"/api/receipts/{receipt_id}").json()["items"][0]["id"]
+    product_id = client.post(
+        "/api/master-products", json={"canonical_name": "Polpa de Tomate", "brand": "Guloso"}
+    ).json()["id"]
+
+    response = client.patch(
+        f"/api/receipt-items/{item_id}/product", json={"master_product_id": product_id}
+    )
+    assert response.status_code == 200
+    assert response.json()["master_product_id"] == product_id
+    assert response.json()["display_name"] == "Polpa de Tomate"
+
+
+def test_a_pack_format_is_added_idempotently_through_the_api(client: TestClient) -> None:
+    """Appending a format never has to send the ones already there."""
+    product_id = client.post(
+        "/api/master-products", json={"canonical_name": "Arroz Carolino"}
+    ).json()["id"]
+    path = f"/api/master-products/{product_id}/pack-variants"
+
+    assert client.post(path, json={"weight_kg": "0.5"}).status_code == 200
+    body = client.post(path, json={"weight_kg": "0.5"}).json()
+
+    assert body["pack_variants"] == [
+        {"label": "500 g", "weight_kg": "0.500", "barcode": None},
+    ]
+
+
 def test_an_fs_article_can_be_appended_through_the_api(client: TestClient, receipt_id: str) -> None:
     before = client.get(f"/api/receipts/{receipt_id}").json()
     response = client.post(

@@ -84,7 +84,7 @@ export function ReceiptQueueTable({
           {compact ? null : <TableHead>Tentativas</TableHead>}
           <TableHead>Confiança</TableHead>
           <TableHead>Motivo da falha</TableHead>
-          <TableHead className="text-right">Ações</TableHead>
+          <TableHead className="w-32">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -118,7 +118,9 @@ export function ReceiptQueueTable({
                 {entry.last_error ?? '—'}
               </TableCell>
               <TableCell>
-                <div className="flex justify-end gap-2">
+                {/* Stacked, not side by side: the actions column was what pushed
+                    the failure reason off the right edge of the page. */}
+                <div className="flex flex-col items-stretch gap-1.5">
                   {canWrite ? (
                     <Button
                       size="sm"

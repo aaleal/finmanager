@@ -21,6 +21,7 @@ from app.schemas.common import Ok, Page
 from app.schemas.receipts import (
     FsFilter,
     FsItemCreate,
+    ItemProductAssignment,
     ParserOption,
     ParserProfileIn,
     ParserProfileOut,
@@ -527,6 +528,20 @@ def list_items(
         page=page,
         page_size=page_size,
     )
+
+
+@items_router.patch("/{item_id}/product", response_model=ReceiptItemOut)
+def reassign_item_product(
+    item_id: uuid.UUID, payload: ItemProductAssignment, ctx: Writer, db: Db
+) -> ReceiptItemOut:
+    """Correcting a line here is also how the merchant's vocabulary is learned."""
+    item = receipts.get_item(db, item_id)
+    if item.entity_id not in _scope(db, ctx):
+        raise NotFound("Linha não encontrada.")
+    receipts.reassign_item_product(
+        db, item, master_product_id=payload.master_product_id, actor_user_id=ctx.user.id
+    )
+    return item_out(item, products=_product_display(db, {payload.master_product_id}))
 
 
 # --- Parser profiles (UX-1.8) --------------------------------------------------

@@ -110,11 +110,13 @@ function isBlankRow(row: VariantRow): boolean {
 }
 
 function rowsToVariants(rows: VariantRow[]): PackVariant[] {
-  return rows.filter((row) => !isBlankRow(row)).map((row) => ({
-    label: row.label.trim() || null,
-    weight_kg: rowWeightKg(row),
-    barcode: row.barcode,
-  }));
+  return rows
+    .filter((row) => !isBlankRow(row))
+    .map((row) => ({
+      label: row.label.trim() || null,
+      weight_kg: rowWeightKg(row),
+      barcode: row.barcode,
+    }));
 }
 
 /** Unique weights are what let a receipt line find its format by value alone. */

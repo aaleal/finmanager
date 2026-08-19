@@ -51,7 +51,9 @@ export function CategoryPicker({
           )}
         >
           <Search className="size-4 shrink-0 text-muted-foreground" />
-          <span className={cn('truncate', !value && 'text-placeholder')}>{value ?? placeholder}</span>
+          <span className={cn('truncate', !value && 'text-placeholder')} title={value ?? undefined}>
+            {value ?? placeholder}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-96 space-y-2 p-2" align="start">
@@ -80,6 +82,7 @@ export function CategoryPicker({
                   <button
                     type="button"
                     onClick={() => choose(category)}
+                    title={category.path}
                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted"
                   >
                     <Badge variant="outline" className="shrink-0">
@@ -91,7 +94,9 @@ export function CategoryPicker({
               ))}
             </ul>
           ) : (
-            <p className="px-2 py-3 text-sm text-muted-foreground">Sem categorias correspondentes.</p>
+            <p className="px-2 py-3 text-sm text-muted-foreground">
+              Sem categorias correspondentes.
+            </p>
           )}
         </div>
       </PopoverContent>

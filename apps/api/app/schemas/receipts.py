@@ -82,6 +82,12 @@ class ReceiptItemUpdate(BaseModel):
     notes: str | None = None
 
 
+class ItemProductAssignment(BaseModel):
+    """Re-resolve a line to another product; the correction is learned per merchant."""
+
+    master_product_id: uuid.UUID
+
+
 class FsItemCreate(BaseModel):
     """An article that was **never on the invoice**, appended by hand."""
 

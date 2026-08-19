@@ -50,13 +50,16 @@ import {
   useConfirmReceiptCategories,
   useReassignItemProduct,
 } from './catalogue-api';
-import { useConfirmReceipt, useReceipt, useReparse, useUpdateItem, useVoidReceipt } from './api';
+import {
+  useConfirmReceipt,
+  useReceipt,
+  useReparse,
+  useUpdateItem,
+  useUpdateReceipt,
+  useVoidReceipt,
+} from './api';
 
-type EditableField =
-  | 'unit_price_pvp_eur'
-  | 'promo_discount_eur'
-  | 'quantity'
-  | 'weight_listed_kg';
+type EditableField = 'unit_price_pvp_eur' | 'promo_discount_eur' | 'quantity' | 'weight_listed_kg';
 
 const LOW_CONFIDENCE = 0.6;
 const ZOOM_STEPS = [0.6, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -378,19 +381,23 @@ function ItemRow({
   );
 }
 
-const ITEM_COLUMNS = [
-  '#',
-  'Descrição',
-  'Produto',
-  'Categoria',
-  'Qtd',
-  'Peso',
-  'PVP',
-  'Promo',
-  'Desconto fatura',
-  'Pago',
-  '€/kg',
-  '?',
+const ITEM_COLUMNS: { label: string; title?: string }[] = [
+  { label: '#' },
+  { label: 'Descrição' },
+  { label: 'Produto' },
+  { label: 'Categoria' },
+  { label: 'Qtd' },
+  { label: 'Peso' },
+  { label: 'PVP' },
+  { label: 'Promo' },
+  {
+    label: 'Desconto fatura',
+    title:
+      'Repartição automática do desconto da fatura por cada linha. Edite o desconto no cabeçalho — a repartição é refeita a seguir.',
+  },
+  { label: 'Pago' },
+  { label: '€/kg' },
+  { label: '?' },
 ];
 
 function ItemTableHead() {
@@ -398,10 +405,73 @@ function ItemTableHead() {
     <TableHeader>
       <TableRow>
         {ITEM_COLUMNS.map((column) => (
-          <TableHead key={column}>{column}</TableHead>
+          <TableHead key={column.label} title={column.title}>
+            {column.label}
+          </TableHead>
         ))}
       </TableRow>
     </TableHeader>
+  );
+}
+
+/**
+ * A total that is an **input**, edited in place.
+ *
+ * The invoice discount is one of them: the per-line `Desconto fatura` column is
+ * its proration, recomputed on every edit, so it is here that it is changed.
+ */
+function EditableTotalRow({
+  label,
+  value,
+  hint,
+  disabled,
+  onSave,
+}: {
+  label: string;
+  value: string | number | null;
+  hint?: string;
+  disabled: boolean;
+  onSave: (value: number) => void;
+}) {
+  const [draft, setDraft] = React.useState<string | null>(null);
+
+  function commit() {
+    const raw = draft ?? '';
+    setDraft(null);
+    const numeric = Number(raw.trim().replace(',', '.'));
+    if (!Number.isFinite(numeric) || numeric === Number(value)) return;
+    onSave(numeric);
+  }
+
+  return (
+    <div className="flex items-baseline justify-between text-sm">
+      <span className="text-muted-foreground" title={hint}>
+        {label}
+      </span>
+      {draft === null ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setDraft(value === null ? '' : String(value))}
+          className="numeric rounded px-1.5 py-0.5 font-medium hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+        >
+          {eur(value)}
+        </button>
+      ) : (
+        <Input
+          autoFocus
+          className="h-7 w-28"
+          inputMode="decimal"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') commit();
+            if (event.key === 'Escape') setDraft(null);
+          }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -506,8 +576,8 @@ function DocumentPane({ url }: { url: string | null }) {
           </div>
         ) : failed ? (
           <div className="flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-            Não foi possível carregar o original. A ligação assinada expira ao fim de alguns
-            minutos — feche e reabra a fatura.
+            Não foi possível carregar o original. A ligação assinada expira ao fim de alguns minutos
+            — feche e reabra a fatura.
           </div>
         ) : !objectUrl ? (
           <div className="p-3">
@@ -544,6 +614,7 @@ export function ReceiptReviewPane({
   const voidReceipt = useVoidReceipt();
   const reparse = useReparse();
   const updateItem = useUpdateItem();
+  const updateReceipt = useUpdateReceipt();
   const reassign = useReassignItemProduct();
 
   const [addFsOpen, setAddFsOpen] = React.useState(false);
@@ -721,6 +792,18 @@ export function ReceiptReviewPane({
                     <span className="text-muted-foreground">Total impresso</span>
                     <span className="numeric font-medium">{eur(receipt.total_eur)}</span>
                   </div>
+                  <EditableTotalRow
+                    label="Desconto da fatura"
+                    hint="Reparte-se por todas as linhas na coluna «Desconto fatura», que por isso não se edita linha a linha."
+                    value={receipt.total_discount_eur}
+                    disabled={!canEditItems}
+                    onSave={(total_discount_eur) =>
+                      updateReceipt.mutate({
+                        receiptId: receipt.id,
+                        patch: { total_discount_eur },
+                      })
+                    }
+                  />
                   <div className="flex items-baseline justify-between text-sm">
                     <span className="text-muted-foreground">Soma das linhas</span>
                     <span className="numeric font-medium">

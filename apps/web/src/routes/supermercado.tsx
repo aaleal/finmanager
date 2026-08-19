@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useSession } from '@/features/auth/session';
 import { useDebounced, useUrlFilters } from '@/lib/filters';
-import { FS_FILTER_OPTIONS, RECEIPT_STATUS_OPTIONS } from '@/features/receipts/constants';
+import { RECEIPT_STATUS_OPTIONS } from '@/features/receipts/constants';
 import { useReceiptItems, useReceipts } from '@/features/receipts/api';
 import { ReceiptStatusPanel } from '@/features/receipts/status-panel';
 import { ReceiptUploadDialog } from '@/features/receipts/upload-panel';
@@ -37,7 +37,6 @@ const DEFAULTS = {
   status: undefined,
   date_from: undefined,
   date_to: undefined,
-  fs: 'all',
   page: '1',
   page_size: '25',
   //: Which invoice the review pane is open on, so the shared Review Queue can
@@ -66,8 +65,8 @@ function FilterBar({
   }, [debouncedSearch, filters.search, setFilters]);
 
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div className="relative min-w-0">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3">
+      <div className="relative min-w-[15rem] flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           className="pl-9"
@@ -84,7 +83,7 @@ function FilterBar({
             setFilters({ status: value === ALL ? undefined : value, page: '1' })
           }
         >
-          <SelectTrigger className="min-w-0">
+          <SelectTrigger className="w-48 shrink-0">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -98,39 +97,21 @@ function FilterBar({
         </Select>
       ) : null}
 
-      <Select
-        value={filters.fs ?? 'all'}
-        onValueChange={(value) => setFilters({ fs: value, page: '1' })}
-      >
-        <SelectTrigger className="min-w-0">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {FS_FILTER_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Two date inputs in one grid cell used to overflow the card on narrow
-          viewports: they now wrap onto their own row instead of spilling out. */}
-      <div className="flex min-w-0 flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-1">
+      <div className="flex shrink-0 items-center gap-2">
         <Input
           type="date"
           aria-label="De"
-          className="min-w-0 flex-1 basis-36"
+          className="w-40"
           value={filters.date_from ?? ''}
           onChange={(event) =>
             setFilters({ date_from: event.target.value || undefined, page: '1' })
           }
         />
-        <span className="shrink-0 text-muted-foreground">–</span>
+        <span className="text-muted-foreground">–</span>
         <Input
           type="date"
           aria-label="Até"
-          className="min-w-0 flex-1 basis-36"
+          className="w-40"
           value={filters.date_to ?? ''}
           onChange={(event) => setFilters({ date_to: event.target.value || undefined, page: '1' })}
         />
@@ -151,7 +132,6 @@ export function SupermercadoPage() {
     status: filters.status,
     date_from: filters.date_from,
     date_to: filters.date_to,
-    fs: filters.fs as 'all' | 'only' | 'exclude',
     page: filters.page,
     page_size: filters.page_size,
   });
@@ -160,7 +140,6 @@ export function SupermercadoPage() {
     search: filters.search,
     date_from: filters.date_from,
     date_to: filters.date_to,
-    fs: filters.fs as 'all' | 'only' | 'exclude',
     page: filters.page,
     page_size: filters.page_size,
   });

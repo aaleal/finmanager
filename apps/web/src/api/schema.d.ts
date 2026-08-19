@@ -873,6 +873,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/receipt-items/{item_id}/product": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Reassign Item Product
+         * @description Correcting a line here is also how the merchant's vocabulary is learned.
+         */
+        patch: operations["reassign_item_product_api_receipt_items__item_id__product_patch"];
+        trace?: never;
+    };
     "/api/master-products": {
         parameters: {
             query?: never;
@@ -1775,6 +1795,17 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * ItemProductAssignment
+         * @description Re-resolve a line to another product; the correction is learned per merchant.
+         */
+        ItemProductAssignment: {
+            /**
+             * Master Product Id
+             * Format: uuid
+             */
+            master_product_id: string;
         };
         /**
          * LastKnownPrice
@@ -5876,6 +5907,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_ReceiptItemOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reassign_item_product_api_receipt_items__item_id__product_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemProductAssignment"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptItemOut"];
                 };
             };
             /** @description Validation Error */

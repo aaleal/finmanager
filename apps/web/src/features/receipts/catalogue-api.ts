@@ -124,7 +124,8 @@ export function useCategoryImpact(categoryId: string | null) {
 export function useCreateProduct() {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post<MasterProduct>('/master-products', body),
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<MasterProduct>('/master-products', body),
     onSuccess: () => {
       toast.success('Produto criado.');
       invalidate();
