@@ -33,6 +33,11 @@ const WEIGHT = new Intl.NumberFormat('pt-PT', {
   useGrouping: 'always',
 });
 
+const WEIGHT_SHORT = new Intl.NumberFormat('pt-PT', {
+  maximumFractionDigits: 2,
+  useGrouping: 'always',
+});
+
 /** Force the group separator regardless of the ICU data the runtime ships with. */
 function spaced(formatter: Intl.NumberFormat, value: number): string {
   return formatter
@@ -109,6 +114,21 @@ export function weightKg(value: Money, fallback = EM_DASH): string {
   const numeric = typeof value === 'string' ? Number(value) : value;
   if (Number.isNaN(numeric)) return fallback;
   return `${spaced(WEIGHT, numeric)} kg`;
+}
+
+/**
+ * The weight as a shopper says it: grams below the kilo, kilos above it with at
+ * most two decimals.
+ *
+ * Display only. Every €/kg is divided server-side from the unrounded weight, and
+ * the exact figure belongs on the `title` of whatever renders this.
+ */
+export function weightCompact(value: Money, fallback = EM_DASH): string {
+  if (value === null || value === undefined || value === '') return fallback;
+  const numeric = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isFinite(numeric)) return fallback;
+  if (numeric > 0 && numeric < 1) return `${Math.round(numeric * 1000)} g`;
+  return `${spaced(WEIGHT_SHORT, numeric)} kg`;
 }
 
 /**

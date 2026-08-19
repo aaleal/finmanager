@@ -40,7 +40,9 @@ export function CategoryPicker({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    // `modal` so the list still scrolls when the picker opens on top of a dialog:
+    // the dialog's scroll lock ignores a portalled popover that is not its own.
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <button
           type="button"

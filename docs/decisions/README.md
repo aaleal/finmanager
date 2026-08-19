@@ -33,3 +33,6 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0026](0026-carregar-is-an-action-not-a-place.md) | Carregar is an action, not a place |
 | [0027](0027-real-invoices-are-seed-data.md) | The eleven real *talões* are seed data, not test fixtures |
 | [0028](0028-line-grid-shows-category-not-merchant-section.md) | The line grid shows the category, not the merchant's section heading |
+| [0029](0029-reference-data-ships-with-the-release.md) | Reference data ships with the release |
+| [0030](0030-a-pack-format-is-matched-by-value-not-referenced.md) | A pack format is matched by value, not referenced |
+| [0031](0031-the-review-grid-shows-the-price-per-kg-that-was-paid.md) | The review grid shows the €/kg that was paid |

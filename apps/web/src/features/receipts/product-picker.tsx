@@ -55,7 +55,8 @@ export function ProductPicker({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    // `modal` so the list still scrolls inside the review pane's dialog.
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <button
           type="button"

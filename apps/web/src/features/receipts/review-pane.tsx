@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   ShieldX,
   Tags,
+  Trash2,
   XCircle,
   ZoomIn,
   ZoomOut,
@@ -36,7 +37,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/feedback';
-import { EM_DASH, date, eur, packLabel, percent, quantity, weightKg } from '@/lib/format';
+import {
+  EM_DASH,
+  date,
+  eur,
+  packLabel,
+  percent,
+  quantity,
+  weightCompact,
+  weightKg,
+} from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
 import { RECEIPT_STATUS_META } from './constants';
@@ -52,6 +62,7 @@ import {
 } from './catalogue-api';
 import {
   useConfirmReceipt,
+  useDeleteItem,
   useReceipt,
   useReparse,
   useUpdateItem,
@@ -75,6 +86,13 @@ function confidencePct(confidence: string | null | undefined): number | null {
   if (confidence === null || confidence === undefined) return null;
   const value = Number(confidence);
   return Number.isFinite(value) ? value * 100 : null;
+}
+
+/** What the line cost before the invoice-level credit was spread over it. Cents,
+ * so two decimal strings never subtract into a float artefact. */
+function lineTotalEur(item: ReceiptItem): number {
+  const cents = (value: string) => Math.round(Number(value) * 100);
+  return (cents(item.unit_price_pvp_eur) - cents(item.promo_discount_eur)) / 100;
 }
 
 function EditableNumberCell({
@@ -199,8 +217,8 @@ function WeightCell({
   // Weighed at the counter: the scale is the answer and there is no format.
   if (item.sold_by_weight) {
     return (
-      <span className="numeric" title="Pesado ao balcão — o peso vem da balança.">
-        {weightKg(item.weight_kg)}
+      <span className="numeric" title={`${weightKg(item.weight_kg)} — pesado ao balcão.`}>
+        {weightCompact(item.weight_kg)}
       </span>
     );
   }
@@ -225,10 +243,10 @@ function WeightCell({
           type="button"
           disabled={!canEdit}
           onClick={onStart}
-          title="Peso da embalagem, em kg."
+          title={`${weightKg(item.weight_kg)} — peso da embalagem.`}
           className="numeric rounded px-1.5 py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
         >
-          {weightKg(item.weight_kg)}
+          {weightCompact(item.weight_kg)}
         </button>
       )}
       {item.pack_weight_is_known === true ? (
@@ -265,6 +283,7 @@ function ItemRow({
   onCommit,
   onCancel,
   onCreateProduct,
+  onRemove,
 }: {
   item: ReceiptItem;
   index: number;
@@ -277,23 +296,46 @@ function ItemRow({
   onCommit: () => void;
   onCancel: () => void;
   onCreateProduct: (item: ReceiptItem, name: string) => void;
+  onRemove?: () => void;
 }) {
   const low = isLowConfidence(item.confidence);
   return (
-    <TableRow>
+    <TableRow className="group/row">
       <TableCell className="text-muted-foreground">{index}</TableCell>
-      <TableCell className="max-w-[14rem]">
-        <span className="truncate" title={item.description_raw}>
-          {item.display_name ?? item.description_raw}
-        </span>
-      </TableCell>
-      <TableCell className="w-64">
+      {/* One column, two truths: the product we decided on, and beneath it the
+          text the till actually printed — which is the evidence against paper,
+          not a second name. Separate columns showed the same string twice. */}
+      <TableCell className="w-52 max-w-[13rem]">
         <ProductCell item={item} disabled={!canReassignProduct} onCreateProduct={onCreateProduct} />
+        <div className="mt-0.5 flex items-center gap-1">
+          <span
+            className="min-w-0 flex-1 truncate text-[0.65rem] uppercase tracking-wide text-muted-foreground"
+            title={item.description_raw}
+          >
+            {item.description_raw}
+          </span>
+          {low ? (
+            <span
+              className="flex shrink-0 items-center gap-0.5 text-[0.65rem] font-medium text-warning"
+              title="Valor incerto — confirme contra o documento."
+            >
+              <AlertTriangle className="size-3" />
+              {percent(confidencePct(item.confidence))}
+            </span>
+          ) : null}
+          {item.decision_reasons.length ? (
+            <WhyPopover
+              reasons={item.decision_reasons}
+              label={null}
+              title={`Confiança ${percent(confidencePct(item.confidence))} — porquê?`}
+            />
+          ) : null}
+        </div>
       </TableCell>
       {/* The category lives on the product and nowhere else, so it is shown as
           the full `L1 › L2 › L3` path: the same leaf name under two parents is
           never ambiguous (FR-1.3, Decision #34). */}
-      <TableCell className="max-w-[13rem]">
+      <TableCell className="max-w-[11rem]">
         <span className="block truncate text-xs" title={item.category_path ?? undefined}>
           {item.category_path ?? EM_DASH}
         </span>
@@ -340,7 +382,10 @@ function ItemRow({
           onCancel={onCancel}
         />
       </TableCell>
-      <TableCell>
+      {/* The line's own promotion is an input; the invoice's share is the
+          proration of a figure edited in the header. Both are discounts, so they
+          share a column instead of costing two. */}
+      <TableCell className="whitespace-nowrap">
         <EditableNumberCell
           item={item}
           field="promo_discount_eur"
@@ -352,55 +397,84 @@ function ItemRow({
           onCommit={onCommit}
           onCancel={onCancel}
         />
+        {Number(item.invoice_allocated_discount_eur) !== 0 ? (
+          <div
+            className="numeric px-1.5 text-[0.65rem] text-muted-foreground"
+            title="Parte do desconto global da fatura atribuída a esta linha."
+          >
+            {eur(item.invoice_allocated_discount_eur)} fat.
+          </div>
+        ) : null}
       </TableCell>
-      <TableCell className="numeric">{eur(item.invoice_allocated_discount_eur)}</TableCell>
-      <TableCell className="numeric font-medium">{eur(item.paid_price_eur)}</TableCell>
+      <TableCell className="numeric whitespace-nowrap font-medium">
+        {eur(lineTotalEur(item))}
+        {Number(item.invoice_allocated_discount_eur) !== 0 ? (
+          <div
+            className="text-[0.65rem] font-normal text-muted-foreground"
+            title="Já com a fatia do desconto global da fatura — é este o valor que entra no histórico de preços."
+          >
+            {eur(item.paid_price_eur)}
+          </div>
+        ) : null}
+      </TableCell>
       <TableCell className="numeric">
         {item.price_per_kg_final_eur ? (
-          eur(item.price_per_kg_final_eur)
+          <span
+            title={`Pago ${eur(item.price_per_kg_final_eur)}/kg · PVP ${eur(
+              item.price_per_kg_pvp_eur,
+            )}/kg`}
+          >
+            {eur(item.price_per_kg_final_eur)}
+          </span>
         ) : (
           <span title={item.price_per_kg_unavailable_reason ?? undefined}>{EM_DASH}</span>
         )}
       </TableCell>
-      {/* Only the icon: the percentage cost a whole column and said less than
-          the reasons behind it. Uncertainty is still flagged by icon and label,
-          never by colour alone. */}
-      <TableCell>
-        <div className="flex items-center gap-1">
-          {low ? (
-            <AlertTriangle className="size-3.5 shrink-0 text-warning" aria-label="Valor incerto" />
-          ) : null}
-          <WhyPopover
-            reasons={item.decision_reasons}
-            label={null}
-            title={`Confiança ${percent(confidencePct(item.confidence))} — porquê?`}
-          />
-        </div>
-      </TableCell>
+      {/* Only an Fs row gets this cell: a printed line is on the paper, and
+          deleting it would break the reconciliation it exists to prove (ADR-0015). */}
+      {onRemove ? (
+        <TableCell className="w-8">
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={onRemove}
+            title="Remover este artigo Fs"
+            aria-label={`Remover ${item.display_name ?? item.description_raw}`}
+            className="text-destructive opacity-0 transition-opacity focus-visible:opacity-100 group-hover/row:opacity-100"
+          >
+            <Trash2 />
+          </Button>
+        </TableCell>
+      ) : null}
     </TableRow>
   );
 }
 
 const ITEM_COLUMNS: { label: string; title?: string }[] = [
   { label: '#' },
-  { label: 'Descrição' },
-  { label: 'Produto' },
+  { label: 'Artigo', title: 'O produto a que a linha resolveu, e por baixo o texto impresso.' },
   { label: 'Categoria' },
   { label: 'Qtd' },
   { label: 'Peso' },
   { label: 'PVP' },
-  { label: 'Promo' },
   {
-    label: 'Desconto fatura',
+    label: 'Promo',
     title:
-      'Repartição automática do desconto da fatura por cada linha. Edite o desconto no cabeçalho — a repartição é refeita a seguir.',
+      'Promoção da própria linha. Por baixo, a parte do desconto global da fatura que lhe coube — essa reparte-se sozinha a partir do desconto no cabeçalho.',
   },
-  { label: 'Pago' },
-  { label: '€/kg' },
-  { label: '?' },
+  {
+    label: 'Total',
+    title:
+      'PVP menos a promoção da linha. Por baixo, o mesmo valor já com a fatia do desconto global da fatura — esse é o que foi pago.',
+  },
+  {
+    label: '€/kg',
+    title:
+      'Sobre o preço efetivamente pago, já com a promoção e o desconto global da fatura. Passe o rato para ver também o €/kg de tabela (PVP).',
+  },
 ];
 
-function ItemTableHead() {
+function ItemTableHead({ withActions = false }: { withActions?: boolean }) {
   return (
     <TableHeader>
       <TableRow>
@@ -409,18 +483,51 @@ function ItemTableHead() {
             {column.label}
           </TableHead>
         ))}
+        {withActions ? (
+          <TableHead className="w-8">
+            <span className="sr-only">Ações</span>
+          </TableHead>
+        ) : null}
       </TableRow>
     </TableHeader>
   );
 }
 
 /**
+ * One figure in the reconciliation strip: label above, number below.
+ *
+ * The label/value pairs used to be full-width rows stacked four deep, which gave
+ * three short numbers the vertical weight of a paragraph.
+ */
+function TotalStat({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p
+        className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground"
+        title={hint}
+      >
+        {label}
+      </p>
+      <div className="numeric text-lg font-semibold leading-tight">{children}</div>
+    </div>
+  );
+}
+
+/**
  * A total that is an **input**, edited in place.
  *
- * The invoice discount is one of them: the per-line `Desconto fatura` column is
- * its proration, recomputed on every edit, so it is here that it is changed.
+ * The invoice discount is one of them: the per-line share is the proration of a
+ * figure that is recomputed on every edit, so it is here that it is changed.
  */
-function EditableTotalRow({
+function EditableTotalStat({
   label,
   value,
   hint,
@@ -444,23 +551,20 @@ function EditableTotalRow({
   }
 
   return (
-    <div className="flex items-baseline justify-between text-sm">
-      <span className="text-muted-foreground" title={hint}>
-        {label}
-      </span>
+    <TotalStat label={label} hint={hint}>
       {draft === null ? (
         <button
           type="button"
           disabled={disabled}
           onClick={() => setDraft(value === null ? '' : String(value))}
-          className="numeric rounded px-1.5 py-0.5 font-medium hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+          className="-mx-1 rounded px-1 hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
         >
           {eur(value)}
         </button>
       ) : (
         <Input
           autoFocus
-          className="h-7 w-28"
+          className="h-8 w-24 text-base"
           inputMode="decimal"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -471,7 +575,7 @@ function EditableTotalRow({
           }}
         />
       )}
-    </div>
+    </TotalStat>
   );
 }
 
@@ -615,9 +719,11 @@ export function ReceiptReviewPane({
   const reparse = useReparse();
   const updateItem = useUpdateItem();
   const updateReceipt = useUpdateReceipt();
+  const deleteItem = useDeleteItem();
   const reassign = useReassignItemProduct();
 
   const [addFsOpen, setAddFsOpen] = React.useState(false);
+  const [fsToRemove, setFsToRemove] = React.useState<ReceiptItem | null>(null);
   const [voidOpen, setVoidOpen] = React.useState(false);
   const [voidReason, setVoidReason] = React.useState('');
   const [newProduct, setNewProduct] = React.useState<{ itemId: string; name: string } | null>(null);
@@ -638,6 +744,7 @@ export function ReceiptReviewPane({
       setVoidOpen(false);
       setVoidReason('');
       setNewProduct(null);
+      setFsToRemove(null);
     }
   }, [receiptId]);
 
@@ -787,42 +894,48 @@ export function ReceiptReviewPane({
                   </div>
                 </div>
 
-                <div className="space-y-2 border-b border-border py-4">
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="text-muted-foreground">Total impresso</span>
-                    <span className="numeric font-medium">{eur(receipt.total_eur)}</span>
-                  </div>
-                  <EditableTotalRow
-                    label="Desconto da fatura"
-                    hint="Reparte-se por todas as linhas na coluna «Desconto fatura», que por isso não se edita linha a linha."
-                    value={receipt.total_discount_eur}
-                    disabled={!canEditItems}
-                    onSave={(total_discount_eur) =>
-                      updateReceipt.mutate({
-                        receiptId: receipt.id,
-                        patch: { total_discount_eur },
-                      })
-                    }
-                  />
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="text-muted-foreground">Soma das linhas</span>
-                    <span className="numeric font-medium">
+                <div className="border-b border-border py-4">
+                  {/* The two figures being reconciled sit side by side, the input
+                      that moves them next to it, and the verdict as a badge — a
+                      full-width banner for one number was most of this block. */}
+                  <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+                    <TotalStat label="Total impresso">{eur(receipt.total_eur)}</TotalStat>
+                    <TotalStat label="Soma das linhas">
                       {liveTotal !== null
                         ? eur(liveTotal)
                         : eur(receipt.derived.computed_total_eur)}
-                    </span>
-                  </div>
-                  {receipt.derived.is_reconciled === false ? (
-                    <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm font-medium text-warning">
-                      <AlertTriangle className="size-4 shrink-0" />
-                      <span>As linhas não batem certo com o total impresso</span>
-                      <span className="numeric ml-auto">
-                        {eur(receipt.derived.reconciliation_delta_eur)}
-                      </span>
+                    </TotalStat>
+                    <EditableTotalStat
+                      label="Desconto da fatura"
+                      hint="Reparte-se por todas as linhas, que por isso não o editam uma a uma."
+                      value={receipt.total_discount_eur}
+                      disabled={!canEditItems}
+                      onSave={(total_discount_eur) =>
+                        updateReceipt.mutate({
+                          receiptId: receipt.id,
+                          patch: { total_discount_eur },
+                        })
+                      }
+                    />
+                    <div className="pb-1">
+                      {receipt.derived.is_reconciled === false ? (
+                        <Badge
+                          variant="warning"
+                          title="As linhas não batem certo com o total impresso."
+                        >
+                          <AlertTriangle />
+                          {eur(receipt.derived.reconciliation_delta_eur)} de diferença
+                        </Badge>
+                      ) : (
+                        <Badge variant="success">
+                          <CheckCircle2 />
+                          reconciliada
+                        </Badge>
+                      )}
                     </div>
-                  ) : null}
+                  </div>
                   {receipt.derived.fs_item_count > 0 ? (
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground sm:grid-cols-4">
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span>Total nocional: {eur(receipt.derived.notional_total_eur)}</span>
                       <span>Valor Fs: {eur(receipt.derived.fs_value_eur)}</span>
                       <span>Artigos Fs: {receipt.derived.fs_item_count}</span>
@@ -862,10 +975,15 @@ export function ReceiptReviewPane({
                     </p>
                     {fsItems.length ? (
                       <Table>
-                        <ItemTableHead />
+                        <ItemTableHead withActions={canEditItems} />
                         <TableBody>
                           {fsItems.map((item, index) => (
-                            <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
+                            <ItemRow
+                              key={item.id}
+                              index={index + 1}
+                              {...itemRowProps(item)}
+                              onRemove={canEditItems ? () => setFsToRemove(item) : undefined}
+                            />
                           ))}
                         </TableBody>
                       </Table>
@@ -984,6 +1102,41 @@ export function ReceiptReviewPane({
               }}
             >
               Anular
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={fsToRemove !== null} onOpenChange={(open) => !open && setFsToRemove(null)}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Remover artigo Fs
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {fsToRemove?.display_name ?? fsToRemove?.description_raw}
+              </span>{' '}
+              deixa de contar para o valor nocional desta fatura. Nenhum valor impresso se altera —
+              um artigo Fs nunca esteve na fatura.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFsToRemove(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={deleteItem.isPending}
+              onClick={async () => {
+                if (!receipt || !fsToRemove) return;
+                await deleteItem.mutateAsync({ receiptId: receipt.id, itemId: fsToRemove.id });
+                setFsToRemove(null);
+              }}
+            >
+              Remover
             </Button>
           </DialogFooter>
         </DialogContent>
