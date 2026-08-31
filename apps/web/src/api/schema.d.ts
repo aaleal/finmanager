@@ -702,10 +702,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add Fs Item
-         * @description Append an Fs article. Every printed figure must be unchanged afterwards.
+         * Add Item
+         * @description Append an article by hand. An Fs row leaves every printed figure unchanged.
          */
-        post: operations["add_fs_item_api_receipts__receipt_id__items_post"];
+        post: operations["add_item_api_receipts__receipt_id__items_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -740,6 +740,26 @@ export interface paths {
         put?: never;
         /** Confirm */
         post: operations["confirm_api_receipts__receipt_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/receipts/{receipt_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen
+         * @description Back to review. The observations already frozen are left untouched.
+         */
+        post: operations["reopen_api_receipts__receipt_id__reopen_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -891,6 +911,26 @@ export interface paths {
          * @description Correcting a line here is also how the merchant's vocabulary is learned.
          */
         patch: operations["reassign_item_product_api_receipt_items__item_id__product_patch"];
+        trace?: never;
+    };
+    "/api/receipt-items/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarise Items
+         * @description One row per product: how much of it, how often, and at what €/kg.
+         */
+        get: operations["summarise_items_api_receipt_items_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/master-products": {
@@ -1765,7 +1805,10 @@ export interface components {
         };
         /**
          * FsItemCreate
-         * @description An article that was **never on the invoice**, appended by hand.
+         * @description An article added by hand during review.
+         *
+         *     ``is_fs`` false means the parser missed a line that **is** on the paper; the
+         *     reconciliation against the printed total is what judges the correction.
          */
         FsItemCreate: {
             /** Description Raw */
@@ -1782,6 +1825,18 @@ export interface components {
              * @default UN
              */
             unit: string;
+            /**
+             * Is Fs
+             * @default true
+             */
+            is_fs: boolean;
+            /** Line No */
+            line_no?: number | null;
+            /**
+             * Promo Discount Eur
+             * @default 0
+             */
+            promo_discount_eur: number | string;
             /**
              * Notional Value Source
              * @default MANUAL
@@ -2672,6 +2727,17 @@ export interface components {
             /** Page Size */
             page_size: number;
         };
+        /** Page[ProductSummary] */
+        Page_ProductSummary_: {
+            /** Items */
+            items: components["schemas"]["ProductSummary"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /** Page[ReceiptItemOut] */
         Page_ReceiptItemOut_: {
             /** Items */
@@ -2919,6 +2985,47 @@ export interface components {
             /** Score */
             score: number;
             last_known_price?: components["schemas"]["LastKnownPrice"] | null;
+        };
+        /**
+         * ProductSummary
+         * @description One row per product across every invoice in scope.
+         *
+         *     ``price_per_kg_eur`` is weighted by weight, not an average of the per-line
+         *     quotients: averaging rates would let a 200 g purchase count as much as a 5 kg
+         *     one. Lines with no weight are left out of it entirely rather than guessed.
+         */
+        ProductSummary: {
+            /**
+             * Master Product Id
+             * Format: uuid
+             */
+            master_product_id: string;
+            /** Canonical Name */
+            canonical_name: string;
+            /** Brand */
+            brand: string | null;
+            /** Category Path */
+            category_path: string | null;
+            /** Sold By Weight */
+            sold_by_weight: boolean;
+            /** Line Count */
+            line_count: number;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Total Quantity */
+            total_quantity: string;
+            /** Total Weight Kg */
+            total_weight_kg: string | null;
+            /** Total Paid Eur */
+            total_paid_eur: string;
+            /** Total Notional Eur */
+            total_notional_eur: string;
+            /** Price Per Kg Eur */
+            price_per_kg_eur: string | null;
+            /** First Purchase On */
+            first_purchase_on: string | null;
+            /** Last Purchase On */
+            last_purchase_on: string | null;
         };
         /**
          * ProfileTestResult
@@ -3190,6 +3297,8 @@ export interface components {
             display_name?: string | null;
             /** Category Path */
             category_path?: string | null;
+            /** Category Status */
+            category_status?: string | null;
             /**
              * Sold By Weight
              * @default false
@@ -3200,6 +3309,8 @@ export interface components {
         };
         /** ReceiptItemUpdate */
         ReceiptItemUpdate: {
+            /** Line No */
+            line_no?: number | null;
             /** Description Raw */
             description_raw?: string | null;
             /** Quantity */
@@ -5545,7 +5656,7 @@ export interface operations {
             };
         };
     };
-    add_fs_item_api_receipts__receipt_id__items_post: {
+    add_item_api_receipts__receipt_id__items_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5614,6 +5725,37 @@ export interface operations {
         };
     };
     confirm_api_receipts__receipt_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_api_receipts__receipt_id__reopen_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5891,6 +6033,7 @@ export interface operations {
                 date_to?: string | null;
                 fs?: "all" | "only" | "exclude";
                 product_flag?: string | null;
+                master_product_id?: string | null;
                 page?: number;
                 page_size?: number;
             };
@@ -5942,6 +6085,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReceiptItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summarise_items_api_receipt_items_summary_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                merchant_id?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                fs?: "all" | "only" | "exclude";
+                product_flag?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ProductSummary_"];
                 };
             };
             /** @description Validation Error */

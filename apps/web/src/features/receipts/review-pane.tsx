@@ -4,6 +4,7 @@ import {
   Ban,
   CheckCircle2,
   ExternalLink,
+  HelpCircle,
   Maximize2,
   Plus,
   RotateCcw,
@@ -64,13 +65,22 @@ import {
   useConfirmReceipt,
   useDeleteItem,
   useReceipt,
+  useReopenReceipt,
   useReparse,
   useUpdateItem,
   useUpdateReceipt,
   useVoidReceipt,
 } from './api';
 
-type EditableField = 'unit_price_pvp_eur' | 'promo_discount_eur' | 'quantity' | 'weight_listed_kg';
+type EditableField =
+  | 'unit_price_pvp_eur'
+  | 'promo_discount_eur'
+  | 'quantity'
+  | 'weight_listed_kg'
+  | 'line_no';
+
+/** Cleared to `null` rather than to zero: not knowing is a real answer. */
+const CLEARABLE_FIELDS: EditableField[] = ['weight_listed_kg', 'line_no'];
 
 const LOW_CONFIDENCE = 0.6;
 const ZOOM_STEPS = [0.6, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -120,7 +130,7 @@ function EditableNumberCell({
     return (
       <Input
         autoFocus
-        className="h-7 w-24"
+        className={cn('h-7', field === 'line_no' ? 'w-10 px-1' : 'w-24')}
         inputMode="decimal"
         value={editValue}
         onChange={(event) => onEditValueChange(event.target.value)}
@@ -138,12 +148,17 @@ function EditableNumberCell({
       disabled={disabled}
       onClick={onStart}
       className={cn(
-        'numeric rounded px-1.5 py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent',
+        'numeric rounded py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent',
+        field === 'line_no' ? 'px-1' : 'px-1.5',
       )}
     >
       {/* A quantity is a count, not money — formatting it as EUR made `1` read
           as `1,00 €`. Weight is the separate column beside it. */}
-      {field === 'quantity' ? quantity(item.quantity) : eur(item[field])}
+      {field === 'quantity'
+        ? quantity(item.quantity)
+        : field === 'line_no'
+          ? (item.line_no ?? EM_DASH)
+          : eur(item[field])}
     </button>
   );
 }
@@ -260,7 +275,11 @@ function WeightCell({
           size="icon-sm"
           variant="ghost"
           disabled={!canEdit || addVariant.isPending}
-          title={`${packLabel(listed)} ainda não é um formato de ${item.display_name} — adicionar`}
+          title={
+            canEdit
+              ? `${packLabel(listed)} ainda não é um formato de ${item.display_name} — adicionar`
+              : 'Fatura confirmada ou anulada: reabra-a para acrescentar o formato.'
+          }
           aria-label={`Adicionar o formato ${packLabel(listed)} a este produto`}
           onClick={() => addVariant.mutate({ productId, weightKg: String(listed) })}
         >
@@ -273,7 +292,6 @@ function WeightCell({
 
 function ItemRow({
   item,
-  index,
   canEdit,
   canReassignProduct,
   editing,
@@ -286,7 +304,6 @@ function ItemRow({
   onRemove,
 }: {
   item: ReceiptItem;
-  index: number;
   canEdit: boolean;
   canReassignProduct: boolean;
   editing: EditableField | null;
@@ -301,7 +318,33 @@ function ItemRow({
   const low = isLowConfidence(item.confidence);
   return (
     <TableRow className="group/row">
-      <TableCell className="text-muted-foreground">{index}</TableCell>
+      {/* The line number is where the line sits on the paper, so it is editable:
+          correcting it is how a hand-added line takes its real place. The remove
+          control sits under it, in the height the Artigo cell already occupies. */}
+      <TableCell className="w-8 align-top text-muted-foreground">
+        <EditableNumberCell
+          item={item}
+          field="line_no"
+          editing={editing === 'line_no'}
+          editValue={editValue}
+          disabled={!canEdit || item.is_fs}
+          onEditValueChange={onEditValueChange}
+          onStart={() => onStart('line_no')}
+          onCommit={onCommit}
+          onCancel={onCancel}
+        />
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Remover esta linha"
+            aria-label={`Remover ${item.display_name ?? item.description_raw}`}
+            className="mt-0.5 hidden size-5 items-center justify-center rounded text-destructive hover:bg-muted focus-visible:flex group-hover/row:flex"
+          >
+            <Trash2 className="size-3" />
+          </button>
+        ) : null}
+      </TableCell>
       {/* One column, two truths: the product we decided on, and beneath it the
           text the till actually printed — which is the evidence against paper,
           not a second name. Separate columns showed the same string twice. */}
@@ -335,10 +378,20 @@ function ItemRow({
       {/* The category lives on the product and nowhere else, so it is shown as
           the full `L1 › L2 › L3` path: the same leaf name under two parents is
           never ambiguous (FR-1.3, Decision #34). */}
-      <TableCell className="max-w-[11rem]">
-        <span className="block truncate text-xs" title={item.category_path ?? undefined}>
+      <TableCell className="max-w-[11rem] align-top">
+        <span className="line-clamp-2 text-xs" title={item.category_path ?? undefined}>
           {item.category_path ?? EM_DASH}
         </span>
+        {/* Which lines the «Confirmar categorias» button would settle. */}
+        {item.category_status === 'AUTO' ? (
+          <span
+            className="mt-0.5 flex items-center gap-0.5 text-[0.65rem] text-warning"
+            title="Categoria sugerida por uma máquina, ainda por confirmar."
+          >
+            <HelpCircle className="size-3" />
+            sugerida
+          </span>
+        ) : null}
       </TableCell>
       <TableCell className="numeric whitespace-nowrap" title={`${item.quantity} ${item.unit}`}>
         {item.sold_by_weight ? (
@@ -402,7 +455,7 @@ function ItemRow({
             className="numeric px-1.5 text-[0.65rem] text-muted-foreground"
             title="Parte do desconto global da fatura atribuída a esta linha."
           >
-            {eur(item.invoice_allocated_discount_eur)} fat.
+            {eur(item.invoice_allocated_discount_eur)}
           </div>
         ) : null}
       </TableCell>
@@ -419,33 +472,25 @@ function ItemRow({
       </TableCell>
       <TableCell className="numeric">
         {item.price_per_kg_final_eur ? (
-          <span
-            title={`Pago ${eur(item.price_per_kg_final_eur)}/kg · PVP ${eur(
-              item.price_per_kg_pvp_eur,
-            )}/kg`}
-          >
-            {eur(item.price_per_kg_final_eur)}
-          </span>
+          <>
+            <span title="Sobre o preço efetivamente pago.">
+              {eur(item.price_per_kg_final_eur)}
+            </span>
+            {/* The shelf reading, and only when the two differ. */}
+            {item.price_per_kg_pvp_eur &&
+            item.price_per_kg_pvp_eur !== item.price_per_kg_final_eur ? (
+              <div
+                className="text-[0.65rem] font-normal text-muted-foreground"
+                title="Sobre o PVP, sem promoção nem desconto da fatura."
+              >
+                {eur(item.price_per_kg_pvp_eur)}
+              </div>
+            ) : null}
+          </>
         ) : (
           <span title={item.price_per_kg_unavailable_reason ?? undefined}>{EM_DASH}</span>
         )}
       </TableCell>
-      {/* Only an Fs row gets this cell: a printed line is on the paper, and
-          deleting it would break the reconciliation it exists to prove (ADR-0015). */}
-      {onRemove ? (
-        <TableCell className="w-8">
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={onRemove}
-            title="Remover este artigo Fs"
-            aria-label={`Remover ${item.display_name ?? item.description_raw}`}
-            className="text-destructive opacity-0 transition-opacity focus-visible:opacity-100 group-hover/row:opacity-100"
-          >
-            <Trash2 />
-          </Button>
-        </TableCell>
-      ) : null}
     </TableRow>
   );
 }
@@ -474,7 +519,7 @@ const ITEM_COLUMNS: { label: string; title?: string }[] = [
   },
 ];
 
-function ItemTableHead({ withActions = false }: { withActions?: boolean }) {
+function ItemTableHead() {
   return (
     <TableHeader>
       <TableRow>
@@ -483,11 +528,6 @@ function ItemTableHead({ withActions = false }: { withActions?: boolean }) {
             {column.label}
           </TableHead>
         ))}
-        {withActions ? (
-          <TableHead className="w-8">
-            <span className="sr-only">Ações</span>
-          </TableHead>
-        ) : null}
       </TableRow>
     </TableHeader>
   );
@@ -714,6 +754,7 @@ export function ReceiptReviewPane({
   const { canWrite } = useSession();
   const receiptQuery = useReceipt(receiptId);
   const confirmReceipt = useConfirmReceipt();
+  const reopenReceipt = useReopenReceipt();
   const confirmCategories = useConfirmReceiptCategories();
   const voidReceipt = useVoidReceipt();
   const reparse = useReparse();
@@ -723,7 +764,8 @@ export function ReceiptReviewPane({
   const reassign = useReassignItemProduct();
 
   const [addFsOpen, setAddFsOpen] = React.useState(false);
-  const [fsToRemove, setFsToRemove] = React.useState<ReceiptItem | null>(null);
+  const [addLineOpen, setAddLineOpen] = React.useState(false);
+  const [itemToRemove, setItemToRemove] = React.useState<ReceiptItem | null>(null);
   const [voidOpen, setVoidOpen] = React.useState(false);
   const [voidReason, setVoidReason] = React.useState('');
   const [newProduct, setNewProduct] = React.useState<{ itemId: string; name: string } | null>(null);
@@ -744,7 +786,7 @@ export function ReceiptReviewPane({
       setVoidOpen(false);
       setVoidReason('');
       setNewProduct(null);
-      setFsToRemove(null);
+      setItemToRemove(null);
     }
   }, [receiptId]);
 
@@ -791,9 +833,9 @@ export function ReceiptReviewPane({
     const { field } = editing;
     const raw = editValue.trim();
     setEditing(null);
-    // Clearing the pack weight is a real answer: nobody knows the size, and a
-    // fabricated one would silently move the €/kg it divides into.
-    const cleared = raw === '' && field === 'weight_listed_kg';
+    // Clearing is a real answer on the fields that may legitimately be unknown;
+    // elsewhere an empty box is a slip, not an instruction.
+    const cleared = raw === '' && CLEARABLE_FIELDS.includes(field);
     const numeric = Number(raw.replace(',', '.'));
     if (!cleared && !Number.isFinite(numeric)) return;
     setDrafts((previous) => ({
@@ -804,7 +846,7 @@ export function ReceiptReviewPane({
       await updateItem.mutateAsync({
         receiptId: receipt.id,
         itemId: item.id,
-        patch: { [field]: cleared ? null : numeric },
+        patch: { [field]: cleared ? null : field === 'line_no' ? Math.round(numeric) : numeric },
       });
     } finally {
       setDrafts((previous) => {
@@ -816,7 +858,11 @@ export function ReceiptReviewPane({
   }
 
   const documentUrl = receipt?.document_url ?? null;
-  const printedItems = receipt?.items.filter((item) => !item.is_fs) ?? [];
+  // Paper order. A hand-added line has no number until someone gives it one, so
+  // it waits at the end rather than jumping to the top.
+  const printedItems = (receipt?.items.filter((item) => !item.is_fs) ?? [])
+    .slice()
+    .sort((a, b) => (a.line_no ?? Infinity) - (b.line_no ?? Infinity));
   const fsItems = receipt?.items.filter((item) => item.is_fs) ?? [];
 
   const itemRowProps = (item: ReceiptItem) => ({
@@ -948,11 +994,22 @@ export function ReceiptReviewPane({
                   <Table>
                     <ItemTableHead />
                     <TableBody>
-                      {printedItems.map((item, index) => (
-                        <ItemRow key={item.id} index={index + 1} {...itemRowProps(item)} />
+                      {printedItems.map((item) => (
+                        <ItemRow
+                          key={item.id}
+                          {...itemRowProps(item)}
+                          onRemove={canEditItems ? () => setItemToRemove(item) : undefined}
+                        />
                       ))}
                     </TableBody>
                   </Table>
+
+                  {canEditItems ? (
+                    <Button size="sm" variant="outline" onClick={() => setAddLineOpen(true)}>
+                      <Plus />
+                      Adicionar linha
+                    </Button>
+                  ) : null}
 
                   <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -975,14 +1032,13 @@ export function ReceiptReviewPane({
                     </p>
                     {fsItems.length ? (
                       <Table>
-                        <ItemTableHead withActions={canEditItems} />
+                        <ItemTableHead />
                         <TableBody>
-                          {fsItems.map((item, index) => (
+                          {fsItems.map((item) => (
                             <ItemRow
                               key={item.id}
-                              index={index + 1}
                               {...itemRowProps(item)}
-                              onRemove={canEditItems ? () => setFsToRemove(item) : undefined}
+                              onRemove={canEditItems ? () => setItemToRemove(item) : undefined}
                             />
                           ))}
                         </TableBody>
@@ -997,14 +1053,31 @@ export function ReceiptReviewPane({
 
                 {canWrite ? (
                   <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                    <Button
-                      disabled={locked}
-                      loading={confirmReceipt.isPending}
-                      onClick={() => confirmReceipt.mutate(receipt.id)}
-                    >
-                      <CheckCircle2 />
-                      Confirmar
-                    </Button>
+                    {receipt.status === 'CONFIRMED' ? (
+                      <Button
+                        variant="outline"
+                        title="Devolve a fatura à revisão. As observações de preço já registadas mantêm-se."
+                        loading={reopenReceipt.isPending}
+                        onClick={() => reopenReceipt.mutate(receipt.id)}
+                      >
+                        <RotateCcw />
+                        Reabrir
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled={locked || !receipt.derived.is_complete}
+                        title={
+                          receipt.derived.is_complete
+                            ? 'Congela os preços desta fatura no histórico.'
+                            : 'Há linhas por resolver: sem produto, a linha não entra no histórico de preços nem herda categoria.'
+                        }
+                        loading={confirmReceipt.isPending}
+                        onClick={() => confirmReceipt.mutate(receipt.id)}
+                      >
+                        <CheckCircle2 />
+                        Confirmar
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       title="Marca como verificadas as categorias que o sistema sugeriu (AUTO) para os produtos desta fatura. É uma confirmação por produto, não por linha: vale para todas as compras passadas e futuras do mesmo produto."
@@ -1025,7 +1098,7 @@ export function ReceiptReviewPane({
                     <Button
                       variant="outline"
                       title="Reprocessa a partir do documento guardado — nunca pede um novo carregamento."
-                      disabled={!receipt.document_id}
+                      disabled={!receipt.document_id || locked}
                       loading={reparse.isPending}
                       onClick={() => reparse.mutate({ receiptId: receipt.id })}
                     >
@@ -1049,7 +1122,17 @@ export function ReceiptReviewPane({
       </Dialog>
 
       {receipt ? (
-        <AddFsItemDialog receiptId={receipt.id} open={addFsOpen} onOpenChange={setAddFsOpen} />
+        <>
+          <AddFsItemDialog receiptId={receipt.id} open={addFsOpen} onOpenChange={setAddFsOpen} />
+          {/* Same dialog, printed line: the parser missed something that is on
+              the paper, so it joins the sum the reconciliation checks. */}
+          <AddFsItemDialog
+            receiptId={receipt.id}
+            open={addLineOpen}
+            onOpenChange={setAddLineOpen}
+            isFs={false}
+          />
+        </>
       ) : null}
 
       {/* Creating a product mid-review resolves the line that prompted it, so the
@@ -1106,34 +1189,35 @@ export function ReceiptReviewPane({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={fsToRemove !== null} onOpenChange={(open) => !open && setFsToRemove(null)}>
+      <Dialog open={itemToRemove !== null} onOpenChange={(open) => !open && setItemToRemove(null)}>
         <DialogContent size="sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trash2 className="size-4" />
-              Remover artigo Fs
+              {itemToRemove?.is_fs ? 'Remover artigo Fs' : 'Remover linha'}
             </DialogTitle>
           </DialogHeader>
           <DialogBody>
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">
-                {fsToRemove?.display_name ?? fsToRemove?.description_raw}
+                {itemToRemove?.display_name ?? itemToRemove?.description_raw}
               </span>{' '}
-              deixa de contar para o valor nocional desta fatura. Nenhum valor impresso se altera —
-              um artigo Fs nunca esteve na fatura.
+              {itemToRemove?.is_fs
+                ? 'deixa de contar para o valor nocional desta fatura. Nenhum valor impresso se altera — um artigo Fs nunca esteve na fatura.'
+                : 'sai da soma das linhas e o desconto da fatura volta a ser repartido pelas restantes. Confirme a reconciliação a seguir.'}
             </p>
           </DialogBody>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setFsToRemove(null)}>
+            <Button variant="ghost" onClick={() => setItemToRemove(null)}>
               Cancelar
             </Button>
             <Button
               variant="destructive"
               loading={deleteItem.isPending}
               onClick={async () => {
-                if (!receipt || !fsToRemove) return;
-                await deleteItem.mutateAsync({ receiptId: receipt.id, itemId: fsToRemove.id });
-                setFsToRemove(null);
+                if (!receipt || !itemToRemove) return;
+                await deleteItem.mutateAsync({ receiptId: receipt.id, itemId: itemToRemove.id });
+                setItemToRemove(null);
               }}
             >
               Remover

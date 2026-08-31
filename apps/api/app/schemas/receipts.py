@@ -60,6 +60,8 @@ class ReceiptItemOut(ApiModel):
     #: ``MasterProduct`` and nowhere else (Decision #34), so an unresolved line
     #: has none and that is the truth.
     category_path: str | None = None
+    #: ``AUTO`` means a machine proposed this category and nobody has confirmed it.
+    category_status: str | None = None
     #: Priced per kg at the counter, so the printed quantity is meaningless.
     sold_by_weight: bool = False
     #: Is ``weight_listed_kg`` already one of the product's curated formats?
@@ -68,7 +70,35 @@ class ReceiptItemOut(ApiModel):
     pack_weight_is_known: bool | None = None
 
 
+class ProductSummary(BaseModel):
+    """One row per product across every invoice in scope.
+
+    ``price_per_kg_eur`` is weighted by weight, not an average of the per-line
+    quotients: averaging rates would let a 200 g purchase count as much as a 5 kg
+    one. Lines with no weight are left out of it entirely rather than guessed.
+    """
+
+    master_product_id: uuid.UUID
+    canonical_name: str
+    brand: str | None
+    category_path: str | None
+    sold_by_weight: bool
+    line_count: int
+    receipt_count: int
+    total_quantity: Decimal
+    total_weight_kg: Decimal | None
+    total_paid_eur: Decimal
+    #: Fs articles were never paid for, so they carry their notional worth here.
+    total_notional_eur: Decimal
+    price_per_kg_eur: Decimal | None
+    first_purchase_on: dt.date | None
+    last_purchase_on: dt.date | None
+
+
 class ReceiptItemUpdate(BaseModel):
+    #: Where the line sits on the paper. The grid orders by it, so correcting it
+    #: is how a hand-added line takes its real place.
+    line_no: int | None = Field(default=None, ge=1)
     description_raw: str | None = Field(default=None, max_length=300)
     quantity: Decimal | None = None
     unit: str | None = None
@@ -89,12 +119,20 @@ class ItemProductAssignment(BaseModel):
 
 
 class FsItemCreate(BaseModel):
-    """An article that was **never on the invoice**, appended by hand."""
+    """An article added by hand during review.
+
+    ``is_fs`` false means the parser missed a line that **is** on the paper; the
+    reconciliation against the printed total is what judges the correction.
+    """
 
     description_raw: str = Field(min_length=1, max_length=300)
     unit_price_pvp_eur: Decimal = Field(gt=0)
     quantity: Decimal = Decimal("1")
     unit: str = "UN"
+    is_fs: bool = True
+    #: Only meaningful on a printed line: an Fs row was never on the paper.
+    line_no: int | None = Field(default=None, ge=1)
+    promo_discount_eur: Decimal = Decimal("0")
     notional_value_source: Literal["PRICE_HISTORY", "MANUAL"] = "MANUAL"
     notes: str | None = None
 

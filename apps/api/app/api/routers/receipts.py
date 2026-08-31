@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Annotated, Any, NamedTuple
 
 from fastapi import APIRouter, File, Header, Query, UploadFile
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.api.deps import CurrentAuth, Db, Writer, household_entity_ids, resolve_write_entity
@@ -26,6 +26,7 @@ from app.schemas.receipts import (
     ParserProfileIn,
     ParserProfileOut,
     ParserProfileUpdate,
+    ProductSummary,
     ProfileTestResult,
     QueueEntry,
     ReceiptDerived,
@@ -73,7 +74,9 @@ class ProductDisplay(NamedTuple):
     """What a line shows once it has resolved: the name, the path, the pricing basis."""
 
     canonical_name: str
+    brand: str | None
     category_path: str | None
+    category_status: str
     sold_by_weight: bool
     pack_weights: frozenset[Decimal]
 
@@ -89,6 +92,7 @@ def item_out(
     product = (products or {}).get(item.master_product_id) if item.master_product_id else None
     payload.display_name = product.canonical_name if product else item.description_raw
     payload.category_path = product.category_path if product else None
+    payload.category_status = product.category_status if product else None
     payload.sold_by_weight = bool(product and product.sold_by_weight)
 
     # Matched by value, at the gram: with unique weights per product there is
@@ -111,11 +115,31 @@ def _product_display(db: DbSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, Prod
             paths[category_id] = products_service.category_path(db, category_id)
         display[product.id] = ProductDisplay(
             canonical_name=product.canonical_name,
+            brand=product.brand,
             category_path=paths.get(category_id) if category_id is not None else None,
+            category_status=product.category_status,
             sold_by_weight=product.sold_by_weight,
             pack_weights=frozenset(products_service.pack_weights(product)),
         )
     return display
+
+
+def _purchase_span(
+    db: DbSession, ids: set[uuid.UUID]
+) -> dict[uuid.UUID, tuple[dt.date | None, dt.date | None]]:
+    if not ids:
+        return {}
+    rows = db.execute(
+        select(
+            ReceiptItem.master_product_id,
+            func.min(Receipt.purchase_date),
+            func.max(Receipt.purchase_date),
+        )
+        .join(Receipt, Receipt.id == ReceiptItem.receipt_id)
+        .where(ReceiptItem.master_product_id.in_(ids), ReceiptItem.is_deleted.is_(False))
+        .group_by(ReceiptItem.master_product_id)
+    ).all()
+    return {row[0]: (row[1], row[2]) for row in rows}
 
 
 def summary_out(
@@ -411,16 +435,19 @@ def update_item(
 
 
 @router.post("/{receipt_id}/items", response_model=ReceiptDetail, status_code=201)
-def add_fs_item(receipt_id: uuid.UUID, payload: FsItemCreate, ctx: Writer, db: Db) -> ReceiptDetail:
-    """Append an Fs article. Every printed figure must be unchanged afterwards."""
+def add_item(receipt_id: uuid.UUID, payload: FsItemCreate, ctx: Writer, db: Db) -> ReceiptDetail:
+    """Append an article by hand. An Fs row leaves every printed figure unchanged."""
     receipt = receipts.get_receipt(db, receipt_id)
-    receipts.append_fs_item(
+    receipts.append_item(
         db,
         receipt,
         description_raw=payload.description_raw,
         unit_price_pvp_eur=payload.unit_price_pvp_eur,
         quantity=payload.quantity,
         unit=payload.unit,
+        is_fs=payload.is_fs,
+        line_no=payload.line_no,
+        promo_discount_eur=payload.promo_discount_eur,
         notional_value_source=payload.notional_value_source,
         notes=payload.notes,
         actor_user_id=ctx.user.id,
@@ -461,6 +488,14 @@ def confirm(receipt_id: uuid.UUID, ctx: Writer, db: Db) -> ReceiptDetail:
     return detail_out(db, receipt)
 
 
+@router.post("/{receipt_id}/reopen", response_model=ReceiptDetail)
+def reopen(receipt_id: uuid.UUID, ctx: Writer, db: Db) -> ReceiptDetail:
+    """Back to review. The observations already frozen are left untouched."""
+    receipt = receipts.get_receipt(db, receipt_id)
+    receipts.reopen(db, receipt, actor_user_id=ctx.user.id)
+    return detail_out(db, receipt)
+
+
 @router.post("/{receipt_id}/confirm-categories", response_model=ReceiptDetail)
 def confirm_categories(receipt_id: uuid.UUID, ctx: Writer, db: Db) -> ReceiptDetail:
     """Promote every ``AUTO`` classification on this receipt to ``VALIDATED``."""
@@ -479,19 +514,19 @@ def void(receipt_id: uuid.UUID, payload: VoidRequest, ctx: Writer, db: Db) -> Re
 # --- Level 2: one row per purchased article (UX-1.4) --------------------------
 
 
-@items_router.get("", response_model=Page[ReceiptItemOut])
-def list_items(
+def _item_scope(
+    db: DbSession,
     ctx: CurrentAuth,
-    db: Db,
-    search: str | None = None,
-    merchant_id: uuid.UUID | None = None,
-    date_from: dt.date | None = None,
-    date_to: dt.date | None = None,
-    fs: FsFilter = "all",
-    product_flag: str | None = None,
-    page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=200)] = 50,
-) -> Page[ReceiptItemOut]:
+    *,
+    search: str | None,
+    merchant_id: uuid.UUID | None,
+    date_from: dt.date | None,
+    date_to: dt.date | None,
+    fs: FsFilter,
+    product_flag: str | None,
+    master_product_id: uuid.UUID | None = None,
+) -> Any:
+    """The filters both article views share, so the two can never disagree."""
     stmt = (
         select(ReceiptItem)
         .join(Receipt, Receipt.id == ReceiptItem.receipt_id)
@@ -514,6 +549,36 @@ def list_items(
         stmt = stmt.where(ReceiptItem.is_fs.is_(fs == "only"))
     if product_flag:
         stmt = stmt.where(ReceiptItem.product_flag == product_flag)
+    if master_product_id:
+        stmt = stmt.where(ReceiptItem.master_product_id == master_product_id)
+    return stmt
+
+
+@items_router.get("", response_model=Page[ReceiptItemOut])
+def list_items(
+    ctx: CurrentAuth,
+    db: Db,
+    search: str | None = None,
+    merchant_id: uuid.UUID | None = None,
+    date_from: dt.date | None = None,
+    date_to: dt.date | None = None,
+    fs: FsFilter = "all",
+    product_flag: str | None = None,
+    master_product_id: uuid.UUID | None = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> Page[ReceiptItemOut]:
+    stmt = _item_scope(
+        db,
+        ctx,
+        search=search,
+        merchant_id=merchant_id,
+        date_from=date_from,
+        date_to=date_to,
+        fs=fs,
+        product_flag=product_flag,
+        master_product_id=master_product_id,
+    )
 
     total = int(db.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
     rows = db.scalars(
@@ -542,6 +607,93 @@ def reassign_item_product(
         db, item, master_product_id=payload.master_product_id, actor_user_id=ctx.user.id
     )
     return item_out(item, products=_product_display(db, {payload.master_product_id}))
+
+
+@items_router.get("/summary", response_model=Page[ProductSummary])
+def summarise_items(
+    ctx: CurrentAuth,
+    db: Db,
+    search: str | None = None,
+    merchant_id: uuid.UUID | None = None,
+    date_from: dt.date | None = None,
+    date_to: dt.date | None = None,
+    fs: FsFilter = "all",
+    product_flag: str | None = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> Page[ProductSummary]:
+    """One row per product: how much of it, how often, and at what €/kg."""
+    scope = _item_scope(
+        db,
+        ctx,
+        search=search,
+        merchant_id=merchant_id,
+        date_from=date_from,
+        date_to=date_to,
+        fs=fs,
+        product_flag=product_flag,
+    ).subquery()
+
+    weight = func.coalesce(scope.c.weight_observed_kg, scope.c.weight_listed_kg)
+    # Only lines that actually carry a weight may enter the €/kg, numerator and
+    # denominator alike — a paid price with no weight would skew the quotient.
+    weighted_paid = case((weight > 0, scope.c.paid_price_eur), else_=None)
+    notional = case(
+        (scope.c.is_fs, scope.c.unit_price_pvp_eur * scope.c.quantity),
+        else_=scope.c.paid_price_eur,
+    )
+
+    stmt = (
+        select(
+            scope.c.master_product_id,
+            func.count().label("line_count"),
+            func.count(func.distinct(scope.c.receipt_id)).label("receipt_count"),
+            func.sum(scope.c.quantity).label("total_quantity"),
+            func.sum(weight).label("total_weight_kg"),
+            func.sum(scope.c.paid_price_eur).label("total_paid_eur"),
+            func.sum(notional).label("total_notional_eur"),
+            func.sum(weighted_paid).label("weighted_paid_eur"),
+            func.sum(case((weight > 0, weight), else_=None)).label("weighted_kg"),
+        )
+        .where(scope.c.master_product_id.is_not(None))
+        .group_by(scope.c.master_product_id)
+    )
+
+    total = int(db.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
+    rows = db.execute(
+        stmt.order_by(func.sum(notional).desc()).limit(page_size).offset((page - 1) * page_size)
+    ).all()
+
+    products = _product_display(db, {row.master_product_id for row in rows})
+    dates = _purchase_span(db, {row.master_product_id for row in rows})
+    items: list[ProductSummary] = []
+    for row in rows:
+        display = products.get(row.master_product_id)
+        span = dates.get(row.master_product_id, (None, None))
+        weighted_kg = row.weighted_kg
+        items.append(
+            ProductSummary(
+                master_product_id=row.master_product_id,
+                canonical_name=display.canonical_name if display else "—",
+                brand=display.brand if display else None,
+                category_path=display.category_path if display else None,
+                sold_by_weight=bool(display and display.sold_by_weight),
+                line_count=row.line_count,
+                receipt_count=row.receipt_count,
+                total_quantity=row.total_quantity or Decimal("0"),
+                total_weight_kg=row.total_weight_kg,
+                total_paid_eur=row.total_paid_eur or Decimal("0"),
+                total_notional_eur=row.total_notional_eur or Decimal("0"),
+                price_per_kg_eur=(
+                    (row.weighted_paid_eur / weighted_kg).quantize(Decimal("0.0001"))
+                    if weighted_kg and weighted_kg > 0 and row.weighted_paid_eur is not None
+                    else None
+                ),
+                first_purchase_on=span[0],
+                last_purchase_on=span[1],
+            )
+        )
+    return Page(items=items, total=total, page=page, page_size=page_size)
 
 
 # --- Parser profiles (UX-1.8) --------------------------------------------------

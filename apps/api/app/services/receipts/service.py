@@ -39,7 +39,7 @@ from app.services.receipts import (
     prices_service,
     products_service,
 )
-from app.services.receipts.normalize import normalize_description
+from app.services.receipts.normalize import extract_pack_weight_kg, normalize_description
 
 MODULE = "receipts"
 ARITHMETIC_TOLERANCE = "receipts.arithmetic_tolerance_eur"
@@ -428,7 +428,7 @@ def get_item(db: DbSession, item_id: uuid.UUID) -> ReceiptItem:
     return item
 
 
-def append_fs_item(
+def append_item(
     db: DbSession,
     receipt: Receipt,
     *,
@@ -436,19 +436,26 @@ def append_fs_item(
     unit_price_pvp_eur: Decimal,
     quantity: Decimal = Decimal("1"),
     unit: str = "UN",
+    is_fs: bool = True,
+    line_no: int | None = None,
+    promo_discount_eur: Decimal = ZERO,
     notional_value_source: str = "MANUAL",
     notes: str | None = None,
     actor_user_id: uuid.UUID | None = None,
 ) -> ReceiptItem:
-    """Append an article that was never on the invoice.
+    """Append an article by hand, Fs or printed.
 
     Only *document parsing* is skipped, not automation: the article goes through
     the same product picker as any other line. What it cannot have is anything
     the document would have supplied — ``line_no``, ``merchant_section``,
     ``iva_class_raw``.
+
+    A **printed** line added here is not a new purchase: it is a line the parser
+    failed to read, and the reconciliation against the printed total is what says
+    whether the correction was right.
     """
     value = to_eur(unit_price_pvp_eur) or ZERO
-    if value <= ZERO:
+    if is_fs and value <= ZERO:
         raise ValidationError("Um artigo Fs precisa de um valor nocional superior a zero.")
 
     quantity_canonical, unit_canonical = arithmetic.canonical_quantity(quantity, unit)
@@ -465,6 +472,7 @@ def append_fs_item(
     item = ReceiptItem(
         receipt_id=receipt.id,
         entity_id=receipt.entity_id,
+        line_no=None if is_fs else line_no,
         description_raw=description_raw[:300],
         description_norm=description_norm,
         master_product_id=match.master_product_id,
@@ -473,21 +481,31 @@ def append_fs_item(
         quantity_canonical=quantity_canonical,
         unit_canonical=unit_canonical,
         unit_price_pvp_eur=value,
-        promo_discount_eur=ZERO,
+        promo_discount_eur=ZERO if is_fs else (to_eur(promo_discount_eur) or ZERO),
         invoice_allocated_discount_eur=ZERO,
         paid_price_eur=ZERO,
-        is_fs=True,
-        notional_value_source=notional_value_source,
+        weight_listed_kg=extract_pack_weight_kg(description_raw),
+        is_fs=is_fs,
+        notional_value_source=notional_value_source if is_fs else None,
         notes=notes,
         confidence=Decimal("1.000"),
         decision_reasons=[
-            {"rule": "manual_entry", "detail": "Artigo Fs introduzido à mão.", "score": "1.000"},
+            {
+                "rule": "manual_entry",
+                "detail": "Artigo Fs introduzido à mão."
+                if is_fs
+                else "Linha introduzida à mão durante a revisão.",
+                "score": "1.000",
+            },
             *match.reasons,
         ],
     )
     db.add(item)
     receipt.items.append(item)
     db.flush()
+    # A printed line joins the proration; an Fs row is excluded from it, so this
+    # leaves every printed figure untouched either way.
+    recompute(receipt)
     audit.record(
         db,
         action="CREATE",
@@ -496,9 +514,35 @@ def append_fs_item(
         entity_id=receipt.entity_id,
         actor_user_id=actor_user_id,
         after=audit.snapshot(item),
-        reason="artigo Fs",
+        reason="artigo Fs" if is_fs else "linha acrescentada na revisão",
     )
     return item
+
+
+def append_fs_item(
+    db: DbSession,
+    receipt: Receipt,
+    *,
+    description_raw: str,
+    unit_price_pvp_eur: Decimal,
+    quantity: Decimal = Decimal("1"),
+    unit: str = "UN",
+    notional_value_source: str = "MANUAL",
+    notes: str | None = None,
+    actor_user_id: uuid.UUID | None = None,
+) -> ReceiptItem:
+    return append_item(
+        db,
+        receipt,
+        description_raw=description_raw,
+        unit_price_pvp_eur=unit_price_pvp_eur,
+        quantity=quantity,
+        unit=unit,
+        is_fs=True,
+        notional_value_source=notional_value_source,
+        notes=notes,
+        actor_user_id=actor_user_id,
+    )
 
 
 def update_item(
@@ -510,7 +554,7 @@ def update_item(
 ) -> ReceiptItem:
     before = audit.snapshot(item)
     for field_name, value in changes.items():
-        if value is not None or field_name in {"notes", "promo_type", "product_flag"}:
+        if value is not None or field_name in {"notes", "promo_type", "product_flag", "line_no"}:
             setattr(item, field_name, value)
     db.flush()
     receipt = db.get(Receipt, item.receipt_id)
@@ -579,6 +623,18 @@ def confirm(db: DbSession, receipt: Receipt, *, actor_user_id: uuid.UUID | None)
     # A correction made during review appends a fresh observation; the superseded
     # one is left exactly where it was.
     prices_service.record_observations(db, receipt)
+    db.flush()
+    return receipt
+
+
+def reopen(db: DbSession, receipt: Receipt, *, actor_user_id: uuid.UUID | None) -> Receipt:
+    """Send a confirmed receipt back to review.
+
+    Not an undo: the price observations frozen on confirmation are append-only
+    and stay exactly where they are. A correction made now writes a new one.
+    """
+    transition(db, receipt, "NEEDS_REVIEW", actor_user_id=actor_user_id, reason="reaberta")
+    _sync_review_task(db, receipt)
     db.flush()
     return receipt
 

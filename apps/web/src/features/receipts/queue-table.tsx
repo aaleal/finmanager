@@ -84,14 +84,18 @@ export function ReceiptQueueTable({
           {compact ? null : <TableHead>Tentativas</TableHead>}
           <TableHead>Confiança</TableHead>
           <TableHead>Motivo da falha</TableHead>
-          <TableHead className="w-32">Ações</TableHead>
+          <TableHead className="w-20">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {entries.map((entry: QueueEntry) => {
           const receiptId = entry.receipt_id;
           return (
-            <TableRow key={entry.processing_job_id}>
+            <TableRow
+              key={entry.processing_job_id}
+              className={receiptId && onOpen ? 'cursor-pointer' : undefined}
+              onClick={() => receiptId && onOpen?.(receiptId)}
+            >
               <TableCell className="max-w-[14rem] truncate" title={entry.filename ?? undefined}>
                 {entry.filename ?? '—'}
               </TableCell>
@@ -118,26 +122,37 @@ export function ReceiptQueueTable({
                 {entry.last_error ?? '—'}
               </TableCell>
               <TableCell>
-                {/* Stacked, not side by side: the actions column was what pushed
-                    the failure reason off the right edge of the page. */}
-                <div className="flex flex-col items-stretch gap-1.5">
+                {/* Icon-only: the row itself opens the review, so these two are
+                    shortcuts and the labels were the widest thing in the table. */}
+                <div className="flex items-center gap-1">
                   {canWrite ? (
                     <Button
-                      size="sm"
-                      variant="outline"
-                      title="Reprocessa a partir do documento guardado — nunca pede um novo carregamento."
+                      size="icon-sm"
+                      variant="ghost"
+                      title="Reprocessar a partir do documento guardado — nunca pede um novo carregamento."
+                      aria-label="Reprocessar"
                       loading={reparse.isPending}
                       disabled={!receiptId}
-                      onClick={() => receiptId && reparse.mutate({ receiptId })}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (receiptId) reparse.mutate({ receiptId });
+                      }}
                     >
                       <RotateCcw />
-                      Reprocessar
                     </Button>
                   ) : null}
                   {receiptId && onOpen ? (
-                    <Button size="sm" variant="ghost" onClick={() => onOpen(receiptId)}>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      title="Rever a fatura"
+                      aria-label="Rever"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpen(receiptId);
+                      }}
+                    >
                       <Search />
-                      Rever
                     </Button>
                   ) : null}
                 </div>

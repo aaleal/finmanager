@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { PageHeader } from '@/components/ui/feedback';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
 import {
@@ -13,12 +14,13 @@ import {
 import { useSession } from '@/features/auth/session';
 import { useDebounced, useUrlFilters } from '@/lib/filters';
 import { RECEIPT_STATUS_OPTIONS } from '@/features/receipts/constants';
-import { useReceiptItems, useReceipts } from '@/features/receipts/api';
+import { useReceiptItems, useProductSummary, useReceipts } from '@/features/receipts/api';
 import { ReceiptStatusPanel } from '@/features/receipts/status-panel';
 import { ReceiptUploadDialog } from '@/features/receipts/upload-panel';
 import { ReceiptQueueTable } from '@/features/receipts/queue-table';
 import { ReceiptsTable } from '@/features/receipts/receipts-table';
 import { ReceiptItemsTable } from '@/features/receipts/items-table';
+import { ProductSummaryTable } from '@/features/receipts/product-summary-table';
 import { ParserProfilesPanel } from '@/features/receipts/parser-profiles-panel';
 import { ReceiptReviewPane } from '@/features/receipts/review-pane';
 import { PriceEvolutionPanel } from '@/features/receipts/price-evolution-panel';
@@ -37,6 +39,9 @@ const DEFAULTS = {
   status: undefined,
   date_from: undefined,
   date_to: undefined,
+  //: Which reading of the Artigos tab is open, and which product it drilled into.
+  view: 'detalhe',
+  product: undefined,
   page: '1',
   page_size: '25',
   //: Which invoice the review pane is open on, so the shared Review Queue can
@@ -140,9 +145,22 @@ export function SupermercadoPage() {
     search: filters.search,
     date_from: filters.date_from,
     date_to: filters.date_to,
+    master_product_id: filters.product,
     page: filters.page,
     page_size: filters.page_size,
   });
+
+  const itemView = filters.view ?? 'detalhe';
+  const summary = useProductSummary(
+    {
+      search: filters.search,
+      date_from: filters.date_from,
+      date_to: filters.date_to,
+      page: filters.page,
+      page_size: filters.page_size,
+    },
+    itemView === 'resumo',
+  );
 
   const openReceipt = React.useCallback(
     (receiptId: string) => setFilters({ receipt: receiptId }, { resetPage: false }),
@@ -201,13 +219,49 @@ export function SupermercadoPage() {
 
         <TabsContent value="artigos" className="space-y-4">
           <FilterBar filters={filters} setFilters={setFilters} showStatus={false} />
-          <ReceiptItemsTable
-            data={items.data}
-            isLoading={items.isLoading}
-            onOpenReceipt={openReceipt}
-            onPageChange={(page) => setFilters({ page: String(page) })}
-            onPageSizeChange={(pageSize) => setFilters({ page_size: String(pageSize), page: '1' })}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Tabs
+              value={itemView}
+              onValueChange={(value) =>
+                setFilters({ view: value, product: undefined, page: '1' })
+              }
+            >
+              <TabsList>
+                <TabsTrigger value="detalhe">Detalhe</TabsTrigger>
+                <TabsTrigger value="resumo">Resumo por produto</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {filters.product ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters({ product: undefined, view: 'resumo', page: '1' })}
+              >
+                <X />
+                Voltar ao resumo
+              </Button>
+            ) : null}
+          </div>
+          {itemView === 'resumo' ? (
+            <ProductSummaryTable
+              data={summary.data}
+              isLoading={summary.isLoading}
+              onDrillDown={(productId) =>
+                setFilters({ product: productId, view: 'detalhe', page: '1' })
+              }
+              onPageChange={(page) => setFilters({ page: String(page) })}
+            />
+          ) : (
+            <ReceiptItemsTable
+              data={items.data}
+              isLoading={items.isLoading}
+              onOpenReceipt={openReceipt}
+              onPageChange={(page) => setFilters({ page: String(page) })}
+              onPageSizeChange={(pageSize) =>
+                setFilters({ page_size: String(pageSize), page: '1' })
+              }
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="precos">

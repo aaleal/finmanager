@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/primiti
 import { useDebounced } from '@/lib/filters';
 import { percent } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useProductSearch } from './catalogue-api';
+import { useProducts, useProductSearch } from './catalogue-api';
 
 /**
  * Search-as-you-type product combobox.
@@ -33,8 +33,23 @@ export function ProductPicker({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const debouncedQuery = useDebounced(query, 300);
+  const searching = debouncedQuery.trim().length >= 2;
   const search = useProductSearch(debouncedQuery);
-  const results = search.data ?? [];
+  // Fuzzy search needs something to match against, so before two characters the
+  // picker lists the catalogue instead of claiming there is nothing to pick.
+  const browse = useProducts({ page_size: '30' });
+  const results: ProductSearchResult[] = searching
+    ? (search.data ?? [])
+    : (browse.data?.items ?? []).map((product) => ({
+        id: product.id,
+        canonical_name: product.canonical_name,
+        brand: product.brand,
+        category_id: product.category_id,
+        category_path: product.category_path ?? null,
+        sold_by_weight: product.sold_by_weight,
+        score: 0,
+        last_known_price: product.last_known_price,
+      }));
 
   React.useEffect(() => {
     if (open && !query && merchantDescription) setQuery(merchantDescription);
@@ -80,7 +95,7 @@ export function ProductPicker({
           onChange={(event) => setQuery(event.target.value)}
         />
         <div className="max-h-72 overflow-y-auto">
-          {search.isFetching && debouncedQuery.trim().length >= 2 ? (
+          {(searching ? search.isFetching : browse.isLoading) ? (
             <p className="px-2 py-3 text-sm text-muted-foreground">A procurar…</p>
           ) : results.length ? (
             <ul className="space-y-0.5">
@@ -93,9 +108,11 @@ export function ProductPicker({
                   >
                     <span className="flex items-center justify-between gap-2">
                       <span className="truncate font-medium">{product.canonical_name}</span>
-                      <span className="numeric shrink-0 text-xs text-muted-foreground">
-                        {percent(product.score * 100)}
-                      </span>
+                      {searching ? (
+                        <span className="numeric shrink-0 text-xs text-muted-foreground">
+                          {percent(product.score * 100)}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
                       {product.brand ?? '—'} · {product.category_path ?? '—'}
@@ -105,7 +122,9 @@ export function ProductPicker({
               ))}
             </ul>
           ) : (
-            <p className="px-2 py-3 text-sm text-muted-foreground">Sem produtos correspondentes.</p>
+            <p className="px-2 py-3 text-sm text-muted-foreground">
+              {searching ? 'Sem produtos correspondentes.' : 'O catálogo ainda está vazio.'}
+            </p>
           )}
         </div>
         {onCreate ? (

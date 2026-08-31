@@ -40,6 +40,7 @@ export type OwnershipStatus = LegoSetInstance['ownership_status'];
 export type ReceiptSummary = Schemas['ReceiptSummary'];
 export type ReceiptDetail = Schemas['ReceiptDetail'];
 export type ReceiptItem = Schemas['ReceiptItemOut'];
+export type ProductSummary = Schemas['ProductSummary'];
 export type ReceiptDerived = Schemas['ReceiptDerived'];
 export type ReceiptStatusBoard = Schemas['StatusBoard'];
 export type QueueEntry = Schemas['QueueEntry'];

@@ -138,10 +138,15 @@ def test_an_empty_catalogue_sends_a_clean_pdf_to_review(
 def test_the_status_machine_rejects_an_illegal_transition(
     db: Session, entity: Entity, owner: User, reference_data: None
 ) -> None:
+    """A confirmed receipt reopens for review, but never goes back to parsing:
+    the document was already read and re-reading it would discard the review."""
     receipt = upload(db, entity, owner, "pingodoce-37014.pdf")
     receipts.confirm(db, receipt, actor_user_id=owner.id)
     with pytest.raises(Conflict):
-        receipts.transition(db, receipt, "NEEDS_REVIEW", actor_user_id=owner.id)
+        receipts.transition(db, receipt, "PARSING", actor_user_id=owner.id)
+
+    receipts.reopen(db, receipt, actor_user_id=owner.id)
+    assert receipt.status == "NEEDS_REVIEW"
 
 
 def test_a_confirmed_receipt_is_voided_with_a_reason_never_deleted(

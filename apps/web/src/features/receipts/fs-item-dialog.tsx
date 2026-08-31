@@ -23,16 +23,19 @@ export function AddFsItemDialog({
   receiptId,
   open,
   onOpenChange,
+  isFs = true,
 }: {
   receiptId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isFs?: boolean;
 }) {
   const addItem = useAddFsItem();
   const [description, setDescription] = React.useState('');
   const [value, setValue] = React.useState('');
   const [quantity, setQuantity] = React.useState('1');
   const [unit, setUnit] = React.useState('UN');
+  const [lineNo, setLineNo] = React.useState('');
 
   React.useEffect(() => {
     if (open) {
@@ -40,6 +43,7 @@ export function AddFsItemDialog({
       setValue('');
       setQuantity('1');
       setUnit('UN');
+      setLineNo('');
     }
   }, [open]);
 
@@ -56,6 +60,8 @@ export function AddFsItemDialog({
         unit_price_pvp_eur: numericValue,
         quantity: numericQuantity,
         unit,
+        is_fs: isFs,
+        line_no: isFs || !lineNo.trim() ? null : Math.round(Number(lineNo)),
       },
     });
     onOpenChange(false);
@@ -65,18 +71,19 @@ export function AddFsItemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Adicionar artigo Fs</DialogTitle>
+          <DialogTitle>{isFs ? 'Adicionar artigo Fs' : 'Adicionar linha'}</DialogTitle>
         </DialogHeader>
         <DialogBody className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Um artigo Fs nunca esteve na fatura: é acrescentado à mão e vale o seu valor
-            nocional. Nenhum total impresso muda.
+            {isFs
+              ? 'Um artigo Fs nunca esteve na fatura: é acrescentado à mão e vale o seu valor nocional. Nenhum total impresso muda.'
+              : 'Para uma linha que está no papel mas o leitor não apanhou. Entra na soma das linhas, portanto confirme a reconciliação depois de a acrescentar.'}
           </p>
           <Field label="Descrição">
             <Input value={description} onChange={(event) => setDescription(event.target.value)} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Valor nocional (€)" className="sm:col-span-1">
+            <Field label={isFs ? 'Valor nocional (€)' : 'PVP (€)'} className="sm:col-span-1">
               <Input
                 type="number"
                 step="0.01"
@@ -111,6 +118,21 @@ export function AddFsItemDialog({
               </Select>
             </Field>
           </div>
+          {!isFs ? (
+            <Field
+              label="N.º de linha"
+              hint="Onde a linha está no talão. A grelha ordena-se por aqui; em branco fica no fim."
+            >
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={lineNo}
+                onChange={(event) => setLineNo(event.target.value)}
+              />
+            </Field>
+          ) : null}
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

@@ -81,6 +81,7 @@ def test_upload_parses_and_serialises_a_full_receipt(client: TestClient, receipt
         "/api/receipts/queue",
         "/api/receipts/status",
         "/api/receipt-items",
+        "/api/receipt-items/summary",
         "/api/parser-profiles",
         "/api/parser-profiles/parsers",
         "/api/master-products",

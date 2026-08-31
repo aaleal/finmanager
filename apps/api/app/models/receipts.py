@@ -52,7 +52,9 @@ RECEIPT_TRANSITIONS: dict[str, tuple[str, ...]] = {
     "PARSING": ("AUTO_ACCEPTED", "NEEDS_REVIEW", "FAILED"),
     "AUTO_ACCEPTED": ("CONFIRMED", "NEEDS_REVIEW", "PARSING", "VOID"),
     "NEEDS_REVIEW": ("CONFIRMED", "PARSING", "VOID"),
-    "CONFIRMED": ("VOID",),
+    # Reopening is not undoing: the observations frozen on confirmation stay put
+    # (ADR-0022), and re-confirming appends rather than rewrites.
+    "CONFIRMED": ("NEEDS_REVIEW", "VOID"),
     "FAILED": ("PARSING",),
     "VOID": (),
 }

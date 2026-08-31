@@ -7,6 +7,7 @@ import type {
   Page,
   ParserOption,
   ParserProfile,
+  ProductSummary,
   QueueEntry,
   ReceiptDetail,
   ReceiptItem,
@@ -39,6 +40,7 @@ export type ItemFilters = {
   date_to?: string;
   fs?: FsFilter;
   product_flag?: string;
+  master_product_id?: string;
   page?: string;
   page_size?: string;
 };
@@ -99,9 +101,31 @@ export function useReceiptItems(filters: ItemFilters) {
         date_to: filters.date_to,
         fs: filters.fs ?? 'all',
         product_flag: filters.product_flag,
+        master_product_id: filters.master_product_id,
         page: filters.page ?? '1',
         page_size: filters.page_size ?? '50',
       }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** The same lines, grouped: one row per product instead of one per purchase. */
+export function useProductSummary(filters: ItemFilters, enabled = true) {
+  const scope = useScope();
+  return useQuery({
+    queryKey: ['receipt-items', 'summary', scope, filters],
+    queryFn: () =>
+      api.get<Page<ProductSummary>>('/receipt-items/summary', {
+        search: filters.search,
+        merchant_id: filters.merchant_id,
+        date_from: filters.date_from,
+        date_to: filters.date_to,
+        fs: filters.fs ?? 'all',
+        product_flag: filters.product_flag,
+        page: filters.page ?? '1',
+        page_size: filters.page_size ?? '50',
+      }),
+    enabled,
     placeholderData: (previous) => previous,
   });
 }
@@ -187,6 +211,18 @@ export function useConfirmReceipt() {
     mutationFn: (receiptId: string) => api.post<ReceiptDetail>(`/receipts/${receiptId}/confirm`),
     onSuccess: (receipt) => {
       toast.success('Fatura confirmada.');
+      invalidate(receipt.id);
+    },
+    onError: report,
+  });
+}
+
+export function useReopenReceipt() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (receiptId: string) => api.post<ReceiptDetail>(`/receipts/${receiptId}/reopen`),
+    onSuccess: (receipt) => {
+      toast.success('Fatura reaberta para revisão.');
       invalidate(receipt.id);
     },
     onError: report,
