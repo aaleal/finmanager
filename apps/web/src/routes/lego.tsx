@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Boxes, DatabaseBackup, Plus, Sheet, Upload } from 'lucide-react';
+import { DatabaseBackup, Plus, Sheet, Upload } from 'lucide-react';
 import type { LegoSetInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
@@ -17,7 +17,7 @@ import {
 import { LegoOverviewPanel } from '@/features/lego/overview-panel';
 import { CollectionGrid } from '@/features/lego/collection-grid';
 import { CopyDetailSheet } from '@/features/lego/detail-sheet';
-import { StorageSheet } from '@/features/lego/storage-sheet';
+import { StoragePanel } from '@/features/lego/storage-panel';
 import { AddSetDialog } from '@/features/lego/add-set-dialog';
 
 const DEFAULTS = {
@@ -43,7 +43,6 @@ export function LegoPage() {
   const { canWrite, activeEntity } = useSession();
   const [filters, setFilters] = useUrlFilters(DEFAULTS);
   const [selected, setSelected] = React.useState<LegoSetInstance | null>(null);
-  const [storageOpen, setStorageOpen] = React.useState(false);
   const [addOpen, setAddOpen] = React.useState(false);
 
   const overview = useLegoOverview();
@@ -133,13 +132,6 @@ export function LegoPage() {
                 </Button>
               </>
             ) : null}
-            <Button variant="outline" onClick={() => setStorageOpen(true)}>
-              <Boxes />
-              Arrumação
-              {overview.data?.locations_total ? (
-                <span className="text-muted-foreground">({overview.data.locations_total})</span>
-              ) : null}
-            </Button>
             {canWrite ? (
               <Button onClick={() => setAddOpen(true)}>
                 <Plus />
@@ -151,7 +143,7 @@ export function LegoPage() {
       />
 
       <Tabs
-        value={filters.tab === 'colecao' ? 'colecao' : 'overview'}
+        value={['colecao', 'arrumacao'].includes(filters.tab) ? filters.tab : 'overview'}
         onValueChange={(value) => setFilters({ tab: value })}
       >
         <TabsList>
@@ -160,6 +152,12 @@ export function LegoPage() {
             Coleção
             {instances.data ? (
               <span className="text-xs text-muted-foreground">({instances.data.total})</span>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="arrumacao">
+            Arrumação
+            {overview.data?.locations_total ? (
+              <span className="text-xs text-muted-foreground">({overview.data.locations_total})</span>
             ) : null}
           </TabsTrigger>
         </TabsList>
@@ -185,6 +183,15 @@ export function LegoPage() {
             onSelect={setSelected}
           />
         </TabsContent>
+
+        <TabsContent value="arrumacao">
+          <StoragePanel
+            locations={storage.data ?? []}
+            onShowContents={(locationId) =>
+              setFilters({ tab: 'colecao', storage_location_id: locationId })
+            }
+          />
+        </TabsContent>
       </Tabs>
 
       <CopyDetailSheet
@@ -194,15 +201,6 @@ export function LegoPage() {
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}
-      />
-
-      <StorageSheet
-        open={storageOpen}
-        onOpenChange={setStorageOpen}
-        locations={storage.data ?? []}
-        onShowContents={(locationId) =>
-          setFilters({ tab: 'colecao', storage_location_id: locationId })
-        }
       />
 
       {canWrite ? (

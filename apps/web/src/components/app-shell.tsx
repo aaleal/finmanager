@@ -63,20 +63,24 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/definicoes', label: 'Definições', icon: Settings },
 ];
 
+const SIDEBAR_COLLAPSED_KEY = 'finmanager.sidebar.collapsed';
+
 function NavSection({
   title,
   items,
   reviewCount,
   onNavigate,
+  collapsed,
 }: {
   title?: string;
   items: NavItem[];
   reviewCount?: number;
   onNavigate?: () => void;
+  collapsed?: boolean;
 }) {
   return (
     <div className="space-y-1">
-      {title ? (
+      {title && !collapsed ? (
         <p className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
           {title}
         </p>
@@ -87,12 +91,19 @@ function NavSection({
           return (
             <div
               key={item.to}
-              className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/35"
-              title="Disponível numa fase seguinte"
+              className={cn(
+                'flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/35',
+                collapsed && 'justify-center px-2',
+              )}
+              title={collapsed ? `${item.label} — disponível numa fase seguinte` : 'Disponível numa fase seguinte'}
             >
               <Icon className="size-4 shrink-0" />
-              <span className="flex-1 truncate">{item.label}</span>
-              <span className="text-[10px] uppercase tracking-wide">em breve</span>
+              {!collapsed ? (
+                <>
+                  <span className="flex-1 truncate">{item.label}</span>
+                  <span className="text-[10px] uppercase tracking-wide">em breve</span>
+                </>
+              ) : null}
             </div>
           );
         }
@@ -102,9 +113,11 @@ function NavSection({
             to={item.to}
             end={item.to === '/'}
             onClick={onNavigate}
+            title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                collapsed && 'justify-center px-2',
                 isActive
                   ? 'bg-sidebar-accent text-white'
                   : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-white',
@@ -112,8 +125,8 @@ function NavSection({
             }
           >
             <Icon className="size-4 shrink-0" />
-            <span className="flex-1 truncate">{item.label}</span>
-            {item.to === '/revisao' && reviewCount ? (
+            {!collapsed ? <span className="flex-1 truncate">{item.label}</span> : null}
+            {!collapsed && item.to === '/revisao' && reviewCount ? (
               <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                 {reviewCount}
               </span>
@@ -128,34 +141,76 @@ function NavSection({
 function SidebarContent({
   reviewCount,
   onNavigate,
+  collapsed = false,
+  collapsible = false,
+  onToggleCollapsed,
 }: {
   reviewCount: number;
   onNavigate?: () => void;
+  collapsed?: boolean;
+  collapsible?: boolean;
+  onToggleCollapsed?: () => void;
 }) {
   const { session } = useSession();
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <PiggyBank className="size-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">FinManager</p>
-          <p className="truncate text-[11px] text-sidebar-foreground/55">
-            {session?.household_name ?? 'Agregado'}
-          </p>
-        </div>
+      <div
+        className={cn(
+          'flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-5',
+          collapsed && 'justify-center px-0',
+        )}
+      >
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? 'Expandir menu' : 'Colapsar menu'}
+            title={collapsed ? 'Expandir menu' : 'Colapsar menu'}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/85"
+          >
+            <PiggyBank className="size-4" />
+          </button>
+        ) : (
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <PiggyBank className="size-4" />
+          </div>
+        )}
+        {!collapsed ? (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">FinManager</p>
+            <p className="truncate text-[11px] text-sidebar-foreground/55">
+              {session?.household_name ?? 'Agregado'}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        <NavSection items={PRIMARY_NAV} reviewCount={reviewCount} onNavigate={onNavigate} />
-        <NavSection title="Próximas fases" items={PLANNED_NAV} onNavigate={onNavigate} />
-        <NavSection title="Administração" items={ADMIN_NAV} onNavigate={onNavigate} />
+        <NavSection
+          items={PRIMARY_NAV}
+          reviewCount={reviewCount}
+          onNavigate={onNavigate}
+          collapsed={collapsed}
+        />
+        <NavSection
+          title="Próximas fases"
+          items={PLANNED_NAV}
+          onNavigate={onNavigate}
+          collapsed={collapsed}
+        />
+        <NavSection
+          title="Administração"
+          items={ADMIN_NAV}
+          onNavigate={onNavigate}
+          collapsed={collapsed}
+        />
       </nav>
 
-      <div className="border-t border-sidebar-border p-3 text-[11px] text-sidebar-foreground/45">
-        <p>Fase 1 · Fundação + LEGO</p>
-      </div>
+      {!collapsed ? (
+        <div className="border-t border-sidebar-border p-3 text-[11px] text-sidebar-foreground/45">
+          <p>Fase 1 · Fundação + LEGO</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -203,6 +258,9 @@ function UserMenu() {
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(
+    () => window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1',
+  );
   const location = useLocation();
   const { session } = useSession();
 
@@ -214,15 +272,28 @@ export function AppShell() {
   });
 
   React.useEffect(() => setMobileOpen(false), [location.pathname]);
+  React.useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
 
   return (
     <div className="flex h-full">
-      <aside className="hidden w-64 shrink-0 lg:block">
-        <SidebarContent reviewCount={reviewQuery.data?.pending ?? 0} />
+      <aside
+        className={cn(
+          'hidden shrink-0 transition-[width] duration-200 lg:block',
+          collapsed ? 'w-[4.5rem]' : 'w-64',
+        )}
+      >
+        <SidebarContent
+          reviewCount={reviewQuery.data?.pending ?? 0}
+          collapsed={collapsed}
+          collapsible
+          onToggleCollapsed={() => setCollapsed((value) => !value)}
+        />
       </aside>
 
       <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent className="left-0 right-auto border-l-0 border-r p-0 sm:max-w-[17rem]">
+        <SheetContent side="left" className="p-0 sm:max-w-[17rem]">
           <SidebarContent
             reviewCount={reviewQuery.data?.pending ?? 0}
             onNavigate={() => setMobileOpen(false)}

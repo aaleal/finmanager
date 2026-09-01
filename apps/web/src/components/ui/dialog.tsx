@@ -51,18 +51,24 @@ export const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = 'DialogContent';
 
-/** Right-hand side sheet — the detail surface M9 asks for (UX-9.5 / UX-9.6). */
+/** A sheet anchored to either edge — right for details (M9), left for mobile nav. */
 export const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { width?: 'md' | 'lg' }
->(({ className, children, width = 'md', ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    width?: 'md' | 'lg';
+    side?: 'left' | 'right';
+  }
+>(({ className, children, width = 'md', side = 'right', ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col border-l border-border bg-card shadow-pop',
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:duration-200 data-[state=open]:duration-300',
+        'fixed inset-y-0 z-50 flex h-full w-full flex-col bg-card shadow-pop',
+        side === 'right'
+          ? 'right-0 border-l border-border data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right'
+          : 'left-0 border-r border-border data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300',
         width === 'md' && 'sm:max-w-lg',
         width === 'lg' && 'sm:max-w-2xl',
         className,

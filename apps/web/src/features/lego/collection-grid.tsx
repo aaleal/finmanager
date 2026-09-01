@@ -83,14 +83,11 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
     if (model?.rrp_roi_pct != null) {
       const up = Number(model.rrp_roi_pct) >= 0;
       return (
-        <span
-          className="numeric inline-flex items-center gap-1"
-          title="Sem base de custo (prenda). Mostrado face ao PVP original."
-        >
-          <span className={cn('font-medium', up ? 'text-success' : 'text-destructive')}>
+        <span className="block" title="Sem base de custo (prenda). Mostrado face ao PVP original.">
+          <span className={cn('numeric block font-medium', up ? 'text-success' : 'text-destructive')}>
             {percent(model.rrp_roi_pct)}
           </span>
-          <Badge variant="muted">PVP</Badge>
+          <span className="block text-xs text-muted-foreground">PVP</span>
         </span>
       );
     }
@@ -103,9 +100,11 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
 
   const positive = Number(instance.roi_pct) >= 0;
   return (
-    <span className={cn('numeric font-medium', positive ? 'text-success' : 'text-destructive')}>
-      {percent(instance.roi_pct)}
-      <span className="ml-1 text-xs font-normal text-muted-foreground">
+    <span className="block">
+      <span className={cn('numeric block font-medium', positive ? 'text-success' : 'text-destructive')}>
+        {percent(instance.roi_pct)}
+      </span>
+      <span className="numeric block text-xs text-muted-foreground">
         {signedEur(instance.appreciation_eur)}
       </span>
     </span>
@@ -178,18 +177,20 @@ function SortHead({
   filters,
   setFilters,
   align = 'left',
+  className,
 }: {
   field: string;
   label: string;
   filters: Record<string, string | undefined>;
   setFilters: (patch: Record<string, string | undefined>) => void;
   align?: 'left' | 'right';
+  className?: string;
 }) {
   const active = (filters.sort ?? 'created') === field;
   const descending = (filters.direction ?? 'desc') === 'desc';
 
   return (
-    <TableHead className={align === 'right' ? 'text-right' : undefined}>
+    <TableHead className={cn(align === 'right' && 'text-right', className)}>
       <button
         type="button"
         aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
@@ -640,21 +641,8 @@ export function CollectionGrid({
                 />
                 <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
                 <SortHead
-                  field="condition"
-                  label="Condição"
-                  filters={filters}
-                  setFilters={setFilters}
-                />
-                <SortHead
                   field="cost"
                   label="Custo"
-                  filters={filters}
-                  setFilters={setFilters}
-                  align="right"
-                />
-                <SortHead
-                  field="rrp"
-                  label="PVP"
                   filters={filters}
                   setFilters={setFilters}
                   align="right"
@@ -700,28 +688,24 @@ export function CollectionGrid({
                     {instance.storage_label ?? '—'}
                   </TableCell>
                   <TableCell>
-                    {instance.build_state ? (
-                      <Badge variant={BUILD_STATE_VARIANT}>
-                        {BUILD_STATE_LABELS[instance.build_state]}
-                      </Badge>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {instance.condition ? (
-                      <Badge variant={CONDITION_VARIANTS[instance.condition]}>
-                        {CONDITION_LABELS[instance.condition]}
-                      </Badge>
-                    ) : (
-                      '—'
-                    )}
+                    <div className="flex flex-col items-start gap-1">
+                      {instance.build_state ? (
+                        <Badge variant={BUILD_STATE_VARIANT}>
+                          {BUILD_STATE_LABELS[instance.build_state]}
+                        </Badge>
+                      ) : null}
+                      {instance.condition ? (
+                        <Badge variant={CONDITION_VARIANTS[instance.condition]}>
+                          {CONDITION_LABELS[instance.condition]}
+                        </Badge>
+                      ) : null}
+                      {!instance.build_state && !instance.condition ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="numeric text-right">
                     {eur(instance.acquisition_cost_eur)}
-                  </TableCell>
-                  <TableCell className="numeric text-right text-muted-foreground">
-                    {eur(instance.set_model?.rrp_eur)}
                   </TableCell>
                   <TableCell className="numeric text-right">
                     <span className={instance.set_model?.value_is_stale ? 'text-warning' : ''}>

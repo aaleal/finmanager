@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  SheetContent,
 } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/feedback';
 import { eur, num } from '@/lib/format';
@@ -208,14 +207,11 @@ function AddLocationDialog({ locations }: { locations: StorageLocation[] }) {
   );
 }
 
-export function StorageSheet({
-  open,
-  onOpenChange,
+/** Inline panel, shown as its own tab rather than a sheet (a peer of «Coleção», not a modal). */
+export function StoragePanel({
   locations,
   onShowContents,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   locations: StorageLocation[];
   onShowContents: (locationId: string) => void;
 }) {
@@ -233,112 +229,99 @@ export function StorageSheet({
   }, [locations]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <SheetContent width="md" className="p-0">
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="shrink-0 space-y-1 border-b border-border px-6 py-4 pr-12">
-            <DialogTitle>Arrumação</DialogTitle>
-            <DialogDescription>
-              A percentagem de ocupação é sempre uma estimativa sua — nunca é calculada a partir do
-              número de peças.
-            </DialogDescription>
-          </div>
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-3">
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          A percentagem de ocupação é sempre uma estimativa sua — nunca é calculada a partir do
+          número de peças.
+        </p>
+        {canWrite ? <AddLocationDialog locations={locations} /> : null}
+      </div>
 
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-            {canWrite ? (
-              <div className="flex justify-end">
-                <AddLocationDialog locations={locations} />
-              </div>
-            ) : null}
-
-            {areas.length === 0 ? (
-              <EmptyState
-                icon={Boxes}
-                title="Sem locais definidos"
-                description="Crie uma área e um contentor para saber onde está cada cópia."
-              />
-            ) : (
-              areas.map(([area, items]) => (
-                <div key={area} className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {area}
-                  </p>
-                  {items.map((location) => (
-                    <div key={location.id} className="space-y-3 rounded-lg border border-border p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{location.container ?? area}</p>
-                          {location.description ? (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {location.description}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          {location.is_full ? (
-                            <Badge variant="destructive">cheio</Badge>
-                          ) : location.capacity_pct !== null && location.capacity_pct >= 80 ? (
-                            <Badge variant="warning">quase cheio</Badge>
-                          ) : null}
-                          {canWrite ? (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              className="text-muted-foreground hover:text-destructive"
-                              onClick={() =>
-                                remove.mutate(location.id, {
-                                  onError: () =>
-                                    toast.error(
-                                      'Mova primeiro as cópias guardadas neste local.',
-                                    ),
-                                })
-                              }
-                            >
-                              <Trash2 />
-                            </Button>
-                          ) : null}
-                        </div>
+      {areas.length === 0 ? (
+        <EmptyState
+          icon={Boxes}
+          title="Sem locais definidos"
+          description="Crie uma área e um contentor para saber onde está cada cópia."
+        />
+      ) : (
+        <div className="space-y-6">
+          {areas.map(([area, items]) => (
+            <div key={area} className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {area}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {items.map((location) => (
+                  <div key={location.id} className="space-y-3 rounded-lg border border-border p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{location.container ?? area}</p>
+                        {location.description ? (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {location.description}
+                          </p>
+                        ) : null}
                       </div>
-
-                      <div className="flex items-center gap-4 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onShowContents(location.id);
-                            onOpenChange(false);
-                          }}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {num(location.stored_count)} cópia(s)
-                        </button>
-                        <span className="numeric text-muted-foreground">
-                          {eur(location.stored_value_eur)}
-                        </span>
-                        {location.remaining_capacity_pct !== null ? (
-                          <span className={cn('ml-auto text-xs', location.is_full && 'text-destructive')}>
-                            {location.remaining_capacity_pct} % livre
-                          </span>
-                        ) : (
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            ocupação não seguida
-                          </span>
-                        )}
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {location.is_full ? (
+                          <Badge variant="destructive">cheio</Badge>
+                        ) : location.capacity_pct !== null && location.capacity_pct >= 80 ? (
+                          <Badge variant="warning">quase cheio</Badge>
+                        ) : null}
+                        {canWrite ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() =>
+                              remove.mutate(location.id, {
+                                onError: () =>
+                                  toast.error('Mova primeiro as cópias guardadas neste local.'),
+                              })
+                            }
+                          >
+                            <Trash2 />
+                          </Button>
+                        ) : null}
                       </div>
-
-                      {canWrite ? (
-                        <>
-                          <Separator />
-                          <CapacityControl location={location} />
-                        </>
-                      ) : null}
                     </div>
-                  ))}
-                </div>
-              ))
-            )}
-          </div>
+
+                    <div className="flex items-center gap-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => onShowContents(location.id)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {num(location.stored_count)} cópia(s)
+                      </button>
+                      <span className="numeric text-muted-foreground">
+                        {eur(location.stored_value_eur)}
+                      </span>
+                      {location.remaining_capacity_pct !== null ? (
+                        <span className={cn('ml-auto text-xs', location.is_full && 'text-destructive')}>
+                          {location.remaining_capacity_pct} % livre
+                        </span>
+                      ) : (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          ocupação não seguida
+                        </span>
+                      )}
+                    </div>
+
+                    {canWrite ? (
+                      <>
+                        <Separator />
+                        <CapacityControl location={location} />
+                      </>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      </SheetContent>
-    </Dialog>
+      )}
+    </div>
   );
 }
