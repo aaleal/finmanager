@@ -36,3 +36,4 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0029](0029-reference-data-ships-with-the-release.md) | Reference data ships with the release |
 | [0030](0030-a-pack-format-is-matched-by-value-not-referenced.md) | A pack format is matched by value, not referenced |
 | [0031](0031-the-review-grid-shows-the-price-per-kg-that-was-paid.md) | The review grid shows the €/kg that was paid |
+| [0032](0032-the-lego-backup-keeps-its-primary-keys.md) | The LEGO backup keeps its primary keys |

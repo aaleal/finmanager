@@ -42,6 +42,7 @@ import {
   EM_DASH,
   date,
   eur,
+  num,
   packLabel,
   percent,
   quantity,
@@ -73,17 +74,21 @@ import {
 } from './api';
 
 type EditableField =
-  | 'unit_price_pvp_eur'
-  | 'promo_discount_eur'
-  | 'quantity'
-  | 'weight_listed_kg'
-  | 'line_no';
+  'unit_price_pvp_eur' | 'promo_discount_eur' | 'quantity' | 'weight_listed_kg' | 'line_no';
 
 /** Cleared to `null` rather than to zero: not knowing is a real answer. */
 const CLEARABLE_FIELDS: EditableField[] = ['weight_listed_kg', 'line_no'];
 
 const LOW_CONFIDENCE = 0.6;
 const ZOOM_STEPS = [0.6, 0.75, 1, 1.25, 1.5, 2, 3];
+
+//: Kept in words rather than symbols: the reader wants to know what was counted,
+//: not to re-derive the arithmetic.
+const ITEM_CONFIDENCE_FORMULA =
+  'qualidade do texto (a metade se a linha não tiver valor legível), depois a média com a força da correspondência de produto. Sem catálogo, fica só a qualidade do texto.';
+
+const RECEIPT_CONFIDENCE_FORMULA =
+  'média pesada de quatro sinais — produto 30 %, texto 25 %, aritmética 25 %, comerciante 20 %. Uma fase que não correu não conta e o seu peso reparte-se pelas restantes; se a soma das linhas não bater certo com o total impresso, o resultado é reduzido a metade.';
 
 function isLowConfidence(confidence: string | null): boolean {
   if (confidence === null) return false;
@@ -96,6 +101,23 @@ function confidencePct(confidence: string | null | undefined): number | null {
   if (confidence === null || confidence === undefined) return null;
   const value = Number(confidence);
   return Number.isFinite(value) ? value * 100 : null;
+}
+
+/** One of the signals the score was built from, read back out of the reasons. */
+function signalPct(reasons: unknown[], rule: string): number | null {
+  for (const raw of reasons) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const reason = raw as { rule?: unknown; score?: unknown };
+    if (reason.rule !== rule) continue;
+    const score = Number(reason.score);
+    return Number.isFinite(score) ? score * 100 : null;
+  }
+  return null;
+}
+
+/** Unsigned: `percent()` prefixes a `+`, which reads as a gain and this is not one. */
+function signal(value: number | null): string {
+  return value === null ? EM_DASH : `${num(Math.round(value))} %`;
 }
 
 /** What the line cost before the invoice-level credit was spread over it. Cents,
@@ -357,22 +379,29 @@ function ItemRow({
           >
             {item.description_raw}
           </span>
-          {low ? (
-            <span
-              className="flex shrink-0 items-center gap-0.5 text-[0.65rem] font-medium text-warning"
-              title="Valor incerto — confirme contra o documento."
-            >
-              <AlertTriangle className="size-3" />
-              {percent(confidencePct(item.confidence))}
-            </span>
-          ) : null}
-          {item.decision_reasons.length ? (
-            <WhyPopover
-              reasons={item.decision_reasons}
-              label={null}
-              title={`Confiança ${percent(confidencePct(item.confidence))} — porquê?`}
-            />
-          ) : null}
+          {/* Two numbers, not one: a line read perfectly but matched to nothing
+              is a different problem from a blurry line matched confidently, and
+              a single average hides which of the two it is. */}
+          <WhyPopover
+            reasons={item.decision_reasons}
+            confidence={confidencePct(item.confidence)}
+            formula={ITEM_CONFIDENCE_FORMULA}
+            trigger={
+              <button
+                type="button"
+                title={`Leitura ${signal(signalPct(item.decision_reasons, 'ocr_text'))} · produto ${signal(signalPct(item.decision_reasons, 'product_match'))} — como se calcula?`}
+                className={cn(
+                  'numeric shrink-0 rounded px-1 text-[0.65rem] font-medium hover:bg-muted',
+                  low ? 'text-warning' : 'text-muted-foreground',
+                )}
+              >
+                {low ? <AlertTriangle className="mr-0.5 inline size-3" /> : null}
+                {signal(signalPct(item.decision_reasons, 'ocr_text'))}
+                <span className="px-0.5 opacity-50">/</span>
+                {signal(signalPct(item.decision_reasons, 'product_match'))}
+              </button>
+            }
+          />
         </div>
       </TableCell>
       {/* The category lives on the product and nowhere else, so it is shown as
@@ -473,9 +502,7 @@ function ItemRow({
       <TableCell className="numeric">
         {item.price_per_kg_final_eur ? (
           <>
-            <span title="Sobre o preço efetivamente pago.">
-              {eur(item.price_per_kg_final_eur)}
-            </span>
+            <span title="Sobre o preço efetivamente pago.">{eur(item.price_per_kg_final_eur)}</span>
             {/* The shelf reading, and only when the two differ. */}
             {item.price_per_kg_pvp_eur &&
             item.price_per_kg_pvp_eur !== item.price_per_kg_final_eur ? (
@@ -497,7 +524,11 @@ function ItemRow({
 
 const ITEM_COLUMNS: { label: string; title?: string }[] = [
   { label: '#' },
-  { label: 'Artigo', title: 'O produto a que a linha resolveu, e por baixo o texto impresso.' },
+  {
+    label: 'Artigo',
+    title:
+      'O produto a que a linha resolveu, o texto impresso e, à direita, a confiança da leitura e a da correspondência de produto.',
+  },
   { label: 'Categoria' },
   { label: 'Qtd' },
   { label: 'Peso' },
@@ -931,8 +962,12 @@ export function ReceiptReviewPane({
                       ) : null}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      Confiança: {percent(confidencePct(receipt.confidence))}
-                      <WhyPopover reasons={receipt.decision_reasons} />
+                      Confiança: {signal(confidencePct(receipt.confidence))}
+                      <WhyPopover
+                        reasons={receipt.decision_reasons}
+                        confidence={confidencePct(receipt.confidence)}
+                        formula={RECEIPT_CONFIDENCE_FORMULA}
+                      />
                     </span>
                     <Badge variant="outline">
                       {receipt.parser_profile_name ?? 'Sem perfil de leitura'}

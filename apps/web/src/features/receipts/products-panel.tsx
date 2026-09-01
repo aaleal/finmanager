@@ -41,6 +41,8 @@ import { useSession } from '@/features/auth/session';
 import { CategoryPicker } from './category-picker';
 import { ProductCreateDialog } from './product-create-dialog';
 import {
+  useLearnAlias,
+  useMerchants,
   useMergeCandidates,
   useMergeProducts,
   useProduct,
@@ -78,15 +80,32 @@ function categoryConfidencePct(value: string | null): number | null {
   return Number.isFinite(numeric) ? numeric * 100 : null;
 }
 
-type WeightUnit = 'g' | 'kg';
+/**
+ * A litre counts as a kilo. That is the household's own convention for liquids
+ * and it is what the parser already applies to `1,5L` off a till, so a bottle
+ * and a bag end up comparable in the same €/kg.
+ */
+const UNIT_FACTORS = {
+  g: 0.001,
+  kg: 1,
+  ml: 0.001,
+  cl: 0.01,
+  L: 1,
+} as const;
+
+type PackUnit = keyof typeof UNIT_FACTORS;
+
+const PACK_UNITS = Object.keys(UNIT_FACTORS) as PackUnit[];
 
 /** A format as it is edited: the number and the unit the human chose to say it in. */
-type VariantRow = { value: string; unit: WeightUnit; label: string; barcode: string | null };
+type VariantRow = { value: string; unit: PackUnit; label: string; barcode: string | null };
 
 function variantToRow(variant: PackVariant): VariantRow {
   const kg = Number(variant.weight_kg ?? '');
   const known = Number.isFinite(kg) && kg > 0;
-  const unit: WeightUnit = known && kg < 1 ? 'g' : 'kg';
+  // Volume is indistinguishable from weight once stored, so the unit is only a
+  // guess on the way back in — the label is what preserves the human's wording.
+  const unit: PackUnit = known && kg < 1 ? 'g' : 'kg';
   return {
     value: !known ? '' : unit === 'g' ? String(Math.round(kg * 1000)) : String(kg),
     unit,
@@ -101,8 +120,16 @@ function rowWeightKg(row: VariantRow): string | null {
   if (!raw) return null;
   const numeric = Number(raw);
   if (!Number.isFinite(numeric) || numeric <= 0) return null;
-  const grams = Math.round(row.unit === 'g' ? numeric : numeric * 1000);
+  const grams = Math.round(numeric * UNIT_FACTORS[row.unit] * 1000);
   return grams > 0 ? (grams / 1000).toFixed(3) : null;
+}
+
+/** What the human said, kept verbatim: `1,5 L` never renders itself as `1,5 kg`. */
+function rowLabel(row: VariantRow): string {
+  const typed = row.label.trim();
+  if (typed) return typed;
+  const value = row.value.trim().replace('.', ',');
+  return value ? `${value} ${row.unit}` : '';
 }
 
 function isBlankRow(row: VariantRow): boolean {
@@ -113,7 +140,7 @@ function rowsToVariants(rows: VariantRow[]): PackVariant[] {
   return rows
     .filter((row) => !isBlankRow(row))
     .map((row) => ({
-      label: row.label.trim() || null,
+      label: rowLabel(row) || null,
       weight_kg: rowWeightKg(row),
       barcode: row.barcode,
     }));
@@ -213,13 +240,12 @@ function PackVariantsEditor({
   return (
     <div className="space-y-2">
       {rows.map((row, index) => {
-        const weight = rowWeightKg(row);
         return (
           <div key={index} className="flex items-end gap-2">
-            <Field label="Peso" className="w-28">
+            <Field label="Quantidade" className="w-28">
               <Input
                 inputMode="decimal"
-                placeholder={row.unit === 'g' ? '500' : '1,5'}
+                placeholder={row.unit === 'g' || row.unit === 'ml' ? '500' : '1,5'}
                 value={row.value}
                 disabled={disabled}
                 onChange={(event) => update(index, { value: event.target.value })}
@@ -228,20 +254,23 @@ function PackVariantsEditor({
             <Select
               value={row.unit}
               disabled={disabled}
-              onValueChange={(unit) => update(index, { unit: unit as WeightUnit })}
+              onValueChange={(unit) => update(index, { unit: unit as PackUnit })}
             >
               <SelectTrigger className="w-20" aria-label="Unidade">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="g">g</SelectItem>
-                <SelectItem value="kg">kg</SelectItem>
+                {PACK_UNITS.map((unit) => (
+                  <SelectItem key={unit} value={unit}>
+                    {unit}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Field label="Nome (opcional)" className="flex-1">
               <Input
                 value={row.label}
-                placeholder={weight ? packLabel(weight, '') : 'derivado do peso'}
+                placeholder={rowLabel({ ...row, label: '' }) || 'derivado do peso'}
                 disabled={disabled}
                 onChange={(event) => update(index, { label: event.target.value })}
               />
@@ -365,38 +394,102 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
   );
 }
 
+function AddAliasForm({ productId }: { productId: string }) {
+  const merchants = useMerchants();
+  const learn = useLearnAlias();
+  const [merchantId, setMerchantId] = React.useState('');
+  const [text, setText] = React.useState('');
+
+  const valid = Boolean(merchantId) && text.trim().length > 0;
+
+  return (
+    <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+      <p className="text-xs text-muted-foreground">
+        O texto tal como o comerciante o imprime. Fica aprendido para esse comerciante e resolve
+        sozinho a partir da próxima fatura.
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label="Comerciante" className="w-48">
+          <Select value={merchantId} onValueChange={setMerchantId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Escolher…" />
+            </SelectTrigger>
+            <SelectContent>
+              {(merchants.data ?? []).map((merchant) => (
+                <SelectItem key={merchant.id} value={merchant.id}>
+                  {merchant.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Texto impresso" className="min-w-[14rem] flex-1">
+          <Input
+            value={text}
+            placeholder="POLPA TOMATE GULOSO 500G"
+            onChange={(event) => setText(event.target.value)}
+          />
+        </Field>
+        <Button
+          disabled={!valid}
+          loading={learn.isPending}
+          onClick={() =>
+            learn.mutate(
+              {
+                master_product_id: productId,
+                merchant_id: merchantId,
+                merchant_description: text.trim(),
+              },
+              { onSuccess: () => setText('') },
+            )
+          }
+        >
+          <Plus />
+          Aprender
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ProductAliasesTab({ productId }: { productId: string }) {
+  const { canWrite } = useSession();
   const aliases = useProductAliases(productId);
 
   if (aliases.isLoading) return <Skeleton className="h-32 rounded-lg" />;
-  if (!aliases.data?.length)
-    return <EmptyState title="Sem aliases aprendidos para este produto." />;
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Comerciante</TableHead>
-          <TableHead>Texto do comerciante</TableHead>
-          <TableHead>Confiança</TableHead>
-          <TableHead>Correções</TableHead>
-          <TableHead>Última utilização</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {aliases.data.map((alias) => (
-          <TableRow key={alias.id}>
-            <TableCell>{alias.merchant_name ?? EM_DASH}</TableCell>
-            <TableCell className="max-w-[14rem] truncate" title={alias.merchant_description}>
-              {alias.merchant_description}
-            </TableCell>
-            <TableCell className="numeric">{percent(Number(alias.confidence) * 100)}</TableCell>
-            <TableCell className="numeric">{num(alias.correction_count)}</TableCell>
-            <TableCell>{date(alias.last_used_at)}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-3">
+      {canWrite ? <AddAliasForm productId={productId} /> : null}
+      {aliases.data?.length ? (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Comerciante</TableHead>
+              <TableHead>Texto do comerciante</TableHead>
+              <TableHead>Confiança</TableHead>
+              <TableHead>Correções</TableHead>
+              <TableHead>Última utilização</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {aliases.data.map((alias) => (
+              <TableRow key={alias.id}>
+                <TableCell>{alias.merchant_name ?? EM_DASH}</TableCell>
+                <TableCell className="max-w-[14rem] truncate" title={alias.merchant_description}>
+                  {alias.merchant_description}
+                </TableCell>
+                <TableCell className="numeric">{percent(Number(alias.confidence) * 100)}</TableCell>
+                <TableCell className="numeric">{num(alias.correction_count)}</TableCell>
+                <TableCell>{date(alias.last_used_at)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <EmptyState title="Sem aliases aprendidos para este produto." />
+      )}
+    </div>
   );
 }
 

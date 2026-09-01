@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/primitives';
@@ -17,32 +18,47 @@ function isReason(value: unknown): value is Reason {
  * The «Porquê?» affordance: every auto-filled value can show the reasons and
  * scores behind it.
  *
- * Passing `label={null}` renders just the `?` icon — in a dense line-item grid
- * the reasons are worth a column and the word is not.
+ * `trigger` replaces the icon when the caller has something better to click — the
+ * confidence itself, for instance, which says more than a question mark and
+ * costs the same space.
  */
 export function WhyPopover({
   reasons,
   label = 'Porquê?',
   title,
+  confidence = null,
+  formula,
+  trigger,
 }: {
   reasons: unknown[];
   label?: string | null;
   title?: string;
+  confidence?: number | null;
+  formula?: string;
+  trigger?: React.ReactNode;
 }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size={label === null ? 'icon-sm' : 'sm'}
-          title={title ?? 'Porquê?'}
-          aria-label={title ?? 'Porquê?'}
-        >
-          <HelpCircle />
-          {label}
-        </Button>
+        {trigger ?? (
+          <Button
+            variant="ghost"
+            size={label === null ? 'icon-sm' : 'sm'}
+            title={title ?? 'Porquê?'}
+            aria-label={title ?? 'Porquê?'}
+          >
+            <HelpCircle />
+            {label}
+          </Button>
+        )}
       </PopoverTrigger>
-      <PopoverContent className="space-y-2">
+      <PopoverContent className="w-96 space-y-2">
+        {confidence !== null ? (
+          <div className="flex items-baseline justify-between border-b border-border pb-2">
+            <span className="text-sm font-medium">Confiança final</span>
+            <span className="numeric text-lg font-semibold">{percent(confidence)}</span>
+          </div>
+        ) : null}
         {reasons.length ? (
           <ul className="space-y-2">
             {reasons.map((raw, index) => {
@@ -77,6 +93,11 @@ export function WhyPopover({
         ) : (
           <p className="text-sm text-muted-foreground">Sem razões registadas.</p>
         )}
+        {formula ? (
+          <p className="border-t border-border pt-2 text-xs text-muted-foreground">
+            <span className="font-medium">Cálculo:</span> {formula}
+          </p>
+        ) : null}
       </PopoverContent>
     </Popover>
   );

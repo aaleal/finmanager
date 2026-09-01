@@ -594,6 +594,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lego/backup.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Backup
+         * @description The collection as an archive that can rebuild it on an empty installation.
+         *
+         *     Distinct from ``export.xlsx``, which is a report: this keeps the identifiers,
+         *     the image bytes and the valuation history, and none of it is legible.
+         */
+        get: operations["export_backup_api_lego_backup_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Backup
+         * @description Restore an archive onto one entity. Existing rows are kept, never merged.
+         */
+        post: operations["import_backup_api_lego_backup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/receipts": {
         parameters: {
             query?: never;
@@ -1573,6 +1616,14 @@ export interface components {
             /** File */
             file?: string | null;
         };
+        /** Body_import_backup_api_lego_backup_post */
+        Body_import_backup_api_lego_backup_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
         /** Body_import_legacy_api_receipts_import_legacy_post */
         Body_import_legacy_api_receipts_import_legacy_post: {
             /**
@@ -1927,6 +1978,58 @@ export interface components {
             merchants_created: number;
             /** Exceptions */
             exceptions: Record<string, never>[];
+        };
+        /**
+         * LegoBackupReport
+         * @description What the restore actually did. A skip is a row that was already there —
+         *     an archive is a snapshot, so it never overwrites what is live today.
+         */
+        LegoBackupReport: {
+            /**
+             * Storage Locations
+             * @default 0
+             */
+            storage_locations: number;
+            /**
+             * Models
+             * @default 0
+             */
+            models: number;
+            /**
+             * Images
+             * @default 0
+             */
+            images: number;
+            /**
+             * Instances
+             * @default 0
+             */
+            instances: number;
+            /**
+             * Documents
+             * @default 0
+             */
+            documents: number;
+            /**
+             * Skipped Storage Locations
+             * @default 0
+             */
+            skipped_storage_locations: number;
+            /**
+             * Skipped Models
+             * @default 0
+             */
+            skipped_models: number;
+            /**
+             * Skipped Images
+             * @default 0
+             */
+            skipped_images: number;
+            /**
+             * Skipped Instances
+             * @default 0
+             */
+            skipped_instances: number;
         };
         /** LegoSetImageOut */
         LegoSetImageOut: {
@@ -5390,6 +5493,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    export_backup_api_lego_backup_zip_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    import_backup_api_lego_backup_post: {
+        parameters: {
+            query?: {
+                entity_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_backup_api_lego_backup_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoBackupReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

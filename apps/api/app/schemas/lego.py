@@ -315,6 +315,21 @@ class TimelinePoint(BaseModel):
     value_eur: Decimal
 
 
+class LegoBackupReport(BaseModel):
+    """What the restore actually did. A skip is a row that was already there —
+    an archive is a snapshot, so it never overwrites what is live today."""
+
+    storage_locations: int = 0
+    models: int = 0
+    images: int = 0
+    instances: int = 0
+    documents: int = 0
+    skipped_storage_locations: int = 0
+    skipped_models: int = 0
+    skipped_images: int = 0
+    skipped_instances: int = 0
+
+
 class OverviewOut(BaseModel):
     total_cost_eur: Decimal
     total_value_eur: Decimal

@@ -8,6 +8,7 @@ import type {
   CategoryTreeNode,
   LegacyImportResult,
   MasterProduct,
+  Merchant,
   MergeCandidate,
   Page,
   ProductAlias,
@@ -66,6 +67,37 @@ export function useProductAliases(productId: string | null) {
     queryKey: ['products', 'aliases', productId],
     queryFn: () => api.get<ProductAlias[]>(`/master-products/${productId}/aliases`),
     enabled: Boolean(productId),
+  });
+}
+
+export function useMerchants() {
+  return useQuery({
+    queryKey: ['merchants'],
+    queryFn: () => api.get<Merchant[]>('/merchants'),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Teach the catalogue a merchant's wording by hand.
+ *
+ * The same call the review pane makes when a product is corrected, so a
+ * hand-written alias is indistinguishable from a learned one and rises through
+ * the same confidence.
+ */
+export function useLearnAlias() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (body: {
+      master_product_id: string;
+      merchant_id: string;
+      merchant_description: string;
+    }) => api.post<ProductAlias>('/product-aliases/learn', body),
+    onSuccess: () => {
+      toast.success('Alias aprendido. A próxima linha com este texto resolve sozinha.');
+      invalidate();
+    },
+    onError: report,
   });
 }
 
