@@ -3,7 +3,6 @@ import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
-  LegoBackupReport,
   LegoInstancePage,
   LegoOverview,
   LegoSetInstance,
@@ -193,37 +192,6 @@ export function useExportCollection() {
     mutationFn: () => api.download('/lego/export.xlsx'),
     onSuccess: () => toast.success('Ficheiro exportado.'),
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível exportar a coleção.')),
-  });
-}
-
-/** The archive that restores the collection elsewhere, not the readable report. */
-export function useExportBackup() {
-  return useMutation({
-    mutationFn: () => api.download('/lego/backup.zip'),
-    onSuccess: () => toast.success('Cópia de segurança criada.'),
-    onError: (error) => toast.error(errorMessage(error, 'Não foi possível criar a cópia.')),
-  });
-}
-
-export function useImportBackup() {
-  const invalidate = useInvalidateLego();
-  return useMutation({
-    mutationFn: (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      // `api.upload` defaults to PUT, which this endpoint does not answer.
-      return api.upload<LegoBackupReport>('/lego/backup', formData, undefined, 'POST');
-    },
-    onSuccess: (report) => {
-      toast.success(
-        `Importados ${report.models} conjuntos e ${report.instances} cópias.` +
-          (report.skipped_models + report.skipped_instances > 0
-            ? ' Os registos já existentes foram mantidos.'
-            : ''),
-      );
-      invalidate();
-    },
-    onError: (error) => toast.error(errorMessage(error, 'Não foi possível importar o arquivo.')),
   });
 }
 

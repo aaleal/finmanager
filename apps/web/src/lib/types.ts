@@ -42,7 +42,6 @@ export type ReceiptDetail = Schemas['ReceiptDetail'];
 export type ReceiptItem = Schemas['ReceiptItemOut'];
 export type ProductSummary = Schemas['ProductSummary'];
 export type Merchant = Schemas['MerchantOut'];
-export type LegoBackupReport = Schemas['LegoBackupReport'];
 export type ReceiptDerived = Schemas['ReceiptDerived'];
 export type ReceiptStatusBoard = Schemas['StatusBoard'];
 export type QueueEntry = Schemas['QueueEntry'];

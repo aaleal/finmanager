@@ -12,7 +12,6 @@ from app.schemas.lego import (
     CompletenessFilter,
     CopiesFilter,
     ImageSource,
-    LegoBackupReport,
     LegoSetImageUpdate,
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
@@ -362,38 +361,4 @@ def export_workbook(ctx: CurrentAuth, db: Db) -> Response:
                 f'attachment; filename="{lego_export.filename(ctx.active_entity_id)}"'
             )
         },
-    )
-
-
-# --- Backup & restore ---------------------------------------------------------
-@router.get("/backup.zip", response_class=Response)
-def export_backup(ctx: CurrentAuth, db: Db) -> Response:
-    """The collection as an archive that can rebuild it on an empty installation.
-
-    Distinct from ``export.xlsx``, which is a report: this keeps the identifiers,
-    the image bytes and the valuation history, and none of it is legible.
-    """
-    from app.services import lego_backup
-
-    payload = lego_backup.build_archive(db, entity_ids=household_entity_ids(db, ctx))
-    return Response(
-        content=payload,
-        media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{lego_backup.filename()}"'},
-    )
-
-
-@router.post("/backup", response_model=LegoBackupReport)
-def import_backup(
-    ctx: Writer,
-    db: Db,
-    file: Annotated[UploadFile, File()],
-    entity_id: uuid.UUID | None = None,
-) -> LegoBackupReport:
-    """Restore an archive onto one entity. Existing rows are kept, never merged."""
-    from app.services import lego_backup
-
-    target = resolve_write_entity(db, ctx, entity_id)
-    return lego_backup.restore_archive(
-        db, file.file.read(), entity_id=target, actor_user_id=ctx.user.id
     )

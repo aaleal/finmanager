@@ -41,3 +41,4 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0034](0034-reopening-a-confirmed-receipt.md) | Reopening a confirmed receipt, and what confirming costs |
 | [0035](0035-confirming-a-category-is-a-statement-about-the-product.md) | Confirming a category is a statement about the product |
 | [0036](0036-the-comparable-price-per-kg-is-before-the-loyalty-card.md) | The comparable €/kg is the one before the loyalty card (supersedes 0031) |
+| [0037](0037-backup-is-per-module-behind-one-settings-surface.md) | Backup is per-module, behind one Definições surface |

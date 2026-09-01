@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { ChevronDown, Link2, Search, Sparkles, X } from 'lucide-react';
+import { ChevronDown, ImagePlus, Link2, Search, Sparkles, X } from 'lucide-react';
 import { ApiError } from '@/lib/api';
 import type { LookupResult, StorageLocation, TransactionSuggestion } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionPicker } from '@/components/transaction-picker';
 import { useSession } from '@/features/auth/session';
-import { useCreateInstance, useLookup, useStorageLocations } from './api';
+import { useCreateInstance, useLookup, useSetGallery, useStorageLocations } from './api';
 import { BUILD_STATE_LABELS, CONDITION_LABELS, SOURCE_LABELS } from './constants';
 import { cn } from '@/lib/utils';
 import { date, eur } from '@/lib/format';
@@ -175,6 +175,103 @@ export function EntityField({
  * shortcut dialog silently dropped (M9.1). Passing `existingModel` only locks the
  * catalog identity; everything about the copy stays identical.
  */
+/** A photo staged before the set exists — uploaded to the model's gallery once
+ * `createInstance` returns an id. Never sent anywhere until then. */
+interface PendingPhoto {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
+
+/**
+ * The box shot (once Brickset answers) plus any extra photos staged for the new
+ * set's gallery — shown beside the number field so the picture confirms the
+ * lookup found the right set, not just its name.
+ */
+function SetImagesPreview({
+  coverUrl,
+  photos,
+  onAdd,
+  onRemove,
+}: {
+  coverUrl: string;
+  photos: PendingPhoto[];
+  onAdd: (file: File) => void;
+  onRemove: (id: string) => void;
+}) {
+  const fileRef = React.useRef<HTMLInputElement>(null);
+
+  if (!coverUrl && photos.length === 0) {
+    return (
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onAdd(file);
+            event.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          title="Adicionar fotografia"
+          className="flex size-14 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+        >
+          <ImagePlus className="size-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-start gap-2">
+      {coverUrl ? (
+        <div className="size-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+          <img src={coverUrl} alt="" className="size-full object-contain" loading="lazy" />
+        </div>
+      ) : null}
+      {photos.map((photo) => (
+        <div key={photo.id} className="group relative size-14 shrink-0">
+          <div className="size-full overflow-hidden rounded-lg border border-border bg-muted">
+            <img src={photo.previewUrl} alt="" className="size-full object-cover" loading="lazy" />
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(photo.id)}
+            title="Remover"
+            className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
+      ))}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onAdd(file);
+          event.target.value = '';
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        title="Adicionar fotografia"
+        className="flex size-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+      >
+        <ImagePlus className="size-4" />
+      </button>
+    </div>
+  );
+}
+
 export function AddSetDialog({
   open,
   onOpenChange,
@@ -189,12 +286,14 @@ export function AddSetDialog({
   const form = useForm<FormValues>({ defaultValues: EMPTY });
   const lookup = useLookup();
   const createInstance = useCreateInstance();
+  const gallery = useSetGallery();
   const { activeEntityId } = useSession();
   const [entityId, setEntityId] = React.useState(existingModel?.entityId ?? activeEntityId ?? '');
   const [lookupResult, setLookupResult] = React.useState<LookupResult | null>(null);
   const [duplicateModelId, setDuplicateModelId] = React.useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [transaction, setTransaction] = React.useState<TransactionSuggestion | null>(null);
+  const [pendingPhotos, setPendingPhotos] = React.useState<PendingPhoto[]>([]);
 
   const isCustom = form.watch('is_custom');
   const setNumber = form.watch('set_number');
@@ -205,6 +304,10 @@ export function AddSetDialog({
       setLookupResult(null);
       setDuplicateModelId(null);
       setTransaction(null);
+      setPendingPhotos((current) => {
+        for (const photo of current) URL.revokeObjectURL(photo.previewUrl);
+        return [];
+      });
     }
     setEntityId(existingModel?.entityId ?? activeEntityId ?? '');
   }, [open, form, activeEntityId, existingModel]);
@@ -271,7 +374,11 @@ export function AddSetDialog({
     }
 
     try {
-      await createInstance.mutateAsync(payload);
+      const instance = await createInstance.mutateAsync(payload);
+      // Staged before the model existed; the gallery only accepts a real id.
+      for (const photo of pendingPhotos) {
+        await gallery.add.mutateAsync({ id: instance.lego_set_model_id, file: photo.file });
+      }
       onOpenChange(false);
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
@@ -331,6 +438,23 @@ export function AddSetDialog({
                         <Search />
                         Procurar
                       </Button>
+                      <SetImagesPreview
+                        coverUrl={form.watch('image_url')}
+                        photos={pendingPhotos}
+                        onAdd={(file) =>
+                          setPendingPhotos((current) => [
+                            ...current,
+                            { id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) },
+                          ])
+                        }
+                        onRemove={(id) =>
+                          setPendingPhotos((current) => {
+                            const removed = current.find((photo) => photo.id === id);
+                            if (removed) URL.revokeObjectURL(removed.previewUrl);
+                            return current.filter((photo) => photo.id !== id);
+                          })
+                        }
+                      />
                     </div>
 
                     <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">

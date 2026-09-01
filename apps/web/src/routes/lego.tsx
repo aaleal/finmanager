@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { DatabaseBackup, Plus, Sheet, Upload } from 'lucide-react';
+import { Plus, Sheet } from 'lucide-react';
 import type { LegoSetInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
@@ -7,9 +7,7 @@ import { PageHeader } from '@/components/ui/feedback';
 import { useSession } from '@/features/auth/session';
 import { useUrlFilters } from '@/lib/filters';
 import {
-  useExportBackup,
   useExportCollection,
-  useImportBackup,
   useInstances,
   useLegoOverview,
   useStorageLocations,
@@ -48,9 +46,6 @@ export function LegoPage() {
   const overview = useLegoOverview();
   const storage = useStorageLocations();
   const exportCollection = useExportCollection();
-  const exportBackup = useExportBackup();
-  const importBackup = useImportBackup();
-  const restoreInput = React.useRef<HTMLInputElement>(null);
   const instances = useInstances({
     search: filters.search,
     theme: filters.theme,
@@ -99,39 +94,6 @@ export function LegoPage() {
               <Sheet />
               Exportar
             </Button>
-            <Button
-              variant="outline"
-              title="Arquivo completo (identificadores, imagens e histórico de valores) para repor a coleção noutra instalação."
-              loading={exportBackup.isPending}
-              onClick={() => exportBackup.mutate()}
-            >
-              <DatabaseBackup />
-              Cópia de segurança
-            </Button>
-            {canWrite ? (
-              <>
-                <input
-                  ref={restoreInput}
-                  type="file"
-                  accept=".zip,application/zip"
-                  className="hidden"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) importBackup.mutate(file);
-                    event.target.value = '';
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  title="Repor a partir de uma cópia de segurança. Os registos já existentes são mantidos."
-                  loading={importBackup.isPending}
-                  onClick={() => restoreInput.current?.click()}
-                >
-                  <Upload />
-                  Repor
-                </Button>
-              </>
-            ) : null}
             {canWrite ? (
               <Button onClick={() => setAddOpen(true)}>
                 <Plus />

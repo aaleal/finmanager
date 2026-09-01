@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Blocks, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { LegoSetModel } from '@/lib/types';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 export interface Frame {
@@ -23,8 +24,106 @@ export function frames(model: LegoSetModel | null, photoUrl?: string | null): Fr
   return list;
 }
 
+/** The image plus its nav arrows and caption/counter overlay — shared by the
+ * inline carousel and the large lightbox, at whatever size the container gives it. */
+function CarouselStage({
+  frame,
+  index,
+  total,
+  onStep,
+  onClick,
+  clickable,
+  rounded = true,
+}: {
+  frame: Frame;
+  index: number;
+  total: number;
+  onStep: (delta: number) => void;
+  onClick?: () => void;
+  clickable?: boolean;
+  rounded?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'group relative aspect-[4/3] overflow-hidden border border-border bg-muted',
+        rounded && 'rounded-lg',
+      )}
+    >
+      {clickable ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className="block size-full cursor-zoom-in"
+          aria-label="Ver em tamanho grande"
+        >
+          <img
+            src={frame.url}
+            alt={frame.caption ?? ''}
+            className="size-full object-contain"
+            loading="lazy"
+          />
+        </button>
+      ) : (
+        <img
+          src={frame.url}
+          alt={frame.caption ?? ''}
+          className="size-full object-contain"
+          loading="lazy"
+        />
+      )}
+
+      {total > 1 ? (
+        <>
+          <CarouselButton side="left" onClick={() => onStep(-1)} />
+          <CarouselButton side="right" onClick={() => onStep(1)} />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/55 to-transparent px-3 py-2">
+            <span className="truncate text-xs text-white/90">{frame.caption ?? ''}</span>
+            <span className="numeric shrink-0 text-xs text-white/70">
+              {index + 1}/{total}
+            </span>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function ThumbStrip({
+  items,
+  index,
+  onSelect,
+  size = 'size-12',
+}: {
+  items: Frame[];
+  index: number;
+  onSelect: (position: number) => void;
+  size?: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item, position) => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={() => onSelect(position)}
+          aria-label={item.caption ?? `Imagem ${position + 1}`}
+          aria-current={position === index}
+          className={cn(
+            `${size} shrink-0 overflow-hidden rounded border bg-muted transition-opacity`,
+            position === index ? 'border-primary' : 'border-border opacity-60 hover:opacity-100',
+          )}
+        >
+          <img src={item.url} alt="" className="size-full object-cover" loading="lazy" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function SetCarousel({ items, className }: { items: Frame[]; className?: string }) {
   const [index, setIndex] = React.useState(0);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
   // Deleting or promoting an image reorders the list under us.
   React.useEffect(() => setIndex((current) => Math.min(current, Math.max(0, items.length - 1))), [items.length]);
@@ -47,49 +146,32 @@ export function SetCarousel({ items, className }: { items: Frame[]; className?: 
 
   return (
     <div className={cn('space-y-2', className)}>
-      <div className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
-        <img
-          src={current.url}
-          alt={current.caption ?? ''}
-          className="size-full object-contain"
-          loading="lazy"
-        />
+      <CarouselStage
+        frame={current}
+        index={index}
+        total={items.length}
+        onStep={step}
+        clickable
+        onClick={() => setLightboxOpen(true)}
+      />
 
-        {items.length > 1 ? (
-          <>
-            <CarouselButton side="left" onClick={() => step(-1)} />
-            <CarouselButton side="right" onClick={() => step(1)} />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/55 to-transparent px-3 py-2">
-              <span className="truncate text-xs text-white/90">{current.caption ?? ''}</span>
-              <span className="numeric shrink-0 text-xs text-white/70">
-                {index + 1}/{items.length}
-              </span>
-            </div>
-          </>
-        ) : null}
-      </div>
+      {items.length > 1 ? <ThumbStrip items={items} index={index} onSelect={setIndex} /> : null}
 
-      {items.length > 1 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((item, position) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setIndex(position)}
-              aria-label={item.caption ?? `Imagem ${position + 1}`}
-              aria-current={position === index}
-              className={cn(
-                'size-12 shrink-0 overflow-hidden rounded border bg-muted transition-opacity',
-                position === index
-                  ? 'border-primary'
-                  : 'border-border opacity-60 hover:opacity-100',
-              )}
-            >
-              <img src={item.url} alt="" className="size-full object-cover" loading="lazy" />
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent size="lg" className="space-y-3 p-4">
+          <DialogTitle className="sr-only">Galeria do conjunto</DialogTitle>
+          <CarouselStage
+            frame={current}
+            index={index}
+            total={items.length}
+            onStep={step}
+            rounded={false}
+          />
+          {items.length > 1 ? (
+            <ThumbStrip items={items} index={index} onSelect={setIndex} size="size-16" />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

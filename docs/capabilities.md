@@ -83,7 +83,6 @@ lives here, where it can be corrected when code moves.
 | Filtered summary, tri-state discovery filters, area-level storage filter, field+direction sort | `apps/api/app/services/lego_service.py` | Phase 1 (M9.1) |
 | Derived RRP appreciation/ROI, cumulative acquisition timeline | `apps/api/app/services/lego_service.py` | Phase 1 (M9.1) |
 | `GET /lego/export.xlsx` workbook export (copies, sets, storage) | `apps/api/app/services/lego_export.py` | Phase 1 (M9.1) |
-| `GET /lego/backup.zip` + `POST /lego/backup` round-trip archive (ADR-0032) | `apps/api/app/services/lego_backup.py` | Phase 1 |
 | Exact `release_date` / `retirement_date`, with `is_retired` waiting for the date to pass | `apps/api/app/models/lego.py` | Phase 1 (M9.2) |
 | Full catalog editing from the detail sheet («Editar conjunto» tab) | `apps/web/src/features/lego/detail-sheet.tsx` | Phase 1 (M9.2) |
 | Collapsible two-level storage filter (areas, then containers) | `apps/web/src/features/lego/storage-filter.tsx` | Phase 1 (M9.2) |
@@ -91,6 +90,14 @@ lives here, where it can be corrected when code moves.
 | Sort on every grid column, incl. derived `copies` and `roi`, ordinal `condition` | `apps/api/app/services/lego_service.py` | Phase 1 (M9.3) |
 | Set image gallery + carousel (box shot plus extra views) | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/set-carousel.tsx` | Phase 1 (M9.3) |
 | Real Brickset box art downloaded once into the seed | `apps/api/app/seed/__init__.py` | Phase 1 (M9.3) |
+
+## Settings & backup (Definições)
+
+| Capability | Where | Shipped by |
+| :--- | :--- | :--- |
+| Provider toggles (Brickset), confidence thresholds, password change | `apps/api/app/api/routers/settings.py`, `apps/web/src/routes/settings.tsx` | Phase 0 / Phase 1 |
+| Per-module backup registry — one archive per module, plus a global export bundling every module's own archive unmodified (ADR-0037, LEGO's own rules per ADR-0032) | `apps/api/app/services/backup_service.py`, `apps/api/app/services/lego_backup.py` | Phase 1 |
+| `GET /settings/backup/modules`, `GET /settings/backup.zip?module=`, `POST /settings/backup` — restore auto-detects a single-module or a global archive from its manifest | `apps/api/app/api/routers/settings.py` | Phase 1 |
 
 ## Supermarket & receipts (M1)
 

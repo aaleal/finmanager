@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { KeyRound, ShieldAlert } from 'lucide-react';
+import { DatabaseBackup, KeyRound, ShieldAlert, Upload } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type { AppSettings } from '@/lib/types';
@@ -9,7 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
 import { Separator, Switch } from '@/components/ui/primitives';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PageHeader } from '@/components/ui/feedback';
+import { useBackupModules, useExportBackup, useImportBackup } from '@/features/settings/backup-api';
 
 const KEYS = {
   bricksetEnabled: 'lego.brickset.enabled',
@@ -68,6 +76,83 @@ function PasswordCard() {
         >
           Alterar
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BackupCard() {
+  const { canWrite } = useSession();
+  const modules = useBackupModules();
+  const [scope, setScope] = React.useState('all');
+  const exportBackup = useExportBackup();
+  const importBackup = useImportBackup();
+  const restoreInput = React.useRef<HTMLInputElement>(null);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <DatabaseBackup className="size-4 text-muted-foreground" />
+          Cópia de segurança
+        </CardTitle>
+        <CardDescription>
+          Arquivo com identificadores, imagens e histórico de valores — repõe um módulo, ou toda a
+          instalação, numa instalação vazia. As chaves primárias viajam; só a entidade e os
+          documentos são remapeados; linhas já existentes são mantidas, nunca substituídas.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Field label="Âmbito">
+          <Select value={scope} onValueChange={setScope}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tudo</SelectItem>
+              {(modules.data ?? []).map((module) => (
+                <SelectItem key={module.key} value={module.key}>
+                  {module.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            loading={exportBackup.isPending}
+            onClick={() => exportBackup.mutate(scope)}
+          >
+            <DatabaseBackup />
+            Criar cópia
+          </Button>
+          {canWrite ? (
+            <>
+              <input
+                ref={restoreInput}
+                type="file"
+                accept=".zip,application/zip"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) importBackup.mutate(file);
+                  event.target.value = '';
+                }}
+              />
+              <Button
+                variant="outline"
+                title="O ficheiro decide sozinho se repõe um módulo ou a instalação inteira."
+                loading={importBackup.isPending}
+                onClick={() => restoreInput.current?.click()}
+              >
+                <Upload />
+                Repor a partir de arquivo
+              </Button>
+            </>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -214,6 +299,7 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
+          <BackupCard />
           <PasswordCard />
         </div>
       </div>
