@@ -1,5 +1,9 @@
 # 0031 — The review grid shows the €/kg that was paid
 
+> **Superseded by [ADR-0036](0036-the-comparable-price-per-kg-is-before-the-loyalty-card.md).**
+> The grid now leads with the promo-adjusted reading; the paid one moved to the
+> second line. The reasoning below still holds for *why both are kept*.
+
 ## Context
 
 `arithmetic.price_per_kg` computes three readings of the same line:

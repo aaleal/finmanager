@@ -314,6 +314,14 @@ def run(
     )
 
 
+def _item_text_quality(item: ReceiptItem) -> Decimal:
+    """Read back the text signal the line was first scored with."""
+    for reason in item.decision_reasons:
+        if reason.get("rule") == "ocr_text" and reason.get("score") is not None:
+            return Decimal(str(reason["score"]))
+    return Decimal(0)
+
+
 def _resolve_products(
     db: DbSession,
     merchant_id: uuid.UUID | None,
@@ -332,6 +340,19 @@ def _resolve_products(
         item.master_product_id = product_id
         if reasons:
             item.decision_reasons = [*item.decision_reasons, *reasons]
+        # The line was first scored before the catalogue had spoken, so it is
+        # re-scored now that it has: a line matched at 0,95 and one matched at
+        # nothing were otherwise indistinguishable.
+        confidence, rescored = item_confidence(
+            text_quality=_item_text_quality(item),
+            has_price=item.unit_price_pvp_eur != ZERO,
+            product_match=match,
+        )
+        item.confidence = confidence
+        item.decision_reasons = [
+            *(r for r in item.decision_reasons if r.get("rule") != "ocr_text"),
+            *rescored,
+        ]
         scores.append(match if match is not None else Decimal(0))
 
     average = (sum(scores, Decimal(0)) / Decimal(len(scores))).quantize(Decimal("0.001"))

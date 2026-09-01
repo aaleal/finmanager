@@ -211,7 +211,8 @@ export function useImportBackup() {
     mutationFn: (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      return api.upload<LegoBackupReport>('/lego/backup', formData);
+      // `api.upload` defaults to PUT, which this endpoint does not answer.
+      return api.upload<LegoBackupReport>('/lego/backup', formData, undefined, 'POST');
     },
     onSuccess: (report) => {
       toast.success(

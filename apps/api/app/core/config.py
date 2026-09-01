@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, extra="ignore")
 
     app_env: str = "production"
+    #: Turned off under test: the bootstrap opens its own session on the *real*
+    #: database, which the suite neither uses nor should touch.
+    bootstrap_reference_data: bool = True
     log_level: str = "INFO"
     tz: str = "Europe/Lisbon"
 

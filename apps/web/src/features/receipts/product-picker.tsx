@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { ProductSearchResult } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/primitives';
@@ -81,7 +81,7 @@ export function ProductPicker({
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
         >
-          <Search className="size-4 shrink-0 text-muted-foreground" />
+          {/* <Search className="size-4 shrink-0 text-muted-foreground" /> */}
           <span className={cn('truncate', !value && 'text-placeholder')}>
             {value ?? placeholder}
           </span>

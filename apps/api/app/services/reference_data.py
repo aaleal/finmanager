@@ -20,7 +20,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session as DbSession
 
 from app.models.core import Category, Merchant
@@ -249,8 +249,19 @@ def ensure_parser_profiles(db: DbSession) -> int:
     return created
 
 
+#: Any 64-bit constant will do; it only has to be the same in every process.
+_BOOTSTRAP_LOCK_KEY = 4_919_202_601
+
+
 def ensure_all(db: DbSession) -> dict[str, int]:
-    """Everything a fresh database needs before it can accept a *talão*."""
+    """Everything a fresh database needs before it can accept a *talão*.
+
+    Serialised on an advisory lock because the API and the worker boot at the
+    same time and would otherwise take the same rows in different orders, which
+    Postgres resolves by killing one of them with a deadlock. The lock is held
+    for the transaction and costs nothing once the data is already there.
+    """
+    db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": _BOOTSTRAP_LOCK_KEY})
     merchants = ensure_merchants(db)
     return {
         "merchants": merchants,

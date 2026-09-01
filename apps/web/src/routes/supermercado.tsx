@@ -172,6 +172,7 @@ export function SupermercadoPage() {
       <PageHeader
         title="Supermercado"
         description="Faturas de supermercado, do carregamento à validação linha a linha."
+        actions={canWrite ? <ReceiptUploadDialog /> : null}
       />
 
       <Tabs value={tab} onValueChange={(value) => setFilters({ tab: value })}>
@@ -202,11 +203,6 @@ export function SupermercadoPage() {
         </TabsContent>
 
         <TabsContent value="faturas" className="space-y-4">
-          {canWrite ? (
-            <div className="flex justify-end">
-              <ReceiptUploadDialog />
-            </div>
-          ) : null}
           <FilterBar filters={filters} setFilters={setFilters} showStatus />
           <ReceiptsTable
             data={receipts.data}
@@ -222,9 +218,7 @@ export function SupermercadoPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Tabs
               value={itemView}
-              onValueChange={(value) =>
-                setFilters({ view: value, product: undefined, page: '1' })
-              }
+              onValueChange={(value) => setFilters({ view: value, product: undefined, page: '1' })}
             >
               <TabsList>
                 <TabsTrigger value="detalhe">Detalhe</TabsTrigger>

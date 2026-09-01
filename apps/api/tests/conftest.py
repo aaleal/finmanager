@@ -96,12 +96,18 @@ def entity(db: Session, household: Household, owner: User) -> Entity:
 
 @pytest.fixture
 def api_client(engine, db: Session) -> Iterator[TestClient]:  # type: ignore[no-untyped-def]
+    from app.core.config import settings
     from app.core.db import get_db
     from app.main import app
 
     def override() -> Iterator[Session]:
         yield db
 
+    # The lifespan bootstrap builds its own session from the app's engine, which
+    # points at the development database, not this suite's. Left on, every test
+    # that raises a client would write reference data into real data and race the
+    # running dev containers for the same rows.
+    settings.bootstrap_reference_data = False
     app.dependency_overrides[get_db] = override
     with TestClient(app) as client:
         yield client

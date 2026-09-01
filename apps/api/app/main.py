@@ -47,6 +47,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     keep the API from serving the rest of the household's data.
     """
     try:
+        if not settings.bootstrap_reference_data:
+            yield
+            return
         with session_scope() as db:
             created = reference_data.ensure_all(db)
         if any(created.values()):

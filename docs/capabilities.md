@@ -104,20 +104,25 @@ lives here, where it can be corrected when code moves.
 | Fiscal QR / ATCUD reader — `pyzbar` decode, printed-ATCUD fallback, NIF checksum and merchant-vs-buyer disambiguation | `apps/api/app/services/receipts/fiscal.py` | Phase 3 (M1a) |
 | Merchant resolution — NIF → profile → fuzzy-name (`rapidfuzz`) | `apps/api/app/services/receipts/merchants.py` | Phase 3 (M1a) |
 | Fs valuation and the three €/kg variants (PVP, promo-adjusted, final) | `apps/api/app/services/receipts/arithmetic.py` | Phase 3 (M1a) |
-| Receipt status machine — `UPLOADED → PARSING → AUTO_ACCEPTED/NEEDS_REVIEW → CONFIRMED → VOID`, with `FAILED` retry | `apps/api/app/models/receipts.py` | Phase 3 (M1a) |
+| Receipt status machine — `UPLOADED → PARSING → AUTO_ACCEPTED/NEEDS_REVIEW → CONFIRMED → VOID`, with `FAILED` retry and `CONFIRMED → NEEDS_REVIEW` reopen | `apps/api/app/models/receipts.py`, `POST /api/receipts/{id}/reopen` | Phase 3 (M1a) |
 | `/api/receipts`, `/api/receipt-items`, `/api/parser-profiles` | `apps/api/app/api/routers/receipts.py` | Phase 3 (M1a) |
 | Parsing queue and batch upload (Carregar, Fila) | `apps/web/src/features/receipts/upload-panel.tsx`, `queue-table.tsx` | Phase 3 (M1a) |
 | Upload as a button + modal on the invoice list, with a parser-profile override carried into `Receipt.parser_profile_id` | `apps/web/src/features/receipts/upload-panel.tsx::ReceiptUploadDialog`, `POST /api/receipts?parser_profile_id=` | M1 fixes (ADR-0026) |
 | «Processamento» — the processing queue, explicitly not a review queue; reusable compactly inside the upload modal | `apps/web/src/features/receipts/queue-table.tsx` | M1 fixes (ADR-0025) |
 | Review split-pane — document alongside extracted fields, «Porquê?» reasons | `apps/web/src/features/receipts/review-pane.tsx`, `why-popover.tsx` | Phase 3 (M1a) |
 | Full-screen review split pane with a zoomable document column, URL-addressable (`?tab=faturas&receipt=`) | `apps/web/src/features/receipts/review-pane.tsx`, `apps/web/src/components/ui/dialog.tsx::FullscreenContent` | M1 fixes (UX-1.2) |
-| Line grid — `L1 › L2 › L3` category column, 3-decimal weights, integer quantity (`—` when sold by weight), icon-only confidence | `apps/web/src/features/receipts/{review-pane,items-table}.tsx`, `apps/web/src/lib/format.ts` | M1 fixes (ADR-0028) |
+| Line grid — `L1 › L2 › L3` category column, weights in g or kg, integer quantity (`—` when sold by weight) | `apps/web/src/features/receipts/{review-pane,items-table}.tsx`, `apps/web/src/lib/format.ts` | M1 fixes (ADR-0028) |
 | Create a `MasterProduct` inline, from the review pane or the catalogue | `apps/web/src/features/receipts/product-create-dialog.tsx` | M1 fixes (FR-1.2) |
 | Estado status board — totals, queue depth, failures, auto-accept rate | `apps/web/src/features/receipts/status-panel.tsx` | Phase 3 (M1a) |
 | Supermercado tile on the Painel (despesa registada + n.º de faturas) | `apps/api/app/api/routers/dashboard.py` | Phase 3 |
 | Faturas — receipts list | `apps/web/src/features/receipts/receipts-table.tsx` | Phase 3 (M1a) |
 | Faturas — parser-profile column and an `impressos/Fs` article count (`5/2`) | `apps/web/src/features/receipts/receipts-table.tsx` | M1 fixes (UX-1.3) |
 | Artigos — line-level item explorer across every invoice | `apps/web/src/features/receipts/items-table.tsx` | Phase 3 (M1a) |
+| Artigos — «Resumo por produto»: units, weight, spend and a **weight-weighted** €/kg per product, drilling down into the individual purchases | `GET /api/receipt-items/summary`, `apps/web/src/features/receipts/product-summary-table.tsx` | M1 fixes |
+| Pack formats as a curated vocabulary — unique weights per product, matched to a line **by value at the gram**, idempotent append (ADR-0030) | `apps/api/app/services/receipts/products_service.py::sanitize_pack_variants`, `POST /api/master-products/{id}/pack-variants` | M1 fixes (ADR-0030) |
+| Manual alias entry beside the learned ones — same call the review pane makes on a correction | `POST /api/product-aliases/learn`, `apps/web/src/features/receipts/products-panel.tsx::AddAliasForm` | M1 fixes |
+| Hand-added invoice lines and hand-removed ones, with an editable `line_no` that orders the grid | `POST /api/receipts/{id}/items` (`is_fs=false`), `DELETE /api/receipts/{id}/items/{item_id}` | M1 fixes |
+| Confidence shown as its two signals (leitura / produto) with the formula behind it | `apps/web/src/features/receipts/{review-pane,why-popover}.tsx` | M1 fixes |
 | Perfis de leitura — parser-profile administration | `apps/web/src/features/receipts/parser-profiles-panel.tsx` | Phase 3 (M1a) |
 | Golden extraction fixtures — committed word boxes for all eleven real *talões* | `apps/api/tests/fixtures/golden/` | Phase 3 (M1a) |
 | The eleven real *talões* as seed data, ingested through the upload path so each has a `Document` and stays reprocessable | `apps/api/app/seed/data/invoices/`, `apps/api/app/seed/__init__.py::seed_supermarket_invoices` | M1 fixes (ADR-0027) |
@@ -132,6 +137,7 @@ lives here, where it can be corrected when code moves.
 | Product and category autocomplete pickers | `apps/web/src/features/receipts/product-picker.tsx`, `category-picker.tsx` | Phase 3 (M1b) |
 | Legacy spreadsheet importer — the `SUPERMARKET_YYYY` migration («Importar folha» tab) | `apps/api/app/services/receipts/legacy_import.py`, `apps/web/src/features/receipts/legacy-import-panel.tsx` | Phase 3 (M1b) |
 | `confirm-categories` and line-level product reassignment | `POST /api/receipts/{id}/confirm-categories`, `PATCH /api/receipt-items/{id}/product`, `apps/web/src/features/receipts/review-pane.tsx` | Phase 3 (M1b) |
+| Confirmation is refused while any line is unresolved — an unresolved line would be dropped from the price history in silence | `apps/web/src/features/receipts/review-pane.tsx`, `ReceiptDerived.is_complete` | M1 fixes |
 | `ProductPriceHistory` — append-only price observation, frozen on parse-time decision and again on confirm | `apps/api/app/models/prices.py` | Phase 3 (M1c) |
 | Append-only observation recording — `record_observations()`, idempotent on unchanged date/prices/weight, a correction appends rather than rewrites | `apps/api/app/services/receipts/prices_service.py` | Phase 3 (M1c) |
 | Derived last-known price — pre-fills manual entry and Fs valuation, never stored | `apps/api/app/services/receipts/prices_service.py::last_known_price` | Phase 3 (M1c) |

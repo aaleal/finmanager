@@ -103,17 +103,39 @@ function confidencePct(confidence: string | null | undefined): number | null {
   return Number.isFinite(value) ? value * 100 : null;
 }
 
-/** One of the signals the score was built from, read back out of the reasons. */
-function signalPct(reasons: unknown[], rule: string): number | null {
-  for (const raw of reasons) {
+/**
+ * One of the signals the score was built from, read back out of the reasons.
+ *
+ * Scanned from the end: the catalogue stage appends after the parser, and a
+ * human's correction appends after that, so the last match is the current truth.
+ */
+function signalPct(reasons: unknown[], rules: string[]): number | null {
+  for (let index = reasons.length - 1; index >= 0; index -= 1) {
+    const raw = reasons[index];
     if (typeof raw !== 'object' || raw === null) continue;
     const reason = raw as { rule?: unknown; score?: unknown };
-    if (reason.rule !== rule) continue;
+    if (typeof reason.rule !== 'string' || !rules.includes(reason.rule)) continue;
     const score = Number(reason.score);
     return Number.isFinite(score) ? score * 100 : null;
   }
   return null;
 }
+
+const OCR_RULES = ['ocr_text'];
+
+//: The catalogue stage names its outcome, it never emits a plain `product_match`
+//: — reading only that name is why this column showed a dash on every line.
+const PRODUCT_MATCH_RULES = [
+  'manual_product',
+  'product_alias',
+  'product_fuzzy',
+  'product_uncertain',
+  'product_unresolved',
+  'product_match',
+  'no_match',
+  'empty_catalogue',
+  'empty_description',
+];
 
 /** Unsigned: `percent()` prefixes a `+`, which reads as a gain and this is not one. */
 function signal(value: number | null): string {
@@ -125,6 +147,14 @@ function signal(value: number | null): string {
 function lineTotalEur(item: ReceiptItem): number {
   const cents = (value: string) => Math.round(Number(value) * 100);
   return (cents(item.unit_price_pvp_eur) - cents(item.promo_discount_eur)) / 100;
+}
+
+/** How much came off the shelf price, promotion and invoice share together. */
+function discountPctOf(item: ReceiptItem): number | null {
+  const pvp = Number(item.unit_price_pvp_eur);
+  const off = Number(item.promo_discount_eur) + Number(item.invoice_allocated_discount_eur);
+  if (!Number.isFinite(pvp) || pvp <= 0 || !Number.isFinite(off) || off <= 0) return null;
+  return (off / pvp) * 100;
 }
 
 function EditableNumberCell({
@@ -170,8 +200,8 @@ function EditableNumberCell({
       disabled={disabled}
       onClick={onStart}
       className={cn(
-        'numeric rounded py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent',
-        field === 'line_no' ? 'px-1' : 'px-1.5',
+        'numeric rounded py-0.5 hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent',
+        field === 'line_no' ? 'px-1 text-center' : 'px-1.5 text-left',
       )}
     >
       {/* A quantity is a count, not money — formatting it as EUR made `1` read
@@ -208,6 +238,8 @@ function ProductCell({
           onCreate={disabled ? undefined : (name) => onCreateProduct(item, name)}
         />
       </div>
+      {/* All three flags live in the same corner, so a line always reads the
+          same way: no product, a category nobody confirmed, or settled. */}
       {!item.master_product_id ? (
         <span
           className="flex shrink-0 items-center gap-1 text-xs font-medium text-warning"
@@ -215,7 +247,25 @@ function ProductCell({
         >
           <AlertTriangle className="size-3.5" />
         </span>
-      ) : null}
+      ) : item.category_status === 'AUTO' ? (
+        <span
+          className="flex shrink-0 items-center gap-1 text-xs font-medium text-warning"
+          title="Categoria sugerida por uma máquina, ainda por confirmar — é uma das que o botão «Confirmar categorias» resolve."
+        >
+          <HelpCircle className="size-3.5" />
+        </span>
+      ) : (
+        <span
+          className="flex shrink-0 items-center gap-1 text-xs font-medium text-success"
+          title={
+            item.category_status === 'MANUAL'
+              ? 'Produto e categoria escolhidos por uma pessoa.'
+              : 'Categoria confirmada por uma pessoa.'
+          }
+        >
+          <CheckCircle2 className="size-3.5" />
+        </span>
+      )}
     </div>
   );
 }
@@ -250,6 +300,12 @@ function WeightCell({
   const addVariant = useAddPackVariant();
   const productId = item.master_product_id;
   const listed = item.weight_listed_kg;
+  // What was carried home, not what one pack weighs: `3 × 1 kg` is 3 kg, and the
+  // per-unit figure stays underneath because it is the one that gets edited.
+  const units = Number(item.quantity);
+  const perUnit = Number(item.weight_kg);
+  const totalKg =
+    Number.isFinite(units) && Number.isFinite(perUnit) && units > 1 ? perUnit * units : null;
 
   // Weighed at the counter: the scale is the answer and there is no format.
   if (item.sold_by_weight) {
@@ -261,52 +317,59 @@ function WeightCell({
   }
 
   return (
-    <div className="flex items-center gap-1">
-      {editing ? (
-        <Input
-          autoFocus
-          className="h-7 w-24"
-          inputMode="decimal"
-          value={editValue}
-          onChange={(event) => onEditValueChange(event.target.value)}
-          onBlur={onCommit}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') onCommit();
-            if (event.key === 'Escape') onCancel();
-          }}
-        />
-      ) : (
-        <button
-          type="button"
-          disabled={!canEdit}
-          onClick={onStart}
-          title={`${weightKg(item.weight_kg)} — peso da embalagem.`}
-          className="numeric rounded px-1.5 py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
-        >
-          {weightCompact(item.weight_kg)}
-        </button>
-      )}
-      {item.pack_weight_is_known === true ? (
-        <CheckCircle2
-          className="size-3.5 shrink-0 text-success"
-          aria-label={`${packLabel(listed)} é um formato deste produto`}
-        />
-      ) : null}
-      {item.pack_weight_is_known === false && productId && listed ? (
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          disabled={!canEdit || addVariant.isPending}
-          title={
-            canEdit
-              ? `${packLabel(listed)} ainda não é um formato de ${item.display_name} — adicionar`
-              : 'Fatura confirmada ou anulada: reabra-a para acrescentar o formato.'
-          }
-          aria-label={`Adicionar o formato ${packLabel(listed)} a este produto`}
-          onClick={() => addVariant.mutate({ productId, weightKg: String(listed) })}
-        >
-          <Plus className="text-warning" />
-        </Button>
+    <div>
+      <div className="flex items-center gap-1">
+        {editing ? (
+          <Input
+            autoFocus
+            className="h-7 w-24"
+            inputMode="decimal"
+            value={editValue}
+            onChange={(event) => onEditValueChange(event.target.value)}
+            onBlur={onCommit}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') onCommit();
+              if (event.key === 'Escape') onCancel();
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            disabled={!canEdit}
+            onClick={onStart}
+            title={`${weightKg(item.weight_kg)} por embalagem.`}
+            className="numeric rounded px-1.5 py-0.5 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+          >
+            {weightCompact(totalKg ?? item.weight_kg)}
+          </button>
+        )}
+        {item.pack_weight_is_known === true ? (
+          <CheckCircle2
+            className="size-3.5 shrink-0 text-success"
+            aria-label={`${packLabel(listed)} é um formato deste produto`}
+          />
+        ) : null}
+        {item.pack_weight_is_known === false && productId && listed ? (
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            disabled={!canEdit || addVariant.isPending}
+            title={
+              canEdit
+                ? `${packLabel(listed)} ainda não é um formato de ${item.display_name} — adicionar`
+                : 'Fatura confirmada ou anulada: reabra-a para acrescentar o formato.'
+            }
+            aria-label={`Adicionar o formato ${packLabel(listed)} a este produto`}
+            onClick={() => addVariant.mutate({ productId, weightKg: String(listed) })}
+          >
+            <Plus className="text-warning" />
+          </Button>
+        ) : null}
+      </div>
+      {totalKg !== null ? (
+        <div className="numeric px-1.5 text-[0.65rem] text-muted-foreground">
+          {weightCompact(item.weight_kg)}/un
+        </div>
       ) : null}
     </div>
   );
@@ -338,12 +401,13 @@ function ItemRow({
   onRemove?: () => void;
 }) {
   const low = isLowConfidence(item.confidence);
+  const discountPct = discountPctOf(item);
   return (
     <TableRow className="group/row">
       {/* The line number is where the line sits on the paper, so it is editable:
           correcting it is how a hand-added line takes its real place. The remove
           control sits under it, in the height the Artigo cell already occupies. */}
-      <TableCell className="w-8 align-top text-muted-foreground">
+      <TableCell className="w-10 px-1 text-center align-top text-muted-foreground">
         <EditableNumberCell
           item={item}
           field="line_no"
@@ -361,9 +425,9 @@ function ItemRow({
             onClick={onRemove}
             title="Remover esta linha"
             aria-label={`Remover ${item.display_name ?? item.description_raw}`}
-            className="mt-0.5 hidden size-5 items-center justify-center rounded text-destructive hover:bg-muted focus-visible:flex group-hover/row:flex"
+            className="mx-auto mt-1 hidden size-6 items-center justify-center rounded text-destructive hover:bg-muted focus-visible:flex group-hover/row:flex"
           >
-            <Trash2 className="size-3" />
+            <Trash2 className="size-3.5" />
           </button>
         ) : null}
       </TableCell>
@@ -389,16 +453,16 @@ function ItemRow({
             trigger={
               <button
                 type="button"
-                title={`Leitura ${signal(signalPct(item.decision_reasons, 'ocr_text'))} · produto ${signal(signalPct(item.decision_reasons, 'product_match'))} — como se calcula?`}
+                title={`Leitura ${signal(signalPct(item.decision_reasons, OCR_RULES))} · produto ${signal(signalPct(item.decision_reasons, PRODUCT_MATCH_RULES))} — como se calcula?`}
                 className={cn(
                   'numeric shrink-0 rounded px-1 text-[0.65rem] font-medium hover:bg-muted',
                   low ? 'text-warning' : 'text-muted-foreground',
                 )}
               >
                 {low ? <AlertTriangle className="mr-0.5 inline size-3" /> : null}
-                {signal(signalPct(item.decision_reasons, 'ocr_text'))}
+                {signal(signalPct(item.decision_reasons, OCR_RULES))}
                 <span className="px-0.5 opacity-50">/</span>
-                {signal(signalPct(item.decision_reasons, 'product_match'))}
+                {signal(signalPct(item.decision_reasons, PRODUCT_MATCH_RULES))}
               </button>
             }
           />
@@ -411,16 +475,6 @@ function ItemRow({
         <span className="line-clamp-2 text-xs" title={item.category_path ?? undefined}>
           {item.category_path ?? EM_DASH}
         </span>
-        {/* Which lines the «Confirmar categorias» button would settle. */}
-        {item.category_status === 'AUTO' ? (
-          <span
-            className="mt-0.5 flex items-center gap-0.5 text-[0.65rem] text-warning"
-            title="Categoria sugerida por uma máquina, ainda por confirmar."
-          >
-            <HelpCircle className="size-3" />
-            sugerida
-          </span>
-        ) : null}
       </TableCell>
       <TableCell className="numeric whitespace-nowrap" title={`${item.quantity} ${item.unit}`}>
         {item.sold_by_weight ? (
@@ -479,12 +533,17 @@ function ItemRow({
           onCommit={onCommit}
           onCancel={onCancel}
         />
-        {Number(item.invoice_allocated_discount_eur) !== 0 ? (
+        {Number(item.invoice_allocated_discount_eur) !== 0 || discountPct !== null ? (
           <div
             className="numeric px-1.5 text-[0.65rem] text-muted-foreground"
-            title="Parte do desconto global da fatura atribuída a esta linha."
+            title="Parte do desconto global da fatura atribuída a esta linha, e o desconto total sobre o PVP."
           >
-            {eur(item.invoice_allocated_discount_eur)}
+            {Number(item.invoice_allocated_discount_eur) !== 0
+              ? eur(item.invoice_allocated_discount_eur)
+              : null}
+            {discountPct !== null ? (
+              <span className="ml-1">−{num(Math.round(discountPct))} %</span>
+            ) : null}
           </div>
         ) : null}
       </TableCell>
@@ -500,17 +559,21 @@ function ItemRow({
         ) : null}
       </TableCell>
       <TableCell className="numeric">
-        {item.price_per_kg_final_eur ? (
+        {(item.price_per_kg_promo_eur ?? item.price_per_kg_final_eur) ? (
           <>
-            <span title="Sobre o preço efetivamente pago.">{eur(item.price_per_kg_final_eur)}</span>
-            {/* The shelf reading, and only when the two differ. */}
-            {item.price_per_kg_pvp_eur &&
-            item.price_per_kg_pvp_eur !== item.price_per_kg_final_eur ? (
+            {/* The shelf price net of the line's own promotion leads: it is the
+                comparable one. What the loyalty card took off is the household's
+                circumstance that day, not the product's price. */}
+            <span title="Sobre o PVP menos a promoção da linha.">
+              {eur(item.price_per_kg_promo_eur ?? item.price_per_kg_final_eur)}
+            </span>
+            {item.price_per_kg_final_eur &&
+            item.price_per_kg_final_eur !== item.price_per_kg_promo_eur ? (
               <div
                 className="text-[0.65rem] font-normal text-muted-foreground"
-                title="Sobre o PVP, sem promoção nem desconto da fatura."
+                title="Já com a fatia do desconto global da fatura — o que foi mesmo pago."
               >
-                {eur(item.price_per_kg_pvp_eur)}
+                {eur(item.price_per_kg_final_eur)}
               </div>
             ) : null}
           </>
@@ -522,8 +585,8 @@ function ItemRow({
   );
 }
 
-const ITEM_COLUMNS: { label: string; title?: string }[] = [
-  { label: '#' },
+const ITEM_COLUMNS: { label: string; title?: string; className?: string }[] = [
+  { label: '#', className: 'w-10 px-1 text-center' },
   {
     label: 'Artigo',
     title:
@@ -555,7 +618,7 @@ function ItemTableHead() {
     <TableHeader>
       <TableRow>
         {ITEM_COLUMNS.map((column) => (
-          <TableHead key={column.label} title={column.title}>
+          <TableHead key={column.label} title={column.title} className={column.className}>
             {column.label}
           </TableHead>
         ))}

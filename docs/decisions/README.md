@@ -37,3 +37,7 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0030](0030-a-pack-format-is-matched-by-value-not-referenced.md) | A pack format is matched by value, not referenced |
 | [0031](0031-the-review-grid-shows-the-price-per-kg-that-was-paid.md) | The review grid shows the €/kg that was paid |
 | [0032](0032-the-lego-backup-keeps-its-primary-keys.md) | The LEGO backup keeps its primary keys |
+| [0033](0033-line-confidence-is-scored-again-after-the-catalogue-answers.md) | A line's confidence is scored again after the catalogue answers |
+| [0034](0034-reopening-a-confirmed-receipt.md) | Reopening a confirmed receipt, and what confirming costs |
+| [0035](0035-confirming-a-category-is-a-statement-about-the-product.md) | Confirming a category is a statement about the product |
+| [0036](0036-the-comparable-price-per-kg-is-before-the-loyalty-card.md) | The comparable €/kg is the one before the loyalty card (supersedes 0031) |
