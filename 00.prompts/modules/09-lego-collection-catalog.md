@@ -152,12 +152,12 @@ copies means three rows pointing at the same `LegoSetModel`.
 #### 3. `StorageLocation` (Flat Two-Level Place)
 A flat list — **no parent/child tree**. Real usage is always `area` + `container`
 (`Garagem / Caixa TV`, `Casa / Armário`, `Casa / A uso`, `Casa / Montado`,
-`Garagem / Caixa A`), displayed as `Garagem › Caixa TV`.
+`Garagem / Caixa A`), displayed as `Garagem › Caixa TV`. Household-level
+reference data, not entity-scoped — a shelf holds anyone's sets (ADR-0046).
 
 | Attribute | Type | Description |
 | :--- | :--- | :--- |
 | `id` | `UUID` | Primary key |
-| `entity_id` | `UUID` | Owning entity |
 | `area` | `String` | Room or zone (e.g. `"Garagem"`, `"Casa"`) |
 | `container` | `String?` | Box, shelf or state within the area (e.g. `"Caixa TV"`, `"Armário"`, `"A uso"`) |
 | `description` | `String?` | Optional access/condition details |
@@ -165,7 +165,7 @@ A flat list — **no parent/child tree**. Real usage is always `area` + `contain
 | `is_deleted` | `Boolean` | Soft-delete flag (`default: false`) |
 | `deleted_at` | `Timestamp?` | Soft-delete timestamp |
 
-Unique constraint: `(entity_id, area, container)`.
+Unique constraint: `(area, container)`.
 
 ---
 

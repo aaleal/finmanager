@@ -97,19 +97,16 @@ def test_storage_filter_by_area_spans_every_container(
     garage_a = lego_service.create_storage_location(
         db,
         StorageLocationCreate(area="Garagem", container="Caixa A"),
-        entity_id=entity.id,
         actor_user_id=owner.id,
     )
     garage_b = lego_service.create_storage_location(
         db,
         StorageLocationCreate(area="Garagem", container="Caixa B"),
-        entity_id=entity.id,
         actor_user_id=owner.id,
     )
     house = lego_service.create_storage_location(
         db,
         StorageLocationCreate(area="Casa", container="Armário"),
-        entity_id=entity.id,
         actor_user_id=owner.id,
     )
     _copy(db, entity, owner, set_number="1000", name="Alfa", storage_location_id=garage_a.id)

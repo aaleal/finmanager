@@ -17,9 +17,10 @@ import { useLoyalty, useLoyaltyReceipts } from './prices-api';
 
 export function LoyaltyPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: string) => void }) {
   const loyalty = useLoyalty();
-  const [selected, setSelected] = React.useState<{ scheme: string; cardMasked: string | null } | null>(
-    null,
-  );
+  const [selected, setSelected] = React.useState<{
+    scheme: string;
+    cardMasked: string | null;
+  } | null>(null);
 
   const receipts = useLoyaltyReceipts(selected?.scheme ?? null, selected?.cardMasked ?? null);
   const groups = loyalty.data ?? [];
@@ -35,9 +36,8 @@ export function LoyaltyPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: str
   return (
     <div className="space-y-4">
       <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-        <Info className="size-3.5 shrink-0 translate-y-0.5" />
-        O desconto do cartão é repartido proporcionalmente pelas linhas a que se aplicou — nunca
-        somado aos descontos de artigo.
+        <Info className="size-3.5 shrink-0 translate-y-0.5" />O desconto do cartão é repartido
+        proporcionalmente pelas linhas a que se aplicou — nunca somado aos descontos de artigo.
       </p>
 
       <Card>
@@ -118,8 +118,12 @@ export function LoyaltyPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: str
                       <TableCell>{date(allocation.purchase_date)}</TableCell>
                       <TableCell>{allocation.merchant_name ?? EM_DASH}</TableCell>
                       <TableCell className="numeric">{eur(allocation.total_eur)}</TableCell>
-                      <TableCell className="numeric">{eur(allocation.loyalty_discount_eur)}</TableCell>
-                      <TableCell className="numeric">{eur(allocation.loyalty_accrued_eur)}</TableCell>
+                      <TableCell className="numeric">
+                        {eur(allocation.loyalty_discount_eur)}
+                      </TableCell>
+                      <TableCell className="numeric">
+                        {eur(allocation.loyalty_accrued_eur)}
+                      </TableCell>
                       <TableCell className="numeric">
                         {eur(allocation.allocated_across_items_eur)}
                       </TableCell>

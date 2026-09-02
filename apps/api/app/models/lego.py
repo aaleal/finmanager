@@ -189,13 +189,16 @@ class LegoSetInstruction(Base):
 
 
 class StorageLocation(Base, SoftDeleteMixin):
-    """Flat ``area`` + ``container``. No tree — real usage never needed one."""
+    """Flat ``area`` + ``container``. No tree — real usage never needed one.
+
+    Household-level reference data, not entity-scoped — a shelf does not
+    belong to whoever created it, it holds anyone's sets (ADR-0046, the same
+    trade as ADR-0019 for the product catalogue).
+    """
 
     __tablename__ = "lego_storage_locations"
     __table_args__ = (
-        UniqueConstraint(
-            "entity_id", "area", "container", name="uq_lego_storage_locations_entity_area_container"
-        ),
+        UniqueConstraint("area", "container", name="uq_lego_storage_locations_area_container"),
         CheckConstraint(
             "capacity_pct IS NULL OR (capacity_pct BETWEEN 0 AND 100)",
             name="ck_lego_storage_locations_capacity_range",
@@ -203,9 +206,6 @@ class StorageLocation(Base, SoftDeleteMixin):
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
-    entity_id: Mapped[uuid.UUID] = mapped_column(
-        PgUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False
-    )
     area: Mapped[str] = mapped_column(String(120), nullable=False)
     container: Mapped[str | None] = mapped_column(String(120), nullable=True)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)

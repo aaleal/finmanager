@@ -25,6 +25,12 @@ from sqlalchemy.orm import Session
 pytestmark = pytest.mark.integration
 
 
+def test_entities_is_registered_and_restored_before_lego_in_a_global_archive() -> None:
+    """A row LEGO's own archive names by entity must find that entity already
+    created — the global restore walks the registry in this order."""
+    assert list(backup_service.modules().keys()) == ["entities", "lego"]
+
+
 @pytest.fixture
 def one_set(db: Session, entity: Entity, owner: User) -> LegoSetModel:
     model = lego_service.create_model(
@@ -108,8 +114,9 @@ def test_restore_any_unwraps_the_global_container_module_by_module(
 
     report = backup_service.restore_any(db, payload, entity_id=target.id)
 
-    assert [entry.module for entry in report.modules] == ["lego"]
-    assert report.modules[0].counts["models"] == 1
+    assert [entry.module for entry in report.modules] == ["entities", "lego"]
+    lego_report = next(entry for entry in report.modules if entry.module == "lego")
+    assert lego_report.counts["models"] == 1
 
 
 def test_restore_any_refuses_an_archive_it_does_not_recognise(db: Session, entity: Entity) -> None:

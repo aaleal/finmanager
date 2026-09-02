@@ -29,7 +29,7 @@ class StorageLocationBase(BaseModel):
 
 
 class StorageLocationCreate(StorageLocationBase):
-    entity_id: uuid.UUID | None = None
+    pass
 
 
 class StorageLocationUpdate(BaseModel):
@@ -41,7 +41,6 @@ class StorageLocationUpdate(BaseModel):
 
 class StorageLocationOut(ApiModel):
     id: uuid.UUID
-    entity_id: uuid.UUID
     area: str
     container: str | None
     description: str | None

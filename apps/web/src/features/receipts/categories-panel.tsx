@@ -258,7 +258,9 @@ function CategoryNodeRow({ node, depth }: { node: TreeNode; depth: number }) {
           <button
             type="button"
             onClick={() => setExpanded((previous) => !previous)}
-            aria-label={expanded ? `Fechar ${node.display_name_pt}` : `Abrir ${node.display_name_pt}`}
+            aria-label={
+              expanded ? `Fechar ${node.display_name_pt}` : `Abrir ${node.display_name_pt}`
+            }
             aria-expanded={expanded}
             className="rounded p-1 text-muted-foreground hover:bg-muted"
           >
@@ -352,7 +354,13 @@ function CategoryNodeRow({ node, depth }: { node: TreeNode; depth: number }) {
   );
 }
 
-function NewCategoryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function NewCategoryDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const create = useCreateCategory();
   const [name, setName] = React.useState('');
   const [parent, setParent] = React.useState<CategoryResult | null>(null);

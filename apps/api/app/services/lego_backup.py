@@ -7,12 +7,22 @@ starts empty, which forces three decisions the report never had to make.
 1. **Primary keys travel.** Every row keeps the UUID it had. Re-importing the
    same archive is therefore a no-op instead of a second copy of the collection,
    and no natural key has to be invented for an instance, which has none.
-2. **Only two references are rewritten.** ``entity_id`` is remapped onto the
-   target entity, because entities are created per installation and the old id
-   means nothing here. ``document_id`` is remapped through the content-addressed
-   store, which deduplicates by SHA-256 — the same photo imported twice is one
-   file on disk either way.
-3. **The valuation history comes along.** It lives in ``audit_logs`` and nowhere
+2. **Two references are rewritten, one by name.** ``document_id`` is remapped
+   through the content-addressed store, which deduplicates by SHA-256 — the
+   same photo imported twice is one file on disk either way. A model's or
+   instance's ``entity_id`` is resolved by the owning entity's *name* against
+   the target household, because a copied UUID means nothing on another
+   installation but the name is exactly how a household already tells its
+   entities apart — an archive with entities split across owners restores
+   with that split intact, instead of collapsing onto whoever ran the import.
+   A name with no match is refused, not guessed (ADR-0007): import that
+   entity first (Definições → Cópia de segurança → módulo Entidades). An
+   archive written before this existed (v1/v2) carries no name, so its rows
+   fall back to the entity the caller chose, exactly as before.
+3. **Storage locations carry no entity at all.** They are household-level
+   reference data, not entity-scoped (ADR-0046) — the same trade already made
+   for the product catalogue (ADR-0019).
+4. **The valuation history comes along.** It lives in ``audit_logs`` and nowhere
    else (ADR-0008), so an archive that skipped it would silently discard every
    price this collection was ever worth.
 """
@@ -44,8 +54,10 @@ from app.schemas.lego import LegoBackupReport
 from app.services import documents
 
 FORMAT = "finmanager.lego.backup"
-#: v2 added ``instructions``; a v1 archive simply has none of them.
-VERSION = 2
+#: v2 added ``instructions``; v3 added the owning entity's ``name`` on models and
+#: instances (resolved on restore instead of forcing one entity onto everything).
+#: An older archive simply has none of these.
+VERSION = 3
 
 MANIFEST_NAME = "manifest.json"
 COLLECTION_NAME = "collection.json"
@@ -72,6 +84,14 @@ def _plain(value: Any) -> Any:
 
 def _row(instance: Any, fields: tuple[str, ...]) -> dict[str, Any]:
     return {field: _plain(getattr(instance, field)) for field in fields}
+
+
+def _row_with_entity(
+    instance: Any, fields: tuple[str, ...], entity_names: dict[uuid.UUID, str]
+) -> dict[str, Any]:
+    row = _row(instance, fields)
+    row["entity"] = entity_names.get(instance.entity_id)
+    return row
 
 
 _MODEL_FIELDS = (
@@ -163,23 +183,24 @@ def build_archive(db: DbSession, *, entity_ids: list[uuid.UUID]) -> bytes:
         )
         if instance.lego_set_model_id in model_ids
     ]
+    # Shared reference data (ADR-0046): every live location travels regardless
+    # of which entity's collection is being exported.
     locations = list(
-        db.scalars(
-            select(StorageLocation).where(
-                StorageLocation.entity_id.in_(entity_ids),
-                StorageLocation.is_deleted.is_(False),
-            )
-        )
+        db.scalars(select(StorageLocation).where(StorageLocation.is_deleted.is_(False)))
     )
     images = [image for model in models for image in model.images]
     instructions = [manual for model in models for manual in model.instructions]
+    entity_names = {
+        row[0]: row[1]
+        for row in db.execute(select(Entity.id, Entity.name).where(Entity.id.in_(entity_ids))).all()
+    }
 
     collection = {
         "storage_locations": [_row(row, _STORAGE_FIELDS) for row in locations],
-        "models": [_row(row, _MODEL_FIELDS) for row in models],
+        "models": [_row_with_entity(row, _MODEL_FIELDS, entity_names) for row in models],
         "images": [_row(row, _IMAGE_FIELDS) for row in images],
         "instructions": [_row(row, _INSTRUCTION_FIELDS) for row in instructions],
-        "instances": [_row(row, _INSTANCE_FIELDS) for row in instances],
+        "instances": [_row_with_entity(row, _INSTANCE_FIELDS, entity_names) for row in instances],
     }
 
     document_ids = {
@@ -318,7 +339,13 @@ def restore_archive(
     entity_id: uuid.UUID,
     actor_user_id: uuid.UUID | None = None,
 ) -> LegoBackupReport:
-    """Rebuild a collection from an archive, onto the entity the caller chose.
+    """Rebuild a collection from an archive.
+
+    A model's or instance's row is attributed to the entity named on it,
+    resolved against the caller's own household — not forced onto whichever
+    entity the caller picked. A row from an archive written before entities
+    travelled by name (v1/v2) falls back to that chosen entity, exactly as it
+    always did.
 
     Rows that already exist are **skipped, not merged**: an archive is a snapshot
     of a moment, and silently overwriting today's edits with a month-old value is
@@ -339,18 +366,36 @@ def restore_archive(
         if int(manifest.get("version", 0)) > VERSION:
             raise ValidationError("O arquivo foi criado por uma versão mais recente da aplicação.")
 
-        if db.get(Entity, entity_id) is None:
+        target_entity = db.get(Entity, entity_id)
+        if target_entity is None:
             raise ValidationError("Entidade de destino não encontrada.")
 
         collection = _read_json(archive, COLLECTION_NAME)
         report = LegoBackupReport()
         document_map = _restore_documents(db, archive, report)
+        entity_cache: dict[str, uuid.UUID] = {}
 
-        _restore_locations(db, collection, entity_id, report)
-        _restore_models(db, collection, entity_id, document_map, report)
+        _restore_locations(db, collection, report)
+        _restore_models(
+            db,
+            collection,
+            target_entity.household_id,
+            entity_id,
+            entity_cache,
+            document_map,
+            report,
+        )
         _restore_images(db, collection, document_map, report)
         _restore_instructions(db, collection, document_map, report)
-        _restore_instances(db, collection, entity_id, document_map, report)
+        _restore_instances(
+            db,
+            collection,
+            target_entity.household_id,
+            entity_id,
+            entity_cache,
+            document_map,
+            report,
+        )
         db.flush()
 
     return report
@@ -388,9 +433,42 @@ def _restore_documents(
     return mapping
 
 
-def _restore_locations(
-    db: DbSession, collection: dict[str, Any], entity_id: uuid.UUID, report: LegoBackupReport
-) -> None:
+def _resolve_entity(
+    db: DbSession,
+    row: dict[str, Any],
+    *,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID,
+    cache: dict[str, uuid.UUID],
+) -> uuid.UUID:
+    """The entity a restored row is attributed to.
+
+    By name, if the archive carries one (v3+) — refused, not guessed, when no
+    entity of that name exists here yet (ADR-0007). Onto the entity the caller
+    chose, for a v1/v2 archive that never recorded a name.
+    """
+    name = row.get("entity")
+    if name is None:
+        return fallback_entity_id
+    if name in cache:
+        return cache[name]
+    entity = db.scalar(
+        select(Entity).where(
+            Entity.household_id == household_id,
+            Entity.name == name,
+            Entity.is_deleted.is_(False),
+        )
+    )
+    if entity is None:
+        raise ValidationError(
+            f"A entidade «{name}» não existe neste agregado. Importe as entidades "
+            "primeiro, em Definições › Cópia de segurança › Entidades."
+        )
+    cache[name] = entity.id
+    return entity.id
+
+
+def _restore_locations(db: DbSession, collection: dict[str, Any], report: LegoBackupReport) -> None:
     for row in collection.get("storage_locations", []):
         location_id = _as_uuid(row["id"])
         if location_id is None or db.get(StorageLocation, location_id) is not None:
@@ -399,7 +477,6 @@ def _restore_locations(
         db.add(
             StorageLocation(
                 id=location_id,
-                entity_id=entity_id,
                 area=row["area"],
                 container=row.get("container"),
                 description=row.get("description"),
@@ -413,7 +490,9 @@ def _restore_locations(
 def _restore_models(
     db: DbSession,
     collection: dict[str, Any],
-    entity_id: uuid.UUID,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID,
+    entity_cache: dict[str, uuid.UUID],
     document_map: dict[uuid.UUID, uuid.UUID],
     report: LegoBackupReport,
 ) -> None:
@@ -422,6 +501,13 @@ def _restore_models(
         if model_id is None or db.get(LegoSetModel, model_id) is not None:
             report.skipped_models += 1
             continue
+        entity_id = _resolve_entity(
+            db,
+            row,
+            household_id=household_id,
+            fallback_entity_id=fallback_entity_id,
+            cache=entity_cache,
+        )
         old_image = _as_uuid(row.get("image_document_id"))
         db.add(
             LegoSetModel(
@@ -520,7 +606,9 @@ def _restore_instructions(
 def _restore_instances(
     db: DbSession,
     collection: dict[str, Any],
-    entity_id: uuid.UUID,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID,
+    entity_cache: dict[str, uuid.UUID],
     document_map: dict[uuid.UUID, uuid.UUID],
     report: LegoBackupReport,
 ) -> None:
@@ -533,6 +621,13 @@ def _restore_instances(
         if model_id is None or db.get(LegoSetModel, model_id) is None:
             report.skipped_instances += 1
             continue
+        entity_id = _resolve_entity(
+            db,
+            row,
+            household_id=household_id,
+            fallback_entity_id=fallback_entity_id,
+            cache=entity_cache,
+        )
         location_id = _as_uuid(row.get("storage_location_id"))
         if location_id is not None and db.get(StorageLocation, location_id) is None:
             location_id = None

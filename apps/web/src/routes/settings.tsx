@@ -96,8 +96,10 @@ function BackupCard() {
         </CardTitle>
         <CardDescription>
           Arquivo com identificadores, imagens e histórico de valores — repõe um módulo, ou toda a
-          instalação, numa instalação vazia. As chaves primárias viajam; só a entidade e os
-          documentos são remapeados; linhas já existentes são mantidas, nunca substituídas.
+          instalação, numa instalação vazia. As chaves primárias viajam; a entidade de cada registo
+          é resolvida pelo nome e os documentos são remapeados; linhas já existentes são mantidas,
+          nunca substituídas. Importe primeiro o módulo «Entidades» para que os outros módulos
+          encontrem as entidades certas pelo nome.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -168,7 +170,8 @@ export function SettingsPage() {
   const [apiKey, setApiKey] = React.useState('');
 
   const update = useMutation({
-    mutationFn: (values: Record<string, unknown>) => api.patch<AppSettings>('/settings', { values }),
+    mutationFn: (values: Record<string, unknown>) =>
+      api.patch<AppSettings>('/settings', { values }),
     onSuccess: (result) => {
       queryClient.setQueryData(['settings'], result);
       toast.success('Definições guardadas.');

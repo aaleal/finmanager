@@ -42,6 +42,7 @@ import {
   EM_DASH,
   date,
   eur,
+  num,
   packLabel,
   percent,
   quantity,

@@ -41,9 +41,10 @@ export function ReceiptLinkPanel({
     );
   }
 
-  const confidencePct = data.confidence !== null && data.confidence !== undefined
-    ? Number(data.confidence) * 100
-    : null;
+  const confidencePct =
+    data.confidence !== null && data.confidence !== undefined
+      ? Number(data.confidence) * 100
+      : null;
 
   return (
     <Card>

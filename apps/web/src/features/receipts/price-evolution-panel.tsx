@@ -157,7 +157,11 @@ export function PriceEvolutionPanel() {
                     tickFormatter={(value: string) => date(value)}
                     tick={{ fontSize: 12 }}
                   />
-                  <YAxis tickFormatter={(value: number) => eur(value)} width={90} tick={{ fontSize: 12 }} />
+                  <YAxis
+                    tickFormatter={(value: number) => eur(value)}
+                    width={90}
+                    tick={{ fontSize: 12 }}
+                  />
                   <RechartsTooltip content={<ChartTooltip />} />
                   {shrinkflation.map((signal, index) => (
                     <ReferenceLine

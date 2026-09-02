@@ -375,17 +375,12 @@ def set_instance_display_image(
 # --- Storage -----------------------------------------------------------------
 @router.get("/storage-locations", response_model=list[StorageLocationOut])
 def list_storage(ctx: CurrentAuth, db: Db) -> list[StorageLocationOut]:
-    return lego_service.list_storage_locations(
-        db, entity_ids=household_entity_ids(db, ctx), active_entity_id=ctx.active_entity_id
-    )
+    return lego_service.list_storage_locations(db)
 
 
 @router.post("/storage-locations", response_model=StorageLocationOut, status_code=201)
 def create_storage(payload: StorageLocationCreate, ctx: Writer, db: Db) -> StorageLocationOut:
-    entity_id = resolve_write_entity(db, ctx, payload.entity_id)
-    location = lego_service.create_storage_location(
-        db, payload, entity_id=entity_id, actor_user_id=ctx.user.id
-    )
+    location = lego_service.create_storage_location(db, payload, actor_user_id=ctx.user.id)
     return lego_service.storage_out(db, location)
 
 

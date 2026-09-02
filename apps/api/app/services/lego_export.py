@@ -82,7 +82,7 @@ def build_workbook(
 
     _copies_sheet(db, workbook, scope_ids, entity_names)
     _sets_sheet(db, workbook, scope_ids, entity_names)
-    _locations_sheet(db, workbook, entity_ids, active_entity_id, entity_names)
+    _locations_sheet(db, workbook)
 
     buffer = io.BytesIO()
     workbook.save(buffer)
@@ -295,22 +295,13 @@ def _sets_sheet(
     )
 
 
-def _locations_sheet(
-    db: DbSession,
-    workbook: Workbook,
-    entity_ids: list[uuid.UUID],
-    active_entity_id: uuid.UUID | None,
-    entity_names: dict[uuid.UUID, str],
-) -> None:
-    locations = lego_service.list_storage_locations(
-        db, entity_ids=entity_ids, active_entity_id=active_entity_id
-    )
+def _locations_sheet(db: DbSession, workbook: Workbook) -> None:
+    locations = lego_service.list_storage_locations(db)
     rows: list[list[Any]] = [
         [
             location.area,
             location.container or "",
             location.description or "",
-            entity_names.get(location.entity_id, ""),
             location.stored_count,
             location.stored_value_eur or ZERO,
             location.capacity_pct,
@@ -326,7 +317,6 @@ def _locations_sheet(
             "Área",
             "Contentor",
             "Descrição",
-            "Entidade",
             "Cópias guardadas",
             "Valor guardado (€)",
             "Ocupação (%)",
@@ -334,7 +324,7 @@ def _locations_sheet(
             "Cheio",
         ],
         rows,
-        {6: MONEY_FORMAT},
+        {5: MONEY_FORMAT},
     )
 
 

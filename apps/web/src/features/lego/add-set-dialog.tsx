@@ -26,7 +26,13 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionPicker } from '@/components/transaction-picker';
 import { useSession } from '@/features/auth/session';
-import { useCreateInstance, useLookup, useSetGallery, useSetInstructions, useStorageLocations } from './api';
+import {
+  useCreateInstance,
+  useLookup,
+  useSetGallery,
+  useSetInstructions,
+  useStorageLocations,
+} from './api';
 import {
   BUILD_STATE_LABELS,
   CONDITION_LABELS,
@@ -358,7 +364,10 @@ export function AddSetDialog({
       'box_dimensions',
       boxDimensionsInput(result.box_width_cm, result.box_depth_cm, result.box_height_cm),
     );
-    apply('box_weight_kg', result.box_weight_kg ? Number(result.box_weight_kg).toLocaleString('pt-PT') : null);
+    apply(
+      'box_weight_kg',
+      result.box_weight_kg ? Number(result.box_weight_kg).toLocaleString('pt-PT') : null,
+    );
     apply('rrp_eur', result.rrp_eur);
     apply('image_url', result.image_url);
     apply('short_description', result.short_description);
@@ -491,7 +500,11 @@ export function AddSetDialog({
                         onAdd={(file) =>
                           setPendingPhotos((current) => [
                             ...current,
-                            { id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) },
+                            {
+                              id: crypto.randomUUID(),
+                              file,
+                              previewUrl: URL.createObjectURL(file),
+                            },
                           ])
                         }
                         onRemove={(id) =>
@@ -592,7 +605,10 @@ export function AddSetDialog({
                         label="Dimensões da caixa (cm)"
                         hint="Largura × profundidade × altura."
                       >
-                        <Input placeholder="26,2 × 7,1 × 38,2" {...form.register('box_dimensions')} />
+                        <Input
+                          placeholder="26,2 × 7,1 × 38,2"
+                          {...form.register('box_dimensions')}
+                        />
                       </Field>
                       <Field label="Peso da caixa (kg)">
                         <Input

@@ -46,6 +46,21 @@ class ModuleBackup:
     skipped_fields: tuple[str, ...]
 
 
+def _entities_module() -> ModuleBackup:
+    from app.services import entity_backup
+
+    return ModuleBackup(
+        key="entities",
+        label="Entidades",
+        format=entity_backup.FORMAT,
+        build_archive=lambda db, entity_ids: entity_backup.build_archive(db, entity_ids),
+        restore_archive=entity_backup.restore_archive,
+        filename=entity_backup.filename,
+        report_fields=("entities",),
+        skipped_fields=("skipped_entities",),
+    )
+
+
 def _lego_module() -> ModuleBackup:
     from app.services import lego_backup
 
@@ -75,9 +90,14 @@ def _lego_module() -> ModuleBackup:
 
 
 def modules() -> dict[str, ModuleBackup]:
-    """Every module that can back itself up. LEGO is the only one shipped so
-    far; a future module registers here and nowhere else."""
-    return {"lego": _lego_module()}
+    """Every module that can back itself up.
+
+    ``entities`` is registered first — and deliberately so — because a global
+    archive's restore walks this dict in order: an entity referenced by name
+    elsewhere (LEGO's own archive resolves its rows this way) must already
+    exist by the time that module's own restore runs.
+    """
+    return {"entities": _entities_module(), "lego": _lego_module()}
 
 
 def get_module(key: str) -> ModuleBackup:

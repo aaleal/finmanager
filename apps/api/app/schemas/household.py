@@ -102,6 +102,14 @@ class EntityUpdate(BaseModel):
     _check_color = field_validator("color")(_hex_color)
 
 
+class EntityBackupReport(BaseModel):
+    """What restoring an entities archive actually did. A skip is an entity
+    whose name already exists here — matched, not merged or renamed."""
+
+    entities: int = 0
+    skipped_entities: int = 0
+
+
 class SessionOut(BaseModel):
     user: UserOut
     household_id: uuid.UUID

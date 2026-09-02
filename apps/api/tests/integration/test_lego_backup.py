@@ -15,7 +15,7 @@ from decimal import Decimal
 
 import pytest
 from app.core.errors import ValidationError
-from app.models import Entity, User
+from app.models import Entity, Household, User
 from app.models.lego import LegoSetInstance, LegoSetModel, StorageLocation
 from app.schemas.lego import LegoSetInstanceCreate, LegoSetModelCreate, StorageLocationCreate
 from app.services import lego_backup, lego_service
@@ -30,7 +30,6 @@ def collection(db: Session, entity: Entity, owner: User) -> LegoSetModel:
     location = lego_service.create_storage_location(
         db,
         StorageLocationCreate(area="Escritório", container="Prateleira 2"),
-        entity_id=entity.id,
         actor_user_id=owner.id,
     )
     model = lego_service.create_model(
@@ -79,15 +78,25 @@ def test_the_archive_carries_every_table_and_a_manifest(
     assert body["models"][0]["set_number"] == "10307"
     # Decimals cross as strings: JSON floats would round money.
     assert body["models"][0]["rrp_eur"] == "629.99"
+    # The owning entity travels by name, not by an id meaningless elsewhere.
+    assert body["models"][0]["entity"] == "Ana"
+    assert body["instances"][0]["entity"] == "Ana"
+    assert "entity" not in body["storage_locations"][0]
 
 
 def test_a_collection_survives_a_round_trip_onto_another_entity(
     db: Session, entity: Entity, owner: User, collection: LegoSetModel
 ) -> None:
-    """The point of the whole feature: an installation that starts empty."""
+    """The point of the whole feature: an installation that starts empty, whose
+    entities were already imported under the same names (the entities backup
+    module), resolves every row back onto the matching entity by name."""
     payload = lego_backup.build_archive(db, entity_ids=[entity.id])
 
-    target = Entity(household_id=entity.household_id, name="Instalação nova")
+    # Simulates the target installation already having "Ana" — imported first,
+    # by name, through the entities module — rather than the source's own row.
+    original_name = entity.name
+    entity.name = "Entidade original (arquivada)"
+    target = Entity(household_id=entity.household_id, name=original_name)
     db.add(target)
     db.flush()
     for copy_row in db.scalars(select(LegoSetInstance)):
@@ -112,6 +121,62 @@ def test_a_collection_survives_a_round_trip_onto_another_entity(
     assert copy.acquisition_cost_eur == Decimal("600.00")
     # Rebuilt on the target entity, and still pointing at its own storage row.
     assert copy.storage_location_id is not None
+
+
+def test_archive_keeps_each_row_on_its_own_entity_not_the_caller(
+    db: Session, household: Household, entity: Entity, owner: User, collection: LegoSetModel
+) -> None:
+    """Five sets are Ana's, five are Bruno's: restoring must not collapse them
+    all onto whichever entity the caller happened to choose."""
+    bruno = Entity(household_id=household.id, name="Bruno", member_ids=[owner.id])
+    db.add(bruno)
+    db.flush()
+    bruno_model = lego_service.create_model(
+        db,
+        LegoSetModelCreate(set_number="75192", name="Millennium Falcon", rrp_eur="849.99"),
+        entity_id=bruno.id,
+        actor_user_id=owner.id,
+    )
+    lego_service.create_instance(
+        db,
+        LegoSetInstanceCreate(lego_set_model_id=bruno_model.id, acquisition_cost_eur="800.00"),
+        entity_id=bruno.id,
+        actor_user_id=owner.id,
+    )
+    db.flush()
+
+    payload = lego_backup.build_archive(db, entity_ids=[entity.id, bruno.id])
+
+    for copy_row in db.scalars(select(LegoSetInstance)):
+        db.delete(copy_row)
+    for model_row in db.scalars(select(LegoSetModel)):
+        db.delete(model_row)
+    db.flush()
+
+    # Both entities' names already exist here (as if imported first): the
+    # entity_id given below is only where an unnamed, legacy row would land.
+    lego_backup.restore_archive(db, payload, entity_id=entity.id, actor_user_id=owner.id)
+
+    ana_model = db.scalar(select(LegoSetModel).where(LegoSetModel.set_number == "10307"))
+    bruno_model = db.scalar(select(LegoSetModel).where(LegoSetModel.set_number == "75192"))
+    assert ana_model is not None and ana_model.entity_id == entity.id
+    assert bruno_model is not None and bruno_model.entity_id == bruno.id
+
+
+def test_restoring_a_row_whose_entity_name_is_unknown_here_is_refused(
+    db: Session, entity: Entity, owner: User, collection: LegoSetModel
+) -> None:
+    """Refused, not guessed (ADR-0007): import the entities archive first."""
+    payload = lego_backup.build_archive(db, entity_ids=[entity.id])
+    entity.name = "Já não se chama Ana"
+    for copy_row in db.scalars(select(LegoSetInstance)):
+        db.delete(copy_row)
+    for model_row in db.scalars(select(LegoSetModel)):
+        db.delete(model_row)
+    db.flush()
+
+    with pytest.raises(ValidationError):
+        lego_backup.restore_archive(db, payload, entity_id=entity.id, actor_user_id=owner.id)
 
 
 def test_importing_the_same_archive_twice_clones_nothing(

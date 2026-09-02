@@ -17,7 +17,6 @@ from app.services.lego_service import _storage_out
 def _location(capacity: int | None, container: str | None = "Caixa TV") -> StorageLocation:
     return StorageLocation(
         id=uuid.uuid4(),
-        entity_id=uuid.uuid4(),
         area="Garagem",
         container=container,
         capacity_pct=capacity,

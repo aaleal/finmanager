@@ -101,8 +101,8 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(59,130,246,0.28),transparent_55%),radial-gradient(circle_at_75%_75%,rgba(45,212,191,0.22),transparent_55%)]" />
         <div className="relative flex h-full flex-col justify-end gap-6 p-14 text-sidebar-foreground">
           <blockquote className="max-w-md text-2xl font-medium leading-snug text-white">
-            Um único sítio para o supermercado, o banco, a saúde, a casa, os carros — e a coleção
-            de LEGO.
+            Um único sítio para o supermercado, o banco, a saúde, a casa, os carros — e a coleção de
+            LEGO.
           </blockquote>
           <div className="space-y-1 text-sm">
             <p className="font-medium text-white/90">FinManager</p>

@@ -67,8 +67,10 @@ Three tables, deliberately:
 - `lego_set_instances` — one row per physical copy; there is no `quantity`.
   `acquisition_transaction_id` is a plain UUID column, not an FK — see
   [ADR 0005](decisions/0005-defer-transaction-fk.md).
-- `lego_storage_locations` — flat `area` + `container`, unique per entity,
-  `capacity_pct` constrained to 0–100.
+- `lego_storage_locations` — flat `area` + `container`, household-level
+  reference data rather than entity-scoped (see
+  [ADR 0046](decisions/0046-storage-locations-are-shared-not-entity-scoped.md)),
+  unique on `(area, container)`, `capacity_pct` constrained to 0–100.
 
 There is **no** valuation-history table, no image table and no external-listing
 table. Value history is recoverable from `audit_logs`; images reuse `documents`;

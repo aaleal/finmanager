@@ -70,7 +70,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers,
     credentials: 'same-origin',
     signal: options.signal,
-    body: options.formData ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
+    body:
+      options.formData ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
   });
 
   if (response.status === 401) {
@@ -103,19 +104,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 }
 
 export const api = {
-  get: <T,>(path: string, query?: RequestOptions['query']) => request<T>(path, { query }),
-  post: <T,>(path: string, body?: unknown, query?: RequestOptions['query']) =>
+  get: <T>(path: string, query?: RequestOptions['query']) => request<T>(path, { query }),
+  post: <T>(path: string, body?: unknown, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'POST', body, query }),
-  patch: <T,>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
-  put: <T,>(path: string, body?: unknown, query?: RequestOptions['query']) =>
+  patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
+  put: <T>(path: string, body?: unknown, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'PUT', body, query }),
-  upload: <T,>(
+  upload: <T>(
     path: string,
     formData: FormData,
     query?: RequestOptions['query'],
     method: 'PUT' | 'POST' = 'PUT',
   ) => request<T>(path, { method, formData, query }),
-  delete: <T,>(path: string, query?: RequestOptions['query']) =>
+  delete: <T>(path: string, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'DELETE', query }),
   download: (path: string, query?: RequestOptions['query']) => download(path, query),
 };

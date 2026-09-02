@@ -95,7 +95,11 @@ function NavSection({
                 'flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/35',
                 collapsed && 'justify-center px-2',
               )}
-              title={collapsed ? `${item.label} — disponível numa fase seguinte` : 'Disponível numa fase seguinte'}
+              title={
+                collapsed
+                  ? `${item.label} — disponível numa fase seguinte`
+                  : 'Disponível numa fase seguinte'
+              }
             >
               <Icon className="size-4 shrink-0" />
               {!collapsed ? (

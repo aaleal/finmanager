@@ -124,7 +124,7 @@ function CarouselStage({
 
 /** How many `size-N` tiles (N × 4px, Tailwind's spacing scale) fit per row at
  * the container's current width — recomputed on resize, not a fixed breakpoint. */
-export function useTilesPerRow(tileSizeClass: string, gapPx = 6) {
+export function useTilesPerRow(tileSizeClass: string, gapPx = 8) {
   const tilePx = Number(tileSizeClass.replace('size-', '')) * 4;
   // State (not a plain ref) so the container mounting *after* the initial
   // render — e.g. behind a collapsed section — still triggers measurement.

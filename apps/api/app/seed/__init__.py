@@ -354,14 +354,12 @@ def seed_lego(db: DbSession, entity: Entity, *, alts: int = 3) -> None:
 
     locations: dict[tuple[str, str | None], StorageLocation] = {}
     for area, container, description, capacity in STORAGE:
-        locations[(area, container)] = _storage_location(
-            db, entity, area, container, description, capacity
-        )
+        locations[(area, container)] = _storage_location(db, area, container, description, capacity)
     for inventory_area, inventory_container in inventory_storage:
         if (inventory_area, inventory_container) in locations:
             continue
         locations[(inventory_area, inventory_container)] = _storage_location(
-            db, entity, inventory_area, inventory_container
+            db, inventory_area, inventory_container
         )
 
     today = dt.date.today()
@@ -475,7 +473,6 @@ def _seed_images(db: DbSession, model: LegoSetModel, *, alts: int) -> None:
 
 def _storage_location(
     db: DbSession,
-    entity: Entity,
     area: str,
     container: str | None,
     description: str | None = None,
@@ -483,7 +480,6 @@ def _storage_location(
 ) -> StorageLocation:
     location = db.scalar(
         select(StorageLocation).where(
-            StorageLocation.entity_id == entity.id,
             StorageLocation.area == area,
             StorageLocation.container.is_(None)
             if container is None
@@ -492,7 +488,6 @@ def _storage_location(
     )
     if location is None:
         location = StorageLocation(
-            entity_id=entity.id,
             area=area,
             container=container,
             description=description,

@@ -35,7 +35,8 @@ export function DashboardPage() {
     queryFn: () => api.get<Dashboard>('/dashboard'),
   });
 
-  const greeting = new Date().getHours() < 13 ? 'Bom dia' : new Date().getHours() < 20 ? 'Boa tarde' : 'Boa noite';
+  const greeting =
+    new Date().getHours() < 13 ? 'Bom dia' : new Date().getHours() < 20 ? 'Boa tarde' : 'Boa noite';
 
   return (
     <div className="space-y-6">
@@ -82,9 +83,7 @@ export function DashboardPage() {
                   {live ? (
                     <div className="flex items-end justify-between gap-3">
                       <div>
-                        <p className="numeric text-2xl font-semibold">
-                          {eur(tile.primary_value)}
-                        </p>
+                        <p className="numeric text-2xl font-semibold">{eur(tile.primary_value)}</p>
                         <p className="text-xs text-muted-foreground">{tile.primary_label}</p>
                       </div>
                       <div className="text-right">
@@ -120,7 +119,10 @@ export function DashboardPage() {
             {dashboard.data?.recent_activity.length ? (
               <ul className="divide-y divide-border">
                 {dashboard.data.recent_activity.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-4 py-2.5 text-sm">
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 py-2.5 text-sm"
+                  >
                     <span className="min-w-0 truncate">
                       Alguém {AUDIT_LABELS[item.action] ?? item.action.toLowerCase()}{' '}
                       <span className="font-medium">
@@ -154,8 +156,8 @@ export function DashboardPage() {
                 {dashboard.data?.pending_reviews ?? 0}
               </p>
               <p className="text-sm text-muted-foreground">
-                Decisões automáticas à espera de confirmação. Enche-se quando os módulos de
-                ingestão entrarem em funcionamento.
+                Decisões automáticas à espera de confirmação. Enche-se quando os módulos de ingestão
+                entrarem em funcionamento.
               </p>
               <Button asChild variant="outline" size="sm">
                 <Link to="/revisao">Abrir fila</Link>

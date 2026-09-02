@@ -12,7 +12,12 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import type { LegoSetInstance, LegoSetModel, StorageLocation, TransactionSuggestion } from '@/lib/types';
+import type {
+  LegoSetInstance,
+  LegoSetModel,
+  StorageLocation,
+  TransactionSuggestion,
+} from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DateInput, Field, Input, Textarea } from '@/components/ui/input';
@@ -334,7 +339,10 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
             onChange={(event) => set('minifig_count', event.target.value)}
           />
         </Field>
-        <Field label="Idade recomendada" hint="O que está impresso na caixa: «18+», «4+» ou «6-12».">
+        <Field
+          label="Idade recomendada"
+          hint="O que está impresso na caixa: «18+», «4+» ou «6-12»."
+        >
           <Input
             placeholder="18+"
             value={form.age_range}
@@ -440,8 +448,8 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Estes campos descrevem o conjunto e valem para todas as cópias. A galeria de imagens
-        gere-se a partir do separador «Resumo».
+        Estes campos descrevem o conjunto e valem para todas as cópias. A galeria de imagens gere-se
+        a partir do separador «Resumo».
       </p>
     </div>
   );
@@ -496,7 +504,11 @@ function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boo
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-1.5">
-        <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label="galeria do conjunto" />
+        <CollapseToggle
+          open={open}
+          onToggle={() => setOpen((v) => !v)}
+          label="galeria do conjunto"
+        />
         <div>
           <p className="text-sm font-medium">
             Galeria do conjunto{items.length ? ` (${items.length})` : ''}
@@ -1057,33 +1069,48 @@ function DisplayImagePicker({ instance }: { instance: LegoSetInstance }) {
     <div className="space-y-2">
       <p className="text-sm font-medium">Imagem desta cópia na tabela</p>
       <p className="text-xs text-muted-foreground">
-        Escolha qual das imagens do conjunto representa esta cópia na coleção. Sem escolha, usa-se
-        a principal do conjunto.
+        A imagem com a estrela é a usada nesta cópia — passe o rato sobre outra para a escolher, ou
+        retire a estrela para voltar a usar a principal do conjunto.
       </p>
       <div ref={ref} className="flex flex-wrap gap-2">
         {shown.map((item) => {
           const active = item.documentId === instance.display_image_document_id;
           return (
-            <button
+            <div
               key={item.key}
-              type="button"
               title={item.caption ?? undefined}
-              aria-pressed={active}
-              onClick={() =>
-                setDisplayImage.mutate({
-                  id: instance.id,
-                  documentId: active ? null : item.documentId,
-                })
-              }
               className={cn(
-                'size-14 shrink-0 overflow-hidden rounded border-2 bg-muted',
-                active ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100',
+                'group relative size-14 shrink-0 overflow-hidden rounded border bg-muted',
+                active ? 'border-primary' : 'border-border',
               )}
             >
               {item.url ? (
                 <img src={item.url} alt="" className="size-full object-cover" loading="lazy" />
               ) : null}
-            </button>
+              {active ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Deixar de usar nesta cópia"
+                  className="absolute left-0.5 top-0.5 size-6 bg-black/40 text-warning hover:bg-black/60"
+                  onClick={() => setDisplayImage.mutate({ id: instance.id, documentId: null })}
+                >
+                  <Star className="size-3.5 fill-current" />
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Usar nesta cópia"
+                  className="absolute left-0.5 top-0.5 size-6 bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 hover:text-warning group-hover:opacity-100"
+                  onClick={() =>
+                    setDisplayImage.mutate({ id: instance.id, documentId: item.documentId })
+                  }
+                >
+                  <Star className="size-3.5" />
+                </Button>
+              )}
+            </div>
           );
         })}
         {hiddenCount > 0 ? (
@@ -1534,9 +1561,9 @@ export function CopyDetailSheet({
               só a que está a ver.
             </p>
             <p>
-              <strong className="text-foreground">Arquivar</strong> mantém o histórico e a auditoria.{' '}
-              <strong className="text-foreground">Eliminar definitivamente</strong> remove as linhas
-              da base de dados; use apenas para enganos.
+              <strong className="text-foreground">Arquivar</strong> mantém o histórico e a
+              auditoria. <strong className="text-foreground">Eliminar definitivamente</strong>{' '}
+              remove as linhas da base de dados; use apenas para enganos.
             </p>
           </DialogBody>
           <DialogFooter>

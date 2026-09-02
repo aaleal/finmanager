@@ -4,7934 +4,7927 @@
  */
 
 export interface paths {
-    "/api/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health */
-        get: operations["health_api_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/setup/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Status */
-        get: operations["status_api_setup_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/setup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create First Owner
-         * @description Create the household and its first owner, then sign that owner straight in.
-         */
-        post: operations["create_first_owner_api_setup_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login */
-        post: operations["login_api_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Logout */
-        post: operations["logout_api_auth_logout_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Me */
-        get: operations["me_api_auth_me_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Change Password */
-        post: operations["change_password_api_auth_password_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Profile */
-        patch: operations["update_profile_api_auth_profile_patch"];
-        trace?: never;
-    };
-    "/api/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Members */
-        get: operations["list_members_api_members_get"];
-        put?: never;
-        /** Create Member */
-        post: operations["create_member_api_members_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/members/{member_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove Member */
-        delete: operations["remove_member_api_members__member_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Member */
-        patch: operations["update_member_api_members__member_id__patch"];
-        trace?: never;
-    };
-    "/api/entities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Entities */
-        get: operations["list_entities_api_entities_get"];
-        put?: never;
-        /** Create Entity */
-        post: operations["create_entity_api_entities_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/entities/{entity_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Entity */
-        patch: operations["update_entity_api_entities__entity_id__patch"];
-        trace?: never;
-    };
-    "/api/sessions/entity": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Switch Entity */
-        post: operations["switch_entity_api_sessions_entity_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/merchants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Merchants */
-        get: operations["list_merchants_api_merchants_get"];
-        put?: never;
-        /** Create Merchant */
-        post: operations["create_merchant_api_merchants_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/merchants/{merchant_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Merchant */
-        delete: operations["delete_merchant_api_merchants__merchant_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Merchant */
-        patch: operations["update_merchant_api_merchants__merchant_id__patch"];
-        trace?: never;
-    };
-    "/api/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Categories */
-        get: operations["list_categories_api_categories_get"];
-        put?: never;
-        /** Create Category */
-        post: operations["create_category_api_categories_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Tags */
-        get: operations["list_tags_api_tags_get"];
-        put?: never;
-        /** Create Tag */
-        post: operations["create_tag_api_tags_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tags/{tag_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Tag */
-        delete: operations["delete_tag_api_tags__tag_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Overview */
-        get: operations["overview_api_lego_overview_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Models */
-        get: operations["list_models_api_lego_models_get"];
-        put?: never;
-        /** Create Model */
-        post: operations["create_model_api_lego_models_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/lookup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Lookup
-         * @description Contacts Brickset only here — on an explicit user action (M9 guarantee).
-         */
-        post: operations["lookup_api_lego_models_lookup_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Model */
-        get: operations["get_model_api_lego_models__model_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Model */
-        delete: operations["delete_model_api_lego_models__model_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Model */
-        patch: operations["update_model_api_lego_models__model_id__patch"];
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/instances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Model Instances */
-        get: operations["model_instances_api_lego_models__model_id__instances_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Set Model Image */
-        put: operations["set_model_image_api_lego_models__model_id__image_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/images": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Model Image
-         * @description Add one more view of the set. The box shot stays the cover until promoted.
-         */
-        post: operations["add_model_image_api_lego_models__model_id__images_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/instructions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Model Instruction
-         * @description Add one manual by hand — a household scan, or a link Brickset doesn't carry.
-         */
-        post: operations["add_model_instruction_api_lego_models__model_id__instructions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/images/{image_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Model Image */
-        delete: operations["delete_model_image_api_lego_models__model_id__images__image_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Model Image */
-        patch: operations["update_model_image_api_lego_models__model_id__images__image_id__patch"];
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/images/{image_id}/cover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Promote Model Image */
-        post: operations["promote_model_image_api_lego_models__model_id__images__image_id__cover_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/brickset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Import From Brickset
-         * @description Download the set's extra photographs and manuals — on this press only.
-         */
-        post: operations["import_from_brickset_api_lego_models__model_id__brickset_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/models/{model_id}/instructions/{instruction_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Model Instruction */
-        delete: operations["delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/instances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instances */
-        get: operations["list_instances_api_lego_instances_get"];
-        put?: never;
-        /** Create Instance */
-        post: operations["create_instance_api_lego_instances_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/instances/{instance_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Instance */
-        get: operations["get_instance_api_lego_instances__instance_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Instance */
-        delete: operations["delete_instance_api_lego_instances__instance_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Instance */
-        patch: operations["update_instance_api_lego_instances__instance_id__patch"];
-        trace?: never;
-    };
-    "/api/lego/instances/{instance_id}/photo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Set Instance Photo */
-        put: operations["set_instance_photo_api_lego_instances__instance_id__photo_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/instances/{instance_id}/display-image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Set Instance Display Image
-         * @description Which of the set's own images stands for this copy in the collection table.
-         */
-        put: operations["set_instance_display_image_api_lego_instances__instance_id__display_image_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/storage-locations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Storage */
-        get: operations["list_storage_api_lego_storage_locations_get"];
-        put?: never;
-        /** Create Storage */
-        post: operations["create_storage_api_lego_storage_locations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/lego/storage-locations/{location_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Storage */
-        get: operations["get_storage_api_lego_storage_locations__location_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Storage */
-        delete: operations["delete_storage_api_lego_storage_locations__location_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Storage */
-        patch: operations["update_storage_api_lego_storage_locations__location_id__patch"];
-        trace?: never;
-    };
-    "/api/lego/export.xlsx": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Export Workbook
-         * @description The whole collection as one workbook: copies, sets and storage locations.
-         */
-        get: operations["export_workbook_api_lego_export_xlsx_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Receipts */
-        get: operations["list_receipts_api_receipts_get"];
-        put?: never;
-        /**
-         * Upload
-         * @description Accept **one or many** invoices; each becomes its own job and receipt.
-         *
-         *     One bad scan never blocks the batch — the failure is recorded on its own job
-         *     row and is retryable from the stored document, without a re-upload.
-         *
-         *     ``parser_profile_id`` forces a profile instead of letting detection choose;
-         *     either way the profile that actually ran is recorded on the receipt and shown
-         *     in the queue (UX-1.1).
-         */
-        post: operations["upload_api_receipts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/queue": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Queue */
-        get: operations["queue_api_receipts_queue_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Status Board */
-        get: operations["status_board_api_receipts_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Receipt */
-        get: operations["get_receipt_api_receipts__receipt_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Receipt */
-        patch: operations["update_receipt_api_receipts__receipt_id__patch"];
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/items/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Item */
-        delete: operations["delete_item_api_receipts__receipt_id__items__item_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Item */
-        patch: operations["update_item_api_receipts__receipt_id__items__item_id__patch"];
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Item
-         * @description Append an article by hand. An Fs row leaves every printed figure unchanged.
-         */
-        post: operations["add_item_api_receipts__receipt_id__items_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/reparse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reparse */
-        post: operations["reparse_api_receipts__receipt_id__reparse_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm */
-        post: operations["confirm_api_receipts__receipt_id__confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/reopen": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reopen
-         * @description Back to review. The observations already frozen are left untouched.
-         */
-        post: operations["reopen_api_receipts__receipt_id__reopen_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/confirm-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Confirm Categories
-         * @description Promote every ``AUTO`` classification on this receipt to ``VALIDATED``.
-         */
-        post: operations["confirm_categories_api_receipts__receipt_id__confirm_categories_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/void": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Void */
-        post: operations["void_api_receipts__receipt_id__void_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/parser-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Profiles */
-        get: operations["list_profiles_api_parser_profiles_get"];
-        put?: never;
-        /** Create Profile */
-        post: operations["create_profile_api_parser_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/parser-profiles/parsers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Parsers */
-        get: operations["list_parsers_api_parser_profiles_parsers_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/parser-profiles/{profile_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Profile */
-        delete: operations["delete_profile_api_parser_profiles__profile_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Profile */
-        patch: operations["update_profile_api_parser_profiles__profile_id__patch"];
-        trace?: never;
-    };
-    "/api/parser-profiles/{profile_id}/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Profile
-         * @description Re-parse a stored document with this profile and diff against the current result.
-         */
-        post: operations["test_profile_api_parser_profiles__profile_id__test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipt-items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Items */
-        get: operations["list_items_api_receipt_items_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipt-items/{item_id}/product": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Reassign Item Product
-         * @description Correcting a line here is also how the merchant's vocabulary is learned.
-         */
-        patch: operations["reassign_item_product_api_receipt_items__item_id__product_patch"];
-        trace?: never;
-    };
-    "/api/receipt-items/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Summarise Items
-         * @description One row per product: how much of it, how often, and at what €/kg.
-         */
-        get: operations["summarise_items_api_receipt_items_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Products */
-        get: operations["list_products_api_master_products_get"];
-        put?: never;
-        /** Create Product */
-        post: operations["create_product_api_master_products_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search Products
-         * @description Autocomplete over canonical names, brands and learned aliases.
-         *
-         *     Returns the category and the last known price so any picker can pre-fill —
-         *     which is what stops a near-duplicate being created by hand.
-         */
-        get: operations["search_products_api_master_products_search_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/merge-candidates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Merge Candidates */
-        get: operations["list_merge_candidates_api_master_products_merge_candidates_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Product */
-        get: operations["get_product_api_master_products__product_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Product */
-        delete: operations["delete_product_api_master_products__product_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Product */
-        patch: operations["update_product_api_master_products__product_id__patch"];
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/pack-variants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Pack Variant
-         * @description Curate the format a receipt line just showed us, without touching the rest.
-         */
-        post: operations["add_pack_variant_api_master_products__product_id__pack_variants_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/validate-category": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate Category */
-        post: operations["validate_category_api_master_products__product_id__validate_category_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/aliases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Product Aliases */
-        get: operations["product_aliases_api_master_products__product_id__aliases_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/occurrences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Product Occurrences
-         * @description Every receipt line this product has appeared on, with a link to each invoice.
-         */
-        get: operations["product_occurrences_api_master_products__product_id__occurrences_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/merge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Merge Products */
-        post: operations["merge_products_api_master_products__product_id__merge_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/product-aliases/learn": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Learn Alias */
-        post: operations["learn_alias_api_product_aliases_learn_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/categories/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search Categories */
-        get: operations["search_categories_api_categories_search_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/categories/tree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Category Tree
-         * @description Every node, flat, with its path and how many products reference it.
-         *
-         *     The taxonomy editor needs the whole tree; a search limit would silently
-         *     truncate it and make a node look retired when it is merely off the end.
-         */
-        get: operations["category_tree_api_categories_tree_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/categories/{category_id}/impact": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Category Impact
-         * @description What a destructive operation would touch, **before** it runs.
-         */
-        get: operations["category_impact_api_categories__category_id__impact_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/categories/{category_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Retire Category
-         * @description Refused while in use, with the usage count returned.
-         */
-        delete: operations["retire_category_api_categories__category_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Rename Category
-         * @description A rename costs nothing: rows reference categories by id.
-         */
-        patch: operations["rename_category_api_categories__category_id__patch"];
-        trace?: never;
-    };
-    "/api/categories/{category_id}/reparent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reparent Category */
-        post: operations["reparent_category_api_categories__category_id__reparent_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/categories/{category_id}/merge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Merge Categories */
-        post: operations["merge_categories_api_categories__category_id__merge_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/import/legacy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Import Legacy
-         * @description The ``SUPERMARKET_YYYY`` migration, wrapped in an ``ImportBatch``.
-         *
-         *     Re-runnable without duplication: a group already imported for this entity is
-         *     updated in place rather than doubled.
-         */
-        post: operations["import_legacy_api_receipts_import_legacy_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/analytics/shrinkflation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Shrinkflation
-         * @description Products whose pack shrank faster than their price fell.
-         */
-        get: operations["shrinkflation_api_receipts_analytics_shrinkflation_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/analytics/category-spend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Category Spend */
-        get: operations["category_spend_api_receipts_analytics_category_spend_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/analytics/loyalty": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Loyalty */
-        get: operations["loyalty_api_receipts_analytics_loyalty_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/analytics/loyalty/receipts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Loyalty Receipts
-         * @description The per-receipt allocation behind a scheme's totals.
-         */
-        get: operations["loyalty_receipts_api_receipts_analytics_loyalty_receipts_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/price-history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Price History */
-        get: operations["price_history_api_master_products__product_id__price_history_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/master-products/{product_id}/price-history.csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Price History Csv */
-        get: operations["price_history_csv_api_master_products__product_id__price_history_csv_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Link */
-        get: operations["get_link_api_receipts__receipt_id__link_get"];
-        put?: never;
-        /**
-         * Create Link
-         * @description Manual linking, reusing the shared transaction picker on the client.
-         */
-        post: operations["create_link_api_receipts__receipt_id__link_post"];
-        /** Delete Link */
-        delete: operations["delete_link_api_receipts__receipt_id__link_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Set Receipt Tags
-         * @description Open labels. They change no total — that is what separates them from ``is_fs``.
-         */
-        put: operations["set_receipt_tags_api_receipts__receipt_id__tags_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/receipts/{receipt_id}/items/{item_id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Set Item Tags */
-        put: operations["set_item_tags_api_receipts__receipt_id__items__item_id__tags_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/documents/{document_id}/content": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Content */
-        get: operations["get_content_api_documents__document_id__content_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/review/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Summary */
-        get: operations["summary_api_review_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/review/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Tasks */
-        get: operations["list_tasks_api_review_tasks_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/review/tasks/{task_id}/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resolve */
-        post: operations["resolve_api_review_tasks__task_id__resolve_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/transactions/suggest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Suggest */
-        get: operations["suggest_api_transactions_suggest_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Read Settings */
-        get: operations["read_settings_api_settings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Settings */
-        patch: operations["update_settings_api_settings_patch"];
-        trace?: never;
-    };
-    "/api/settings/backup/modules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Backup Modules */
-        get: operations["list_backup_modules_api_settings_backup_modules_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/backup.zip": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Export Backup */
-        get: operations["export_backup_api_settings_backup_zip_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/backup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Import Backup
-         * @description Restore an archive onto one entity — a single module's, or the global
-         *     container. Existing rows are kept, never merged (ADR-0032).
-         */
-        post: operations["import_backup_api_settings_backup_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/dashboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Dashboard */
-        get: operations["dashboard_api_dashboard_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  '/api/health': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Health */
+    get: operations['health_api_health_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/setup/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Status */
+    get: operations['status_api_setup_status_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/setup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create First Owner
+     * @description Create the household and its first owner, then sign that owner straight in.
+     */
+    post: operations['create_first_owner_api_setup_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Login */
+    post: operations['login_api_auth_login_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/logout': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Logout */
+    post: operations['logout_api_auth_logout_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Me */
+    get: operations['me_api_auth_me_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Change Password */
+    post: operations['change_password_api_auth_password_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update Profile */
+    patch: operations['update_profile_api_auth_profile_patch'];
+    trace?: never;
+  };
+  '/api/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Members */
+    get: operations['list_members_api_members_get'];
+    put?: never;
+    /** Create Member */
+    post: operations['create_member_api_members_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/members/{member_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove Member */
+    delete: operations['remove_member_api_members__member_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Member */
+    patch: operations['update_member_api_members__member_id__patch'];
+    trace?: never;
+  };
+  '/api/entities': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Entities */
+    get: operations['list_entities_api_entities_get'];
+    put?: never;
+    /** Create Entity */
+    post: operations['create_entity_api_entities_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/entities/{entity_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update Entity */
+    patch: operations['update_entity_api_entities__entity_id__patch'];
+    trace?: never;
+  };
+  '/api/sessions/entity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Switch Entity */
+    post: operations['switch_entity_api_sessions_entity_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/merchants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Merchants */
+    get: operations['list_merchants_api_merchants_get'];
+    put?: never;
+    /** Create Merchant */
+    post: operations['create_merchant_api_merchants_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/merchants/{merchant_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Merchant */
+    delete: operations['delete_merchant_api_merchants__merchant_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Merchant */
+    patch: operations['update_merchant_api_merchants__merchant_id__patch'];
+    trace?: never;
+  };
+  '/api/categories': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Categories */
+    get: operations['list_categories_api_categories_get'];
+    put?: never;
+    /** Create Category */
+    post: operations['create_category_api_categories_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Tags */
+    get: operations['list_tags_api_tags_get'];
+    put?: never;
+    /** Create Tag */
+    post: operations['create_tag_api_tags_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/tags/{tag_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Tag */
+    delete: operations['delete_tag_api_tags__tag_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Overview */
+    get: operations['overview_api_lego_overview_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Models */
+    get: operations['list_models_api_lego_models_get'];
+    put?: never;
+    /** Create Model */
+    post: operations['create_model_api_lego_models_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/lookup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Lookup
+     * @description Contacts Brickset only here — on an explicit user action (M9 guarantee).
+     */
+    post: operations['lookup_api_lego_models_lookup_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Model */
+    get: operations['get_model_api_lego_models__model_id__get'];
+    put?: never;
+    post?: never;
+    /** Delete Model */
+    delete: operations['delete_model_api_lego_models__model_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Model */
+    patch: operations['update_model_api_lego_models__model_id__patch'];
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/instances': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Model Instances */
+    get: operations['model_instances_api_lego_models__model_id__instances_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/image': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set Model Image */
+    put: operations['set_model_image_api_lego_models__model_id__image_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/images': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add Model Image
+     * @description Add one more view of the set. The box shot stays the cover until promoted.
+     */
+    post: operations['add_model_image_api_lego_models__model_id__images_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/instructions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add Model Instruction
+     * @description Add one manual by hand — a household scan, or a link Brickset doesn't carry.
+     */
+    post: operations['add_model_instruction_api_lego_models__model_id__instructions_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/images/{image_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Model Image */
+    delete: operations['delete_model_image_api_lego_models__model_id__images__image_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Model Image */
+    patch: operations['update_model_image_api_lego_models__model_id__images__image_id__patch'];
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/images/{image_id}/cover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Promote Model Image */
+    post: operations['promote_model_image_api_lego_models__model_id__images__image_id__cover_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/brickset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import From Brickset
+     * @description Download the set's extra photographs and manuals — on this press only.
+     */
+    post: operations['import_from_brickset_api_lego_models__model_id__brickset_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/models/{model_id}/instructions/{instruction_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Model Instruction */
+    delete: operations['delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/instances': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Instances */
+    get: operations['list_instances_api_lego_instances_get'];
+    put?: never;
+    /** Create Instance */
+    post: operations['create_instance_api_lego_instances_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/instances/{instance_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Instance */
+    get: operations['get_instance_api_lego_instances__instance_id__get'];
+    put?: never;
+    post?: never;
+    /** Delete Instance */
+    delete: operations['delete_instance_api_lego_instances__instance_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Instance */
+    patch: operations['update_instance_api_lego_instances__instance_id__patch'];
+    trace?: never;
+  };
+  '/api/lego/instances/{instance_id}/photo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set Instance Photo */
+    put: operations['set_instance_photo_api_lego_instances__instance_id__photo_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/instances/{instance_id}/display-image': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set Instance Display Image
+     * @description Which of the set's own images stands for this copy in the collection table.
+     */
+    put: operations['set_instance_display_image_api_lego_instances__instance_id__display_image_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/storage-locations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Storage */
+    get: operations['list_storage_api_lego_storage_locations_get'];
+    put?: never;
+    /** Create Storage */
+    post: operations['create_storage_api_lego_storage_locations_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lego/storage-locations/{location_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Storage */
+    get: operations['get_storage_api_lego_storage_locations__location_id__get'];
+    put?: never;
+    post?: never;
+    /** Delete Storage */
+    delete: operations['delete_storage_api_lego_storage_locations__location_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Storage */
+    patch: operations['update_storage_api_lego_storage_locations__location_id__patch'];
+    trace?: never;
+  };
+  '/api/lego/export.xlsx': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export Workbook
+     * @description The whole collection as one workbook: copies, sets and storage locations.
+     */
+    get: operations['export_workbook_api_lego_export_xlsx_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Receipts */
+    get: operations['list_receipts_api_receipts_get'];
+    put?: never;
+    /**
+     * Upload
+     * @description Accept **one or many** invoices; each becomes its own job and receipt.
+     *
+     *     One bad scan never blocks the batch — the failure is recorded on its own job
+     *     row and is retryable from the stored document, without a re-upload.
+     *
+     *     ``parser_profile_id`` forces a profile instead of letting detection choose;
+     *     either way the profile that actually ran is recorded on the receipt and shown
+     *     in the queue (UX-1.1).
+     */
+    post: operations['upload_api_receipts_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Queue */
+    get: operations['queue_api_receipts_queue_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Status Board */
+    get: operations['status_board_api_receipts_status_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Receipt */
+    get: operations['get_receipt_api_receipts__receipt_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update Receipt */
+    patch: operations['update_receipt_api_receipts__receipt_id__patch'];
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/items/{item_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Item */
+    delete: operations['delete_item_api_receipts__receipt_id__items__item_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Item */
+    patch: operations['update_item_api_receipts__receipt_id__items__item_id__patch'];
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add Item
+     * @description Append an article by hand. An Fs row leaves every printed figure unchanged.
+     */
+    post: operations['add_item_api_receipts__receipt_id__items_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/reparse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reparse */
+    post: operations['reparse_api_receipts__receipt_id__reparse_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirm */
+    post: operations['confirm_api_receipts__receipt_id__confirm_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/reopen': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reopen
+     * @description Back to review. The observations already frozen are left untouched.
+     */
+    post: operations['reopen_api_receipts__receipt_id__reopen_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/confirm-categories': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Confirm Categories
+     * @description Promote every ``AUTO`` classification on this receipt to ``VALIDATED``.
+     */
+    post: operations['confirm_categories_api_receipts__receipt_id__confirm_categories_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/void': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Void */
+    post: operations['void_api_receipts__receipt_id__void_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/parser-profiles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Profiles */
+    get: operations['list_profiles_api_parser_profiles_get'];
+    put?: never;
+    /** Create Profile */
+    post: operations['create_profile_api_parser_profiles_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/parser-profiles/parsers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Parsers */
+    get: operations['list_parsers_api_parser_profiles_parsers_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/parser-profiles/{profile_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Profile */
+    delete: operations['delete_profile_api_parser_profiles__profile_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Profile */
+    patch: operations['update_profile_api_parser_profiles__profile_id__patch'];
+    trace?: never;
+  };
+  '/api/parser-profiles/{profile_id}/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Test Profile
+     * @description Re-parse a stored document with this profile and diff against the current result.
+     */
+    post: operations['test_profile_api_parser_profiles__profile_id__test_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipt-items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Items */
+    get: operations['list_items_api_receipt_items_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipt-items/{item_id}/product': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Reassign Item Product
+     * @description Correcting a line here is also how the merchant's vocabulary is learned.
+     */
+    patch: operations['reassign_item_product_api_receipt_items__item_id__product_patch'];
+    trace?: never;
+  };
+  '/api/receipt-items/summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Summarise Items
+     * @description One row per product: how much of it, how often, and at what €/kg.
+     */
+    get: operations['summarise_items_api_receipt_items_summary_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Products */
+    get: operations['list_products_api_master_products_get'];
+    put?: never;
+    /** Create Product */
+    post: operations['create_product_api_master_products_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search Products
+     * @description Autocomplete over canonical names, brands and learned aliases.
+     *
+     *     Returns the category and the last known price so any picker can pre-fill —
+     *     which is what stops a near-duplicate being created by hand.
+     */
+    get: operations['search_products_api_master_products_search_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/merge-candidates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Merge Candidates */
+    get: operations['list_merge_candidates_api_master_products_merge_candidates_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Product */
+    get: operations['get_product_api_master_products__product_id__get'];
+    put?: never;
+    post?: never;
+    /** Delete Product */
+    delete: operations['delete_product_api_master_products__product_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Product */
+    patch: operations['update_product_api_master_products__product_id__patch'];
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/pack-variants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add Pack Variant
+     * @description Curate the format a receipt line just showed us, without touching the rest.
+     */
+    post: operations['add_pack_variant_api_master_products__product_id__pack_variants_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/validate-category': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Validate Category */
+    post: operations['validate_category_api_master_products__product_id__validate_category_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/aliases': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Product Aliases */
+    get: operations['product_aliases_api_master_products__product_id__aliases_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/occurrences': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Product Occurrences
+     * @description Every receipt line this product has appeared on, with a link to each invoice.
+     */
+    get: operations['product_occurrences_api_master_products__product_id__occurrences_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/merge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Merge Products */
+    post: operations['merge_products_api_master_products__product_id__merge_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/product-aliases/learn': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Learn Alias */
+    post: operations['learn_alias_api_product_aliases_learn_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Search Categories */
+    get: operations['search_categories_api_categories_search_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/tree': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Category Tree
+     * @description Every node, flat, with its path and how many products reference it.
+     *
+     *     The taxonomy editor needs the whole tree; a search limit would silently
+     *     truncate it and make a node look retired when it is merely off the end.
+     */
+    get: operations['category_tree_api_categories_tree_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/{category_id}/impact': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Category Impact
+     * @description What a destructive operation would touch, **before** it runs.
+     */
+    get: operations['category_impact_api_categories__category_id__impact_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/{category_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Retire Category
+     * @description Refused while in use, with the usage count returned.
+     */
+    delete: operations['retire_category_api_categories__category_id__delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Rename Category
+     * @description A rename costs nothing: rows reference categories by id.
+     */
+    patch: operations['rename_category_api_categories__category_id__patch'];
+    trace?: never;
+  };
+  '/api/categories/{category_id}/reparent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reparent Category */
+    post: operations['reparent_category_api_categories__category_id__reparent_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/{category_id}/merge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Merge Categories */
+    post: operations['merge_categories_api_categories__category_id__merge_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/import/legacy': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import Legacy
+     * @description The ``SUPERMARKET_YYYY`` migration, wrapped in an ``ImportBatch``.
+     *
+     *     Re-runnable without duplication: a group already imported for this entity is
+     *     updated in place rather than doubled.
+     */
+    post: operations['import_legacy_api_receipts_import_legacy_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/analytics/shrinkflation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Shrinkflation
+     * @description Products whose pack shrank faster than their price fell.
+     */
+    get: operations['shrinkflation_api_receipts_analytics_shrinkflation_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/analytics/category-spend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Category Spend */
+    get: operations['category_spend_api_receipts_analytics_category_spend_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/analytics/loyalty': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Loyalty */
+    get: operations['loyalty_api_receipts_analytics_loyalty_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/analytics/loyalty/receipts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Loyalty Receipts
+     * @description The per-receipt allocation behind a scheme's totals.
+     */
+    get: operations['loyalty_receipts_api_receipts_analytics_loyalty_receipts_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/price-history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Price History */
+    get: operations['price_history_api_master_products__product_id__price_history_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/{product_id}/price-history.csv': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Price History Csv */
+    get: operations['price_history_csv_api_master_products__product_id__price_history_csv_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Link */
+    get: operations['get_link_api_receipts__receipt_id__link_get'];
+    put?: never;
+    /**
+     * Create Link
+     * @description Manual linking, reusing the shared transaction picker on the client.
+     */
+    post: operations['create_link_api_receipts__receipt_id__link_post'];
+    /** Delete Link */
+    delete: operations['delete_link_api_receipts__receipt_id__link_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set Receipt Tags
+     * @description Open labels. They change no total — that is what separates them from ``is_fs``.
+     */
+    put: operations['set_receipt_tags_api_receipts__receipt_id__tags_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/receipts/{receipt_id}/items/{item_id}/tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set Item Tags */
+    put: operations['set_item_tags_api_receipts__receipt_id__items__item_id__tags_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Content */
+    get: operations['get_content_api_documents__document_id__content_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/review/summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Summary */
+    get: operations['summary_api_review_summary_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/review/tasks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Tasks */
+    get: operations['list_tasks_api_review_tasks_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/review/tasks/{task_id}/resolve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve */
+    post: operations['resolve_api_review_tasks__task_id__resolve_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/transactions/suggest': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Suggest */
+    get: operations['suggest_api_transactions_suggest_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read Settings */
+    get: operations['read_settings_api_settings_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update Settings */
+    patch: operations['update_settings_api_settings_patch'];
+    trace?: never;
+  };
+  '/api/settings/backup/modules': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Backup Modules */
+    get: operations['list_backup_modules_api_settings_backup_modules_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/settings/backup.zip': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export Backup */
+    get: operations['export_backup_api_settings_backup_zip_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/settings/backup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import Backup
+     * @description Restore an archive onto one entity — a single module's, or the global
+     *     container. Existing rows are kept, never merged (ADR-0032).
+     */
+    post: operations['import_backup_api_settings_backup_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/dashboard': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Dashboard */
+    get: operations['dashboard_api_dashboard_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** ActivityItem */
-        ActivityItem: {
-            /** Id */
-            id: string;
-            /** Action */
-            action: string;
-            /** Table Name */
-            table_name: string;
-            /** Record Id */
-            record_id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Actor Display Name */
-            actor_display_name?: string | null;
-        };
-        /**
-         * BackupImportReport
-         * @description One entry per module restored — one for a single-module archive, several
-         *     for the global container.
-         */
-        BackupImportReport: {
-            /** Modules */
-            modules: components["schemas"]["ModuleBackupReport"][];
-        };
-        /**
-         * BackupModuleOut
-         * @description One module this installation knows how to back up. LEGO is the only one
-         *     today; the list grows as other modules register themselves.
-         */
-        BackupModuleOut: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-        };
-        /** Body_add_model_image_api_lego_models__model_id__images_post */
-        Body_add_model_image_api_lego_models__model_id__images_post: {
-            /** File */
-            file?: string | null;
-        };
-        /** Body_add_model_instruction_api_lego_models__model_id__instructions_post */
-        Body_add_model_instruction_api_lego_models__model_id__instructions_post: {
-            /** File */
-            file?: string | null;
-        };
-        /** Body_import_backup_api_settings_backup_post */
-        Body_import_backup_api_settings_backup_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
-        /** Body_import_legacy_api_receipts_import_legacy_post */
-        Body_import_legacy_api_receipts_import_legacy_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
-        /** Body_set_instance_photo_api_lego_instances__instance_id__photo_put */
-        Body_set_instance_photo_api_lego_instances__instance_id__photo_put: {
-            /** File */
-            file?: string | null;
-        };
-        /** Body_set_model_image_api_lego_models__model_id__image_put */
-        Body_set_model_image_api_lego_models__model_id__image_put: {
-            /** File */
-            file?: string | null;
-        };
-        /** Body_upload_api_receipts_post */
-        Body_upload_api_receipts_post: {
-            /** Files */
-            files: string[];
-        };
-        /**
-         * BricksetImportOut
-         * @description What one press of «Importar do Brickset» actually brought down.
-         */
-        BricksetImportOut: {
-            model: components["schemas"]["LegoSetModelOut"];
-            /**
-             * Images Added
-             * @default 0
-             */
-            images_added: number;
-            /**
-             * Instructions Added
-             * @default 0
-             */
-            instructions_added: number;
-            /** Message */
-            message?: string | null;
-        };
-        /** CategoryCreate */
-        CategoryCreate: {
-            /** Display Name Pt */
-            display_name_pt: string;
-            /** Parent Id */
-            parent_id?: string | null;
-            /**
-             * Brand Axis
-             * @default false
-             */
-            brand_axis: boolean;
-        };
-        /** CategoryImpactOut */
-        CategoryImpactOut: {
-            /**
-             * Category Id
-             * Format: uuid
-             */
-            category_id: string;
-            /** Descendants */
-            descendants: number;
-            /** Master Products */
-            master_products: number;
-            /** Receipt Items */
-            receipt_items: number;
-            /** In Use */
-            in_use: boolean;
-        };
-        /** CategoryMerge */
-        CategoryMerge: {
-            /**
-             * Target Id
-             * Format: uuid
-             */
-            target_id: string;
-        };
-        /** CategoryOperationResult */
-        CategoryOperationResult: {
-            /**
-             * Ok
-             * @default true
-             */
-            ok: boolean;
-            /**
-             * Affected Products
-             * @default 0
-             */
-            affected_products: number;
-            /** Message */
-            message?: string | null;
-        };
-        /** CategoryOut */
-        CategoryOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Code En */
-            code_en: string;
-            /** Display Name Pt */
-            display_name_pt: string;
-            /** Domain */
-            domain: string;
-            /** Level */
-            level: number;
-            /** Parent Id */
-            parent_id: string | null;
-            /** Brand Axis */
-            brand_axis: boolean;
-        };
-        /** CategoryRename */
-        CategoryRename: {
-            /** Display Name Pt */
-            display_name_pt: string;
-        };
-        /** CategoryReparent */
-        CategoryReparent: {
-            /** Parent Id */
-            parent_id?: string | null;
-        };
-        /** CategorySearchResult */
-        CategorySearchResult: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Display Name Pt */
-            display_name_pt: string;
-            /** Level */
-            level: number;
-            /** Path */
-            path: string;
-        };
-        /** CategorySpendOut */
-        CategorySpendOut: {
-            /** Category Id */
-            category_id: string | null;
-            /** Display Name Pt */
-            display_name_pt: string;
-            /** Paid Eur */
-            paid_eur: string;
-            /** Notional Eur */
-            notional_eur: string;
-            /** Item Count */
-            item_count: number;
-        };
-        /**
-         * CategoryTreeNode
-         * @description One node of the whole GROCERY tree, flat, for the taxonomy editor.
-         */
-        CategoryTreeNode: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Display Name Pt */
-            display_name_pt: string;
-            /** Level */
-            level: number;
-            /** Parent Id */
-            parent_id: string | null;
-            /** Brand Axis */
-            brand_axis: boolean;
-            /** Path */
-            path: string;
-            /** Product Count */
-            product_count: number;
-        };
-        /**
-         * CollectionSummary
-         * @description Totals for the *currently filtered* set of copies, not the whole collection.
-         */
-        CollectionSummary: {
-            /** Copies */
-            copies: number;
-            /** Unique Sets */
-            unique_sets: number;
-            /** Total Cost Eur */
-            total_cost_eur: string;
-            /** Total Value Eur */
-            total_value_eur: string;
-            /** Total Pieces */
-            total_pieces: number;
-        };
-        /** DashboardOut */
-        DashboardOut: {
-            /** Tiles */
-            tiles: components["schemas"]["ModuleTile"][];
-            /** Pending Reviews */
-            pending_reviews: number;
-            /** Recent Activity */
-            recent_activity: components["schemas"]["ActivityItem"][];
-        };
-        /** EntityCreate */
-        EntityCreate: {
-            /** Name */
-            name: string;
-            /** Member Ids */
-            member_ids: string[];
-            /** Color */
-            color?: string | null;
-        };
-        /** EntityOut */
-        EntityOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Member Ids */
-            member_ids: string[];
-            /** Color */
-            color: string | null;
-            /** Is Readonly */
-            is_readonly: boolean;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** EntitySwitch */
-        EntitySwitch: {
-            /** Entity Id */
-            entity_id?: string | null;
-        };
-        /** EntitySwitchResult */
-        EntitySwitchResult: {
-            /** Active Entity Id */
-            active_entity_id: string | null;
-            /** Csrf Token */
-            csrf_token: string;
-        };
-        /** EntityUpdate */
-        EntityUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Member Ids */
-            member_ids?: string[] | null;
-            /** Color */
-            color?: string | null;
-        };
-        /**
-         * FsItemCreate
-         * @description An article added by hand during review.
-         *
-         *     ``is_fs`` false means the parser missed a line that **is** on the paper; the
-         *     reconciliation against the printed total is what judges the correction.
-         */
-        FsItemCreate: {
-            /** Description Raw */
-            description_raw: string;
-            /** Unit Price Pvp Eur */
-            unit_price_pvp_eur: number | string;
-            /**
-             * Quantity
-             * @default 1
-             */
-            quantity: number | string;
-            /**
-             * Unit
-             * @default UN
-             */
-            unit: string;
-            /**
-             * Is Fs
-             * @default true
-             */
-            is_fs: boolean;
-            /** Line No */
-            line_no?: number | null;
-            /**
-             * Promo Discount Eur
-             * @default 0
-             */
-            promo_discount_eur: number | string;
-            /**
-             * Notional Value Source
-             * @default MANUAL
-             * @enum {string}
-             */
-            notional_value_source: "PRICE_HISTORY" | "MANUAL";
-            /** Notes */
-            notes?: string | null;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /** InstanceDisplayImageUpdate */
-        InstanceDisplayImageUpdate: {
-            /** Document Id */
-            document_id?: string | null;
-        };
-        /**
-         * ItemProductAssignment
-         * @description Re-resolve a line to another product; the correction is learned per merchant.
-         */
-        ItemProductAssignment: {
-            /**
-             * Master Product Id
-             * Format: uuid
-             */
-            master_product_id: string;
-        };
-        /**
-         * LastKnownPrice
-         * @description Derived from the newest price observation; never stored, never a second truth.
-         */
-        LastKnownPrice: {
-            /** Last Pvp Eur */
-            last_pvp_eur?: string | null;
-            /** Last Price Per Kg Eur */
-            last_price_per_kg_eur?: string | null;
-            /** Last Weight Kg */
-            last_weight_kg?: string | null;
-            /** Last Observed On */
-            last_observed_on?: string | null;
-        };
-        /** LearnAliasRequest */
-        LearnAliasRequest: {
-            /**
-             * Master Product Id
-             * Format: uuid
-             */
-            master_product_id: string;
-            /**
-             * Merchant Id
-             * Format: uuid
-             */
-            merchant_id: string;
-            /** Merchant Description */
-            merchant_description: string;
-        };
-        /**
-         * LegacyImportResult
-         * @description The sheet is validated, not trusted: every exception is reported, not repaired.
-         */
-        LegacyImportResult: {
-            /**
-             * Import Batch Id
-             * Format: uuid
-             */
-            import_batch_id: string;
-            /** Row Count */
-            row_count: number;
-            /** Skipped Non Grocery Rows */
-            skipped_non_grocery_rows: number;
-            /** Skipped Non Grocery Merchants */
-            skipped_non_grocery_merchants: string[];
-            /** Receipts Created */
-            receipts_created: number;
-            /** Receipts Reconciled */
-            receipts_reconciled: number;
-            /** Receipts Needing Review */
-            receipts_needing_review: number;
-            /** Fs Rows */
-            fs_rows: number;
-            /** Fs Rows Snapped */
-            fs_rows_snapped: number;
-            /** All Fs Groups */
-            all_fs_groups: number;
-            /** Products Created */
-            products_created: number;
-            /** Aliases Created */
-            aliases_created: number;
-            /** Merchants Created */
-            merchants_created: number;
-            /** Exceptions */
-            exceptions: Record<string, never>[];
-        };
-        /** LegoSetImageOut */
-        LegoSetImageOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
-            /** Url */
-            url?: string | null;
-            /** Caption */
-            caption?: string | null;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
-        };
-        /** LegoSetImageUpdate */
-        LegoSetImageUpdate: {
-            /** Caption */
-            caption?: string | null;
-            /** Position */
-            position?: number | null;
-        };
-        /** LegoSetInstanceCreate */
-        LegoSetInstanceCreate: {
-            /** Acquisition Date */
-            acquisition_date?: string | null;
-            /**
-             * Acquisition Cost Eur
-             * @default 0.00
-             */
-            acquisition_cost_eur: number | string;
-            /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
-            /** Acquisition Transaction Id */
-            acquisition_transaction_id?: string | null;
-            /** Storage Location Id */
-            storage_location_id?: string | null;
-            /** Build State */
-            build_state?: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
-            /** Condition */
-            condition?: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
-            /**
-             * Has Box
-             * @default true
-             */
-            has_box: boolean;
-            /**
-             * Has Instructions
-             * @default true
-             */
-            has_instructions: boolean;
-            /** Missing Parts */
-            missing_parts?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /** Entity Id */
-            entity_id?: string | null;
-            /** Lego Set Model Id */
-            lego_set_model_id?: string | null;
-            new_set?: components["schemas"]["LegoSetModelCreate"] | null;
-        };
-        /** LegoSetInstanceOut */
-        LegoSetInstanceOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Entity Id
-             * Format: uuid
-             */
-            entity_id: string;
-            /**
-             * Lego Set Model Id
-             * Format: uuid
-             */
-            lego_set_model_id: string;
-            /** Acquisition Date */
-            acquisition_date: string | null;
-            /** Acquisition Cost Eur */
-            acquisition_cost_eur: string;
-            /** Acquisition Source */
-            acquisition_source: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
-            /** Acquisition Transaction Id */
-            acquisition_transaction_id: string | null;
-            /** Storage Location Id */
-            storage_location_id: string | null;
-            /** Build State */
-            build_state: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
-            /** Condition */
-            condition: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
-            /** Has Box */
-            has_box: boolean;
-            /** Has Instructions */
-            has_instructions: boolean;
-            /** Missing Parts */
-            missing_parts: string | null;
-            /**
-             * Ownership Status
-             * @enum {string}
-             */
-            ownership_status: "IN_COLLECTION" | "SOLD" | "GIFTED";
-            /** Sale Price Eur */
-            sale_price_eur: string | null;
-            /** Sale Date */
-            sale_date: string | null;
-            /** Photo Document Id */
-            photo_document_id: string | null;
-            /** Photo Url */
-            photo_url?: string | null;
-            /** Display Image Document Id */
-            display_image_document_id?: string | null;
-            /** Display Image Url */
-            display_image_url?: string | null;
-            /** Notes */
-            notes: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /**
-             * Is Complete
-             * @default true
-             */
-            is_complete: boolean;
-            /** Current Value Eur */
-            current_value_eur?: string | null;
-            /** Appreciation Eur */
-            appreciation_eur?: string | null;
-            /** Roi Pct */
-            roi_pct?: string | null;
-            /** Storage Label */
-            storage_label?: string | null;
-            set_model?: components["schemas"]["LegoSetModelOut"] | null;
-        };
-        /** LegoSetInstancePage */
-        LegoSetInstancePage: {
-            /** Items */
-            items: components["schemas"]["LegoSetInstanceOut"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            summary: components["schemas"]["CollectionSummary"];
-        };
-        /** LegoSetInstanceUpdate */
-        LegoSetInstanceUpdate: {
-            /** Acquisition Date */
-            acquisition_date?: string | null;
-            /** Acquisition Cost Eur */
-            acquisition_cost_eur?: number | string | null;
-            /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
-            /** Acquisition Transaction Id */
-            acquisition_transaction_id?: string | null;
-            /** Storage Location Id */
-            storage_location_id?: string | null;
-            /** Build State */
-            build_state?: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
-            /** Condition */
-            condition?: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
-            /** Has Box */
-            has_box?: boolean | null;
-            /** Has Instructions */
-            has_instructions?: boolean | null;
-            /** Missing Parts */
-            missing_parts?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /** Ownership Status */
-            ownership_status?: ("IN_COLLECTION" | "SOLD" | "GIFTED") | null;
-            /** Sale Price Eur */
-            sale_price_eur?: number | string | null;
-            /** Sale Date */
-            sale_date?: string | null;
-            /** Entity Id */
-            entity_id?: string | null;
-            /**
-             * Clear Storage Location
-             * @default false
-             */
-            clear_storage_location: boolean;
-            /**
-             * Clear Transaction Link
-             * @default false
-             */
-            clear_transaction_link: boolean;
-        };
-        /** LegoSetInstructionOut */
-        LegoSetInstructionOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
-            /** Url */
-            url?: string | null;
-            /** Description */
-            description: string;
-            /** Language */
-            language?: string | null;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
-        };
-        /** LegoSetModelCreate */
-        LegoSetModelCreate: {
-            /** Set Number */
-            set_number?: string | null;
-            /**
-             * Is Custom
-             * @default false
-             */
-            is_custom: boolean;
-            /** Name */
-            name: string;
-            /** Theme */
-            theme?: string | null;
-            /** Subtheme */
-            subtheme?: string | null;
-            /** Release Date */
-            release_date?: string | null;
-            /** Retirement Date */
-            retirement_date?: string | null;
-            /** Piece Count */
-            piece_count?: number | null;
-            /** Minifig Count */
-            minifig_count?: number | null;
-            /** Age Min */
-            age_min?: number | null;
-            /** Age Max */
-            age_max?: number | null;
-            /** Box Height Cm */
-            box_height_cm?: number | string | null;
-            /** Box Width Cm */
-            box_width_cm?: number | string | null;
-            /** Box Depth Cm */
-            box_depth_cm?: number | string | null;
-            /** Box Weight Kg */
-            box_weight_kg?: number | string | null;
-            /** Rrp Eur */
-            rrp_eur?: number | string | null;
-            /** Current Value Eur */
-            current_value_eur?: number | string | null;
-            /** Short Description */
-            short_description?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /** Entity Id */
-            entity_id?: string | null;
-            /** Image Url */
-            image_url?: string | null;
-        };
-        /** LegoSetModelOut */
-        LegoSetModelOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Entity Id
-             * Format: uuid
-             */
-            entity_id: string;
-            /** Set Number */
-            set_number: string | null;
-            /** Is Custom */
-            is_custom: boolean;
-            /** Name */
-            name: string;
-            /** Theme */
-            theme: string | null;
-            /** Subtheme */
-            subtheme: string | null;
-            /** Release Date */
-            release_date: string | null;
-            /** Retirement Date */
-            retirement_date: string | null;
-            /** Piece Count */
-            piece_count: number | null;
-            /** Minifig Count */
-            minifig_count: number | null;
-            /** Age Min */
-            age_min: number | null;
-            /** Age Max */
-            age_max: number | null;
-            /** Box Height Cm */
-            box_height_cm: string | null;
-            /** Box Width Cm */
-            box_width_cm: string | null;
-            /** Box Depth Cm */
-            box_depth_cm: string | null;
-            /** Box Weight Kg */
-            box_weight_kg: string | null;
-            /** Rrp Eur */
-            rrp_eur: string | null;
-            /** Current Value Eur */
-            current_value_eur: string | null;
-            /** Value Updated At */
-            value_updated_at: string | null;
-            /** Image Document Id */
-            image_document_id: string | null;
-            /** Image Url */
-            image_url?: string | null;
-            /**
-             * Images
-             * @default []
-             */
-            images: components["schemas"]["LegoSetImageOut"][];
-            /**
-             * Instructions
-             * @default []
-             */
-            instructions: components["schemas"]["LegoSetInstructionOut"][];
-            /** Short Description */
-            short_description: string | null;
-            /** Notes */
-            notes: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /**
-             * Is Retired
-             * @default false
-             */
-            is_retired: boolean;
-            /** Release Year */
-            release_year?: number | null;
-            /** Retired Year */
-            retired_year?: number | null;
-            /**
-             * Value Is Stale
-             * @default false
-             */
-            value_is_stale: boolean;
-            /** Value Age Days */
-            value_age_days?: number | null;
-            /**
-             * Owned Copies Count
-             * @default 0
-             */
-            owned_copies_count: number;
-            /** Rrp Appreciation Eur */
-            rrp_appreciation_eur?: string | null;
-            /** Rrp Roi Pct */
-            rrp_roi_pct?: string | null;
-        };
-        /** LegoSetModelUpdate */
-        LegoSetModelUpdate: {
-            /** Set Number */
-            set_number?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Theme */
-            theme?: string | null;
-            /** Subtheme */
-            subtheme?: string | null;
-            /** Release Date */
-            release_date?: string | null;
-            /** Retirement Date */
-            retirement_date?: string | null;
-            /** Piece Count */
-            piece_count?: number | null;
-            /** Minifig Count */
-            minifig_count?: number | null;
-            /** Age Min */
-            age_min?: number | null;
-            /** Age Max */
-            age_max?: number | null;
-            /** Box Height Cm */
-            box_height_cm?: number | string | null;
-            /** Box Width Cm */
-            box_width_cm?: number | string | null;
-            /** Box Depth Cm */
-            box_depth_cm?: number | string | null;
-            /** Box Weight Kg */
-            box_weight_kg?: number | string | null;
-            /** Rrp Eur */
-            rrp_eur?: number | string | null;
-            /** Current Value Eur */
-            current_value_eur?: number | string | null;
-            /** Short Description */
-            short_description?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /** Entity Id */
-            entity_id?: string | null;
-        };
-        /** LinkRequest */
-        LinkRequest: {
-            /**
-             * Transaction Id
-             * Format: uuid
-             */
-            transaction_id: string;
-        };
-        /** LoginRequest */
-        LoginRequest: {
-            /** Email */
-            email: string;
-            /** Password */
-            password: string;
-        };
-        /** LookupRequest */
-        LookupRequest: {
-            /** Set Number */
-            set_number: string;
-        };
-        /** LookupResult */
-        LookupResult: {
-            /** Found */
-            found: boolean;
-            /**
-             * Provider
-             * @default brickset
-             */
-            provider: string;
-            /** Message */
-            message?: string | null;
-            /** Set Number */
-            set_number?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Theme */
-            theme?: string | null;
-            /** Subtheme */
-            subtheme?: string | null;
-            /** Release Date */
-            release_date?: string | null;
-            /** Retirement Date */
-            retirement_date?: string | null;
-            /** Piece Count */
-            piece_count?: number | null;
-            /** Minifig Count */
-            minifig_count?: number | null;
-            /** Age Min */
-            age_min?: number | null;
-            /** Age Max */
-            age_max?: number | null;
-            /** Box Height Cm */
-            box_height_cm?: string | null;
-            /** Box Width Cm */
-            box_width_cm?: string | null;
-            /** Box Depth Cm */
-            box_depth_cm?: string | null;
-            /** Box Weight Kg */
-            box_weight_kg?: string | null;
-            /** Rrp Eur */
-            rrp_eur?: string | null;
-            /** Image Url */
-            image_url?: string | null;
-            /** Short Description */
-            short_description?: string | null;
-            /**
-             * Additional Image Count
-             * @default 0
-             */
-            additional_image_count: number;
-            /**
-             * Instruction Count
-             * @default 0
-             */
-            instruction_count: number;
-        };
-        /** LoyaltyAllocationOut */
-        LoyaltyAllocationOut: {
-            /**
-             * Receipt Id
-             * Format: uuid
-             */
-            receipt_id: string;
-            /** Purchase Date */
-            purchase_date: string | null;
-            /** Merchant Name */
-            merchant_name: string | null;
-            /** Total Eur */
-            total_eur: string;
-            /** Loyalty Discount Eur */
-            loyalty_discount_eur: string;
-            /** Loyalty Accrued Eur */
-            loyalty_accrued_eur: string;
-            /** Allocated Across Items Eur */
-            allocated_across_items_eur: string;
-        };
-        /** LoyaltyGroupOut */
-        LoyaltyGroupOut: {
-            /** Scheme */
-            scheme: string | null;
-            /** Card Masked */
-            card_masked: string | null;
-            /** Receipt Count */
-            receipt_count: number;
-            /** Accrued Eur */
-            accrued_eur: string;
-            /** Discount Eur */
-            discount_eur: string;
-            /** First Purchase */
-            first_purchase: string | null;
-            /** Last Purchase */
-            last_purchase: string | null;
-        };
-        /** MasterProductCreate */
-        MasterProductCreate: {
-            /** Canonical Name */
-            canonical_name: string;
-            /** Brand */
-            brand?: string | null;
-            /** Category Id */
-            category_id?: string | null;
-            /**
-             * Sold By Weight
-             * @default false
-             */
-            sold_by_weight: boolean;
-            /** Pack Variants */
-            pack_variants?: components["schemas"]["PackVariant"][];
-            /** Dietary Attributes */
-            dietary_attributes?: string[];
-            /** Allergen List */
-            allergen_list?: string[];
-            /** Seasonal Flags */
-            seasonal_flags?: string[];
-            /** Expected Shelf Life Days */
-            expected_shelf_life_days?: number | null;
-            /** Deposit Value Eur */
-            deposit_value_eur?: number | string | null;
-        };
-        /** MasterProductOut */
-        MasterProductOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Canonical Name */
-            canonical_name: string;
-            /** Brand */
-            brand: string | null;
-            /** Category Id */
-            category_id: string | null;
-            /** Category L1 Id */
-            category_l1_id: string | null;
-            /** Category L2 Id */
-            category_l2_id: string | null;
-            /** Category L3 Id */
-            category_l3_id: string | null;
-            /** Category Status */
-            category_status: string;
-            /** Category Confidence */
-            category_confidence: string | null;
-            /** Pack Variants */
-            pack_variants: unknown[];
-            /** Sold By Weight */
-            sold_by_weight: boolean;
-            /** Dietary Attributes */
-            dietary_attributes: unknown[];
-            /** Allergen List */
-            allergen_list: unknown[];
-            /** Seasonal Flags */
-            seasonal_flags: unknown[];
-            /** Expected Shelf Life Days */
-            expected_shelf_life_days: number | null;
-            /** Deposit Value Eur */
-            deposit_value_eur: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Category Path */
-            category_path?: string | null;
-            /**
-             * Alias Count
-             * @default 0
-             */
-            alias_count: number;
-            /**
-             * Occurrence Count
-             * @default 0
-             */
-            occurrence_count: number;
-            last_known_price?: components["schemas"]["LastKnownPrice"] | null;
-        };
-        /** MasterProductUpdate */
-        MasterProductUpdate: {
-            /** Canonical Name */
-            canonical_name?: string | null;
-            /** Brand */
-            brand?: string | null;
-            /** Category Id */
-            category_id?: string | null;
-            /** Sold By Weight */
-            sold_by_weight?: boolean | null;
-            /** Pack Variants */
-            pack_variants?: components["schemas"]["PackVariant"][] | null;
-            /** Dietary Attributes */
-            dietary_attributes?: string[] | null;
-            /** Allergen List */
-            allergen_list?: string[] | null;
-            /** Seasonal Flags */
-            seasonal_flags?: string[] | null;
-            /** Expected Shelf Life Days */
-            expected_shelf_life_days?: number | null;
-            /** Deposit Value Eur */
-            deposit_value_eur?: number | string | null;
-        };
-        /** MemberCreate */
-        MemberCreate: {
-            /** Display Name */
-            display_name: string;
-            /** Email */
-            email?: string | null;
-            /**
-             * Role
-             * @default MEMBER
-             * @enum {string}
-             */
-            role: "OWNER" | "MEMBER" | "VIEWER";
-            /** Temporary Password */
-            temporary_password?: string | null;
-            /**
-             * Is Dependent
-             * @default false
-             */
-            is_dependent: boolean;
-        };
-        /** MemberOut */
-        MemberOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "OWNER" | "MEMBER" | "VIEWER";
-            /**
-             * Joined At
-             * Format: date-time
-             */
-            joined_at: string;
-            /** Left At */
-            left_at: string | null;
-            /** Display Name */
-            display_name: string;
-            /** Email */
-            email: string | null;
-            /** Is Dependent */
-            is_dependent: boolean;
-            /** Is Active */
-            is_active: boolean;
-        };
-        /** MemberUpdate */
-        MemberUpdate: {
-            /** Display Name */
-            display_name?: string | null;
-            /** Email */
-            email?: string | null;
-            /** Role */
-            role?: ("OWNER" | "MEMBER" | "VIEWER") | null;
-            /** Is Dependent */
-            is_dependent?: boolean | null;
-            /** New Password */
-            new_password?: string | null;
-        };
-        /** MerchantIn */
-        MerchantIn: {
-            /** Name */
-            name: string;
-            /** Nif */
-            nif?: string | null;
-            /**
-             * Kind
-             * @default OTHER
-             */
-            kind: string;
-            /** Website */
-            website?: string | null;
-            /** Aliases */
-            aliases?: string[];
-        };
-        /** MerchantOut */
-        MerchantOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Nif */
-            nif: string | null;
-            /** Kind */
-            kind: string;
-            /** Website */
-            website: string | null;
-            /** Aliases */
-            aliases: string[];
-        };
-        /** MergeCandidate */
-        MergeCandidate: {
-            /** Key */
-            key: string;
-            /** Products */
-            products: components["schemas"]["MergeCandidateProduct"][];
-        };
-        /** MergeCandidateProduct */
-        MergeCandidateProduct: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Canonical Name */
-            canonical_name: string;
-            /** Brand */
-            brand?: string | null;
-        };
-        /** MergeRequest */
-        MergeRequest: {
-            /**
-             * Source Id
-             * Format: uuid
-             */
-            source_id: string;
-        };
-        /**
-         * ModuleBackupReport
-         * @description What one module's restore actually did, in module-agnostic shape.
-         */
-        ModuleBackupReport: {
-            /** Module */
-            module: string;
-            /** Label */
-            label: string;
-            /** Counts */
-            counts: {
-                [key: string]: number;
-            };
-            /** Skipped */
-            skipped: {
-                [key: string]: number;
-            };
-        };
-        /** ModuleTile */
-        ModuleTile: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "LIVE" | "PLANNED";
-            /** Primary Value */
-            primary_value?: string | null;
-            /** Primary Label */
-            primary_label?: string | null;
-            /** Secondary Value */
-            secondary_value?: string | null;
-            /** Secondary Label */
-            secondary_label?: string | null;
-            /** Href */
-            href?: string | null;
-        };
-        /** Ok */
-        Ok: {
-            /**
-             * Ok
-             * @default true
-             */
-            ok: boolean;
-            /** Message */
-            message?: string | null;
-        };
-        /** OverviewOut */
-        OverviewOut: {
-            /** Total Cost Eur */
-            total_cost_eur: string;
-            /** Total Value Eur */
-            total_value_eur: string;
-            /** Unrealized Gain Eur */
-            unrealized_gain_eur: string;
-            /** Roi Pct */
-            roi_pct: string | null;
-            /** Unique Sets */
-            unique_sets: number;
-            /** Copies Owned */
-            copies_owned: number;
-            /** Total Pieces */
-            total_pieces: number;
-            /** Total Minifigs */
-            total_minifigs: number;
-            /** Retired Sets */
-            retired_sets: number;
-            /** Models Without Value */
-            models_without_value: number;
-            /** Stale Value Models */
-            stale_value_models: number;
-            /** Oldest Value Updated At */
-            oldest_value_updated_at: string | null;
-            /** Stale Threshold Days */
-            stale_threshold_days: number;
-            /** Departed Copies */
-            departed_copies: number;
-            /** Departed Sale Total Eur */
-            departed_sale_total_eur: string;
-            /** Themes */
-            themes: components["schemas"]["ThemeBreakdown"][];
-            /** Timeline */
-            timeline: components["schemas"]["TimelinePoint"][];
-            /** Copies Without Date */
-            copies_without_date: number;
-            /** Top Gainers */
-            top_gainers: components["schemas"]["LegoSetInstanceOut"][];
-            /** Top Losers */
-            top_losers: components["schemas"]["LegoSetInstanceOut"][];
-            /** Locations Full */
-            locations_full: number;
-            /** Locations Total */
-            locations_total: number;
-        };
-        /**
-         * PackVariant
-         * @description One pack size. A 500 g and a 1 kg bag are one product with two variants.
-         */
-        PackVariant: {
-            /** Label */
-            label?: string | null;
-            /** Weight Kg */
-            weight_kg?: number | string | null;
-            /** Barcode */
-            barcode?: string | null;
-        };
-        /**
-         * PackVariantAdd
-         * @description Append one format to a product. Idempotent on the weight, so the review
-         *     pane can add what it just read off a line without knowing the other formats.
-         */
-        PackVariantAdd: {
-            /** Weight Kg */
-            weight_kg: number | string;
-            /** Label */
-            label?: string | null;
-            /** Barcode */
-            barcode?: string | null;
-        };
-        /** Page[LegoSetModelOut] */
-        Page_LegoSetModelOut_: {
-            /** Items */
-            items: components["schemas"]["LegoSetModelOut"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-        };
-        /** Page[MasterProductOut] */
-        Page_MasterProductOut_: {
-            /** Items */
-            items: components["schemas"]["MasterProductOut"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-        };
-        /** Page[ProductSummary] */
-        Page_ProductSummary_: {
-            /** Items */
-            items: components["schemas"]["ProductSummary"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-        };
-        /** Page[ReceiptItemOut] */
-        Page_ReceiptItemOut_: {
-            /** Items */
-            items: components["schemas"]["ReceiptItemOut"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-        };
-        /** Page[ReceiptSummary] */
-        Page_ReceiptSummary_: {
-            /** Items */
-            items: components["schemas"]["ReceiptSummary"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-        };
-        /** Page[ReviewTaskOut] */
-        Page_ReviewTaskOut_: {
-            /** Items */
-            items: components["schemas"]["ReviewTaskOut"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-        };
-        /** ParserOption */
-        ParserOption: {
-            /** Parser Key */
-            parser_key: string;
-            /** Display Name */
-            display_name: string;
-        };
-        /** ParserProfileIn */
-        ParserProfileIn: {
-            /** Merchant Id */
-            merchant_id?: string | null;
-            /** Name */
-            name: string;
-            /** Parser Key */
-            parser_key: string;
-            /** Document Kinds */
-            document_kinds?: string[];
-            /** Detection Patterns */
-            detection_patterns?: string[];
-            /** Field Hints */
-            field_hints?: Record<string, never>;
-            /**
-             * Priority
-             * @default 0
-             */
-            priority: number;
-            /**
-             * Is Active
-             * @default true
-             */
-            is_active: boolean;
-        };
-        /** ParserProfileOut */
-        ParserProfileOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Merchant Id */
-            merchant_id: string | null;
-            /** Merchant Name */
-            merchant_name?: string | null;
-            /** Name */
-            name: string;
-            /** Parser Key */
-            parser_key: string;
-            /** Document Kinds */
-            document_kinds: unknown[];
-            /** Detection Patterns */
-            detection_patterns: unknown[];
-            /** Field Hints */
-            field_hints: Record<string, never>;
-            /** Priority */
-            priority: number;
-            /** Success Rate */
-            success_rate: string | null;
-            /** Is Active */
-            is_active: boolean;
-            /**
-             * Is Generic
-             * @default false
-             */
-            is_generic: boolean;
-        };
-        /** ParserProfileUpdate */
-        ParserProfileUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Parser Key */
-            parser_key?: string | null;
-            /** Document Kinds */
-            document_kinds?: string[] | null;
-            /** Detection Patterns */
-            detection_patterns?: string[] | null;
-            /** Field Hints */
-            field_hints?: Record<string, never> | null;
-            /** Priority */
-            priority?: number | null;
-            /** Is Active */
-            is_active?: boolean | null;
-        };
-        /** PasswordChange */
-        PasswordChange: {
-            /** Current Password */
-            current_password: string;
-            /** New Password */
-            new_password: string;
-        };
-        /** PriceHistoryOut */
-        PriceHistoryOut: {
-            /**
-             * Master Product Id
-             * Format: uuid
-             */
-            master_product_id: string;
-            /** Canonical Name */
-            canonical_name: string;
-            /** Sold By Weight */
-            sold_by_weight: boolean;
-            /** Points */
-            points: components["schemas"]["PricePointOut"][];
-            /** Shrinkflation */
-            shrinkflation: components["schemas"]["ShrinkflationOut"][];
-        };
-        /** PricePointOut */
-        PricePointOut: {
-            /**
-             * Observed On
-             * Format: date
-             */
-            observed_on: string;
-            /**
-             * Merchant Id
-             * Format: uuid
-             */
-            merchant_id: string;
-            /** Merchant Name */
-            merchant_name: string | null;
-            /** Is Fs */
-            is_fs: boolean;
-            /** Weight Kg */
-            weight_kg: string | null;
-            /** List Price Eur */
-            list_price_eur: string;
-            /** Paid Price Eur */
-            paid_price_eur: string;
-            /** List Price Per Kg Eur */
-            list_price_per_kg_eur: string | null;
-            /** Paid Price Per Kg Eur */
-            paid_price_per_kg_eur: string | null;
-        };
-        /** ProductAliasOut */
-        ProductAliasOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Master Product Id
-             * Format: uuid
-             */
-            master_product_id: string;
-            /**
-             * Merchant Id
-             * Format: uuid
-             */
-            merchant_id: string;
-            /** Merchant Name */
-            merchant_name?: string | null;
-            /** Merchant Description */
-            merchant_description: string;
-            /** Confidence */
-            confidence: string;
-            /** Correction Count */
-            correction_count: number;
-            /** Last Used At */
-            last_used_at: string | null;
-        };
-        /** ProductOccurrence */
-        ProductOccurrence: {
-            /**
-             * Receipt Item Id
-             * Format: uuid
-             */
-            receipt_item_id: string;
-            /**
-             * Receipt Id
-             * Format: uuid
-             */
-            receipt_id: string;
-            /** Purchase Date */
-            purchase_date: string | null;
-            /** Merchant Name */
-            merchant_name: string | null;
-            /** Description Raw */
-            description_raw: string;
-            /** Quantity */
-            quantity: string;
-            /** Unit */
-            unit: string;
-            /** Unit Price Pvp Eur */
-            unit_price_pvp_eur: string;
-            /** Paid Price Eur */
-            paid_price_eur: string;
-            /** Price Per Kg Final Eur */
-            price_per_kg_final_eur: string | null;
-            /** Is Fs */
-            is_fs: boolean;
-        };
-        /**
-         * ProductSearchResult
-         * @description What every picker pre-fills from: identity, category and last known price.
-         */
-        ProductSearchResult: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Canonical Name */
-            canonical_name: string;
-            /** Brand */
-            brand: string | null;
-            /** Category Id */
-            category_id: string | null;
-            /** Category Path */
-            category_path: string | null;
-            /** Sold By Weight */
-            sold_by_weight: boolean;
-            /** Score */
-            score: number;
-            last_known_price?: components["schemas"]["LastKnownPrice"] | null;
-        };
-        /**
-         * ProductSummary
-         * @description One row per product across every invoice in scope.
-         *
-         *     ``price_per_kg_eur`` is weighted by weight, not an average of the per-line
-         *     quotients: averaging rates would let a 200 g purchase count as much as a 5 kg
-         *     one. Lines with no weight are left out of it entirely rather than guessed.
-         */
-        ProductSummary: {
-            /**
-             * Master Product Id
-             * Format: uuid
-             */
-            master_product_id: string;
-            /** Canonical Name */
-            canonical_name: string;
-            /** Brand */
-            brand: string | null;
-            /** Category Path */
-            category_path: string | null;
-            /** Sold By Weight */
-            sold_by_weight: boolean;
-            /** Line Count */
-            line_count: number;
-            /** Receipt Count */
-            receipt_count: number;
-            /** Total Quantity */
-            total_quantity: string;
-            /** Total Weight Kg */
-            total_weight_kg: string | null;
-            /** Total Paid Eur */
-            total_paid_eur: string;
-            /** Total Notional Eur */
-            total_notional_eur: string;
-            /** Price Per Kg Eur */
-            price_per_kg_eur: string | null;
-            /** First Purchase On */
-            first_purchase_on: string | null;
-            /** Last Purchase On */
-            last_purchase_on: string | null;
-        };
-        /**
-         * ProfileTestResult
-         * @description Re-parse a stored document with a chosen profile and diff the result.
-         */
-        ProfileTestResult: {
-            /** Parser Key */
-            parser_key: string;
-            /** Item Count */
-            item_count: number;
-            /** Total Eur */
-            total_eur: string | null;
-            /** Computed Total Eur */
-            computed_total_eur: string;
-            /** Is Reconciled */
-            is_reconciled: boolean;
-            /** Confidence */
-            confidence: string;
-            /** Decision Reasons */
-            decision_reasons: unknown[];
-            /** Items */
-            items: Record<string, never>[];
-            /** Diff Vs Current */
-            diff_vs_current: Record<string, never>;
-        };
-        /** ProfileUpdate */
-        ProfileUpdate: {
-            /** Display Name */
-            display_name?: string | null;
-            /** Locale */
-            locale?: string | null;
-            /** Timezone */
-            timezone?: string | null;
-        };
-        /** QueueEntry */
-        QueueEntry: {
-            /** Receipt Id */
-            receipt_id: string | null;
-            /**
-             * Processing Job Id
-             * Format: uuid
-             */
-            processing_job_id: string;
-            /** Status */
-            status: string;
-            /** Job Status */
-            job_status: string;
-            /** Attempts */
-            attempts: number;
-            /** Max Attempts */
-            max_attempts: number;
-            /** Last Error */
-            last_error: string | null;
-            /** Parser Profile Name */
-            parser_profile_name: string | null;
-            /** Merchant Name */
-            merchant_name: string | null;
-            /** Filename */
-            filename: string | null;
-            /** Confidence */
-            confidence: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Completed At */
-            completed_at: string | null;
-        };
-        /** ReceiptDerived */
-        ReceiptDerived: {
-            /** Computed Total Eur */
-            computed_total_eur: string;
-            /** Subtotal Eur */
-            subtotal_eur: string;
-            /** Fs Value Eur */
-            fs_value_eur: string;
-            /** Fs Item Count */
-            fs_item_count: number;
-            /** Fs Share Pct */
-            fs_share_pct: string | null;
-            /** Notional Total Eur */
-            notional_total_eur: string;
-            /** Printed Item Count */
-            printed_item_count: number;
-            /** Refund Item Count */
-            refund_item_count: number;
-            /** Is Return */
-            is_return: boolean;
-            /** Is Reconciled */
-            is_reconciled: boolean;
-            /** Reconciliation Delta Eur */
-            reconciliation_delta_eur: string;
-            /** Invoice Discount Ratio */
-            invoice_discount_ratio: string | null;
-            /** Item Count Matches */
-            item_count_matches: boolean;
-            /** Is Complete */
-            is_complete: boolean;
-        };
-        /** ReceiptDetail */
-        ReceiptDetail: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Entity Id
-             * Format: uuid
-             */
-            entity_id: string;
-            /** Merchant Id */
-            merchant_id: string | null;
-            /** Merchant Name */
-            merchant_name?: string | null;
-            /** Purchase Date */
-            purchase_date: string | null;
-            /** Purchased At */
-            purchased_at: string | null;
-            /** Total Eur */
-            total_eur: string;
-            /** Total Discount Eur */
-            total_discount_eur: string;
-            /** Item Count */
-            item_count: number | null;
-            /** Status */
-            status: string;
-            /** Confidence */
-            confidence: string | null;
-            /** Atcud Code */
-            atcud_code: string | null;
-            /** Document Id */
-            document_id: string | null;
-            /** Loyalty Scheme */
-            loyalty_scheme: string | null;
-            /**
-             * Fs Value Eur
-             * @default 0.00
-             */
-            fs_value_eur: string;
-            /**
-             * Fs Item Count
-             * @default 0
-             */
-            fs_item_count: number;
-            /**
-             * Printed Item Count
-             * @default 0
-             */
-            printed_item_count: number;
-            /**
-             * Notional Total Eur
-             * @default 0.00
-             */
-            notional_total_eur: string;
-            /**
-             * Is Reconciled
-             * @default true
-             */
-            is_reconciled: boolean;
-            /** Parser Profile Id */
-            parser_profile_id?: string | null;
-            /** Parser Profile Name */
-            parser_profile_name?: string | null;
-            /** Processing Job Id */
-            processing_job_id: string | null;
-            /** Import Batch Id */
-            import_batch_id: string | null;
-            /** Atcud Valid */
-            atcud_valid: boolean | null;
-            /** Atcud Reason */
-            atcud_reason: string | null;
-            /** Parsed Payment Methods */
-            parsed_payment_methods: unknown[];
-            /** Loyalty Card Masked */
-            loyalty_card_masked: string | null;
-            /** Loyalty Accrued Eur */
-            loyalty_accrued_eur: string;
-            /** Loyalty Discount Eur */
-            loyalty_discount_eur: string;
-            /** Decision Reasons */
-            decision_reasons: unknown[];
-            /** Notes */
-            notes: string | null;
-            /** Void Reason */
-            void_reason: string | null;
-            /** Document Url */
-            document_url?: string | null;
-            /** Document Mime Type */
-            document_mime_type?: string | null;
-            /** Document Filename */
-            document_filename?: string | null;
-            /** Items */
-            items: components["schemas"]["ReceiptItemOut"][];
-            derived: components["schemas"]["ReceiptDerived"];
-        };
-        /** ReceiptItemOut */
-        ReceiptItemOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Receipt Id
-             * Format: uuid
-             */
-            receipt_id: string;
-            /** Line No */
-            line_no: number | null;
-            /** Merchant Section */
-            merchant_section: string | null;
-            /** Description Raw */
-            description_raw: string;
-            /** Master Product Id */
-            master_product_id: string | null;
-            /** Quantity */
-            quantity: string;
-            /** Unit */
-            unit: string;
-            /** Quantity Canonical */
-            quantity_canonical: string;
-            /** Unit Canonical */
-            unit_canonical: string;
-            /** Weight Listed Kg */
-            weight_listed_kg: string | null;
-            /** Weight Observed Kg */
-            weight_observed_kg: string | null;
-            /** Is Bulk Weighed */
-            is_bulk_weighed: boolean;
-            /** Unit Price Pvp Eur */
-            unit_price_pvp_eur: string;
-            /** Promo Discount Eur */
-            promo_discount_eur: string;
-            /** Promo Type */
-            promo_type: string | null;
-            /** Invoice Allocated Discount Eur */
-            invoice_allocated_discount_eur: string;
-            /** Paid Price Eur */
-            paid_price_eur: string;
-            /** Iva Class Raw */
-            iva_class_raw: string | null;
-            /** Is Fs */
-            is_fs: boolean;
-            /** Notional Value Source */
-            notional_value_source: string | null;
-            /** Product Flag */
-            product_flag: string | null;
-            /** Notes */
-            notes: string | null;
-            /** Confidence */
-            confidence: string | null;
-            /** Decision Reasons */
-            decision_reasons: unknown[];
-            /** Weight Kg */
-            weight_kg?: string | null;
-            /** Price Per Kg Pvp Eur */
-            price_per_kg_pvp_eur?: string | null;
-            /** Price Per Kg Promo Eur */
-            price_per_kg_promo_eur?: string | null;
-            /** Price Per Kg Final Eur */
-            price_per_kg_final_eur?: string | null;
-            /** Price Per Kg Unavailable Reason */
-            price_per_kg_unavailable_reason?: string | null;
-            /** Notional Value Eur */
-            notional_value_eur?: string | null;
-            /** Display Name */
-            display_name?: string | null;
-            /** Category Path */
-            category_path?: string | null;
-            /** Category Status */
-            category_status?: string | null;
-            /**
-             * Sold By Weight
-             * @default false
-             */
-            sold_by_weight: boolean;
-            /** Pack Weight Is Known */
-            pack_weight_is_known?: boolean | null;
-        };
-        /** ReceiptItemUpdate */
-        ReceiptItemUpdate: {
-            /** Line No */
-            line_no?: number | null;
-            /** Description Raw */
-            description_raw?: string | null;
-            /** Quantity */
-            quantity?: number | string | null;
-            /** Unit */
-            unit?: string | null;
-            /** Unit Price Pvp Eur */
-            unit_price_pvp_eur?: number | string | null;
-            /** Promo Discount Eur */
-            promo_discount_eur?: number | string | null;
-            /** Promo Type */
-            promo_type?: string | null;
-            /** Weight Observed Kg */
-            weight_observed_kg?: number | string | null;
-            /** Weight Listed Kg */
-            weight_listed_kg?: number | string | null;
-            /** Is Bulk Weighed */
-            is_bulk_weighed?: boolean | null;
-            /** Product Flag */
-            product_flag?: string | null;
-            /** Notes */
-            notes?: string | null;
-        };
-        /**
-         * ReceiptLinkOut
-         * @description The receipt↔transaction edge, and whether a ledger exists to link to.
-         */
-        ReceiptLinkOut: {
-            /** Ledger Available */
-            ledger_available: boolean;
-            /** Message */
-            message?: string | null;
-            /** Link Id */
-            link_id?: string | null;
-            /** Transaction Id */
-            transaction_id?: string | null;
-            /** Status */
-            status?: string | null;
-            /** Confidence */
-            confidence?: string | null;
-            /** Decision Reasons */
-            decision_reasons?: unknown[];
-        };
-        /** ReceiptSummary */
-        ReceiptSummary: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Entity Id
-             * Format: uuid
-             */
-            entity_id: string;
-            /** Merchant Id */
-            merchant_id: string | null;
-            /** Merchant Name */
-            merchant_name?: string | null;
-            /** Purchase Date */
-            purchase_date: string | null;
-            /** Purchased At */
-            purchased_at: string | null;
-            /** Total Eur */
-            total_eur: string;
-            /** Total Discount Eur */
-            total_discount_eur: string;
-            /** Item Count */
-            item_count: number | null;
-            /** Status */
-            status: string;
-            /** Confidence */
-            confidence: string | null;
-            /** Atcud Code */
-            atcud_code: string | null;
-            /** Document Id */
-            document_id: string | null;
-            /** Loyalty Scheme */
-            loyalty_scheme: string | null;
-            /**
-             * Fs Value Eur
-             * @default 0.00
-             */
-            fs_value_eur: string;
-            /**
-             * Fs Item Count
-             * @default 0
-             */
-            fs_item_count: number;
-            /**
-             * Printed Item Count
-             * @default 0
-             */
-            printed_item_count: number;
-            /**
-             * Notional Total Eur
-             * @default 0.00
-             */
-            notional_total_eur: string;
-            /**
-             * Is Reconciled
-             * @default true
-             */
-            is_reconciled: boolean;
-            /** Parser Profile Id */
-            parser_profile_id?: string | null;
-            /** Parser Profile Name */
-            parser_profile_name?: string | null;
-        };
-        /** ReceiptUpdate */
-        ReceiptUpdate: {
-            /** Merchant Id */
-            merchant_id?: string | null;
-            /** Purchase Date */
-            purchase_date?: string | null;
-            /** Total Eur */
-            total_eur?: number | string | null;
-            /** Total Discount Eur */
-            total_discount_eur?: number | string | null;
-            /** Item Count */
-            item_count?: number | null;
-            /** Loyalty Scheme */
-            loyalty_scheme?: string | null;
-            /** Loyalty Discount Eur */
-            loyalty_discount_eur?: number | string | null;
-            /** Loyalty Accrued Eur */
-            loyalty_accrued_eur?: number | string | null;
-            /** Notes */
-            notes?: string | null;
-        };
-        /** ReviewResolution */
-        ReviewResolution: {
-            /**
-             * Action
-             * @enum {string}
-             */
-            action: "CONFIRMED" | "FIXED" | "DISMISSED";
-            /** Payload */
-            payload?: Record<string, never> | null;
-        };
-        /** ReviewSummary */
-        ReviewSummary: {
-            /** Pending */
-            pending: number;
-            /** By Module */
-            by_module: {
-                [key: string]: number;
-            };
-        };
-        /** ReviewTaskOut */
-        ReviewTaskOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Entity Id
-             * Format: uuid
-             */
-            entity_id: string;
-            /** Module */
-            module: string;
-            /** Subject Type */
-            subject_type: string;
-            /**
-             * Subject Id
-             * Format: uuid
-             */
-            subject_id: string;
-            /** Confidence */
-            confidence: number | null;
-            /** Suggested Payload */
-            suggested_payload: Record<string, never>;
-            /** Decision Reasons */
-            decision_reasons: unknown[];
-            /** Status */
-            status: string;
-            /** Title */
-            title: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Resolved At */
-            resolved_at: string | null;
-        };
-        /** SessionOut */
-        SessionOut: {
-            user: components["schemas"]["UserOut"];
-            /**
-             * Household Id
-             * Format: uuid
-             */
-            household_id: string;
-            /** Household Name */
-            household_name: string;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "OWNER" | "MEMBER" | "VIEWER";
-            /** Active Entity Id */
-            active_entity_id: string | null;
-            /** Csrf Token */
-            csrf_token: string;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-        };
-        /** SettingsOut */
-        SettingsOut: {
-            /** Values */
-            values: Record<string, never>;
-        };
-        /** SettingsUpdate */
-        SettingsUpdate: {
-            /** Values */
-            values: Record<string, never>;
-        };
-        /** SetupRequest */
-        SetupRequest: {
-            /** Household Name */
-            household_name: string;
-            /** Display Name */
-            display_name: string;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Password */
-            password: string;
-        };
-        /**
-         * SetupStatus
-         * @description Public probe: is this installation still waiting to be configured?
-         */
-        SetupStatus: {
-            /** Needs Setup */
-            needs_setup: boolean;
-        };
-        /**
-         * ShrinkflationOut
-         * @description ``(current_weight / avg_weight_12m) - (current_price / avg_price_12m)``.
-         */
-        ShrinkflationOut: {
-            /**
-             * Master Product Id
-             * Format: uuid
-             */
-            master_product_id: string;
-            /** Canonical Name */
-            canonical_name: string;
-            /**
-             * Merchant Id
-             * Format: uuid
-             */
-            merchant_id: string;
-            /** Merchant Name */
-            merchant_name: string | null;
-            /** Observations */
-            observations: number;
-            /** Current Weight Kg */
-            current_weight_kg: string;
-            /** Average Weight Kg */
-            average_weight_kg: string;
-            /** Current Price Eur */
-            current_price_eur: string;
-            /** Average Price Eur */
-            average_price_eur: string;
-            /** Margin Signal */
-            margin_signal: string;
-            /**
-             * Observed On
-             * Format: date
-             */
-            observed_on: string;
-        };
-        /**
-         * StatusBoard
-         * @description UX-1.5 «Estado» — every figure links to the list that resolves it.
-         */
-        StatusBoard: {
-            /** Total Receipts */
-            total_receipts: number;
-            /** To Process */
-            to_process: number;
-            /** Failed Jobs */
-            failed_jobs: number;
-            /** To Validate */
-            to_validate: number;
-            /** Total Lines */
-            total_lines: number;
-            /** Unresolved Lines */
-            unresolved_lines: number;
-            /** Resolved Lines */
-            resolved_lines: number;
-            /** Uncategorized Products */
-            uncategorized_products: number;
-            /** Total Products */
-            total_products: number;
-            /** Merge Candidates */
-            merge_candidates: number;
-            /** Observed Auto Accept Rate */
-            observed_auto_accept_rate: number | null;
-            /** Decided Receipts */
-            decided_receipts: number;
-        };
-        /** StorageLocationCreate */
-        StorageLocationCreate: {
-            /** Area */
-            area: string;
-            /** Container */
-            container?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Capacity Pct */
-            capacity_pct?: number | null;
-            /** Entity Id */
-            entity_id?: string | null;
-        };
-        /** StorageLocationOut */
-        StorageLocationOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Entity Id
-             * Format: uuid
-             */
-            entity_id: string;
-            /** Area */
-            area: string;
-            /** Container */
-            container: string | null;
-            /** Description */
-            description: string | null;
-            /** Capacity Pct */
-            capacity_pct: number | null;
-            /** Label */
-            label: string;
-            /**
-             * Stored Count
-             * @default 0
-             */
-            stored_count: number;
-            /**
-             * Stored Value Eur
-             * @default 0.00
-             */
-            stored_value_eur: string;
-            /** Remaining Capacity Pct */
-            remaining_capacity_pct?: number | null;
-            /**
-             * Is Full
-             * @default false
-             */
-            is_full: boolean;
-        };
-        /** StorageLocationUpdate */
-        StorageLocationUpdate: {
-            /** Area */
-            area?: string | null;
-            /** Container */
-            container?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Capacity Pct */
-            capacity_pct?: number | null;
-        };
-        /** SuggestionResponse */
-        SuggestionResponse: {
-            /** Ledger Available */
-            ledger_available: boolean;
-            /** Message */
-            message?: string | null;
-            /** Items */
-            items: components["schemas"]["TransactionSuggestion"][];
-        };
-        /** TagIn */
-        TagIn: {
-            /** Name */
-            name: string;
-            /** Color */
-            color?: string | null;
-        };
-        /** TagOut */
-        TagOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Color */
-            color: string | null;
-        };
-        /**
-         * TagsUpdate
-         * @description Open user labels with **no effect on any total** (FR-1.5).
-         */
-        TagsUpdate: {
-            /** Tags */
-            tags: string[];
-        };
-        /** ThemeBreakdown */
-        ThemeBreakdown: {
-            /** Theme */
-            theme: string;
-            /** Copies */
-            copies: number;
-            /** Unique Sets */
-            unique_sets: number;
-            /** Cost Eur */
-            cost_eur: string;
-            /** Value Eur */
-            value_eur: string;
-        };
-        /**
-         * TimelinePoint
-         * @description One month of the acquisition curve.
-         *
-         *     ``value_eur`` is **today's** market value of everything acquired up to that
-         *     month — not a historical quote. There is no valuation snapshot table by design
-         *     (ADR-0008), so a true market-value history cannot be drawn.
-         */
-        TimelinePoint: {
-            /** Month */
-            month: string;
-            /** Copies */
-            copies: number;
-            /** Cost Eur */
-            cost_eur: string;
-            /** Value Eur */
-            value_eur: string;
-        };
-        /** TransactionSuggestion */
-        TransactionSuggestion: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Booked Date
-             * Format: date
-             */
-            booked_date: string;
-            /** Description */
-            description: string;
-            /** Amount Eur */
-            amount_eur: string;
-            /** Account Label */
-            account_label?: string | null;
-            /** Score */
-            score: number;
-        };
-        /** UploadResponse */
-        UploadResponse: {
-            /** Items */
-            items: components["schemas"]["UploadedReceipt"][];
-        };
-        /** UploadedReceipt */
-        UploadedReceipt: {
-            /**
-             * Receipt Id
-             * Format: uuid
-             */
-            receipt_id: string;
-            /**
-             * Processing Job Id
-             * Format: uuid
-             */
-            processing_job_id: string;
-            /** Filename */
-            filename: string | null;
-            /** Created */
-            created: boolean;
-            /** Message */
-            message?: string | null;
-        };
-        /** UserOut */
-        UserOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Email */
-            email: string | null;
-            /** Display Name */
-            display_name: string;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "OWNER" | "MEMBER" | "VIEWER";
-            /** Is Dependent */
-            is_dependent: boolean;
-            /** Must Change Password */
-            must_change_password: boolean;
-            /** Locale */
-            locale: string;
-            /** Timezone */
-            timezone: string;
-            /** Is Deleted */
-            is_deleted: boolean;
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
-        /** VoidRequest */
-        VoidRequest: {
-            /** Reason */
-            reason: string;
-        };
+  schemas: {
+    /** ActivityItem */
+    ActivityItem: {
+      /** Id */
+      id: string;
+      /** Action */
+      action: string;
+      /** Table Name */
+      table_name: string;
+      /** Record Id */
+      record_id: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Actor Display Name */
+      actor_display_name?: string | null;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /**
+     * BackupImportReport
+     * @description One entry per module restored — one for a single-module archive, several
+     *     for the global container.
+     */
+    BackupImportReport: {
+      /** Modules */
+      modules: components['schemas']['ModuleBackupReport'][];
+    };
+    /**
+     * BackupModuleOut
+     * @description One module this installation knows how to back up. LEGO is the only one
+     *     today; the list grows as other modules register themselves.
+     */
+    BackupModuleOut: {
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+    };
+    /** Body_add_model_image_api_lego_models__model_id__images_post */
+    Body_add_model_image_api_lego_models__model_id__images_post: {
+      /** File */
+      file?: string | null;
+    };
+    /** Body_add_model_instruction_api_lego_models__model_id__instructions_post */
+    Body_add_model_instruction_api_lego_models__model_id__instructions_post: {
+      /** File */
+      file?: string | null;
+    };
+    /** Body_import_backup_api_settings_backup_post */
+    Body_import_backup_api_settings_backup_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
+    };
+    /** Body_import_legacy_api_receipts_import_legacy_post */
+    Body_import_legacy_api_receipts_import_legacy_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
+    };
+    /** Body_set_instance_photo_api_lego_instances__instance_id__photo_put */
+    Body_set_instance_photo_api_lego_instances__instance_id__photo_put: {
+      /** File */
+      file?: string | null;
+    };
+    /** Body_set_model_image_api_lego_models__model_id__image_put */
+    Body_set_model_image_api_lego_models__model_id__image_put: {
+      /** File */
+      file?: string | null;
+    };
+    /** Body_upload_api_receipts_post */
+    Body_upload_api_receipts_post: {
+      /** Files */
+      files: string[];
+    };
+    /**
+     * BricksetImportOut
+     * @description What one press of «Importar do Brickset» actually brought down.
+     */
+    BricksetImportOut: {
+      model: components['schemas']['LegoSetModelOut'];
+      /**
+       * Images Added
+       * @default 0
+       */
+      images_added: number;
+      /**
+       * Instructions Added
+       * @default 0
+       */
+      instructions_added: number;
+      /** Message */
+      message?: string | null;
+    };
+    /** CategoryCreate */
+    CategoryCreate: {
+      /** Display Name Pt */
+      display_name_pt: string;
+      /** Parent Id */
+      parent_id?: string | null;
+      /**
+       * Brand Axis
+       * @default false
+       */
+      brand_axis: boolean;
+    };
+    /** CategoryImpactOut */
+    CategoryImpactOut: {
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /** Descendants */
+      descendants: number;
+      /** Master Products */
+      master_products: number;
+      /** Receipt Items */
+      receipt_items: number;
+      /** In Use */
+      in_use: boolean;
+    };
+    /** CategoryMerge */
+    CategoryMerge: {
+      /**
+       * Target Id
+       * Format: uuid
+       */
+      target_id: string;
+    };
+    /** CategoryOperationResult */
+    CategoryOperationResult: {
+      /**
+       * Ok
+       * @default true
+       */
+      ok: boolean;
+      /**
+       * Affected Products
+       * @default 0
+       */
+      affected_products: number;
+      /** Message */
+      message?: string | null;
+    };
+    /** CategoryOut */
+    CategoryOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Code En */
+      code_en: string;
+      /** Display Name Pt */
+      display_name_pt: string;
+      /** Domain */
+      domain: string;
+      /** Level */
+      level: number;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Brand Axis */
+      brand_axis: boolean;
+    };
+    /** CategoryRename */
+    CategoryRename: {
+      /** Display Name Pt */
+      display_name_pt: string;
+    };
+    /** CategoryReparent */
+    CategoryReparent: {
+      /** Parent Id */
+      parent_id?: string | null;
+    };
+    /** CategorySearchResult */
+    CategorySearchResult: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Display Name Pt */
+      display_name_pt: string;
+      /** Level */
+      level: number;
+      /** Path */
+      path: string;
+    };
+    /** CategorySpendOut */
+    CategorySpendOut: {
+      /** Category Id */
+      category_id: string | null;
+      /** Display Name Pt */
+      display_name_pt: string;
+      /** Paid Eur */
+      paid_eur: string;
+      /** Notional Eur */
+      notional_eur: string;
+      /** Item Count */
+      item_count: number;
+    };
+    /**
+     * CategoryTreeNode
+     * @description One node of the whole GROCERY tree, flat, for the taxonomy editor.
+     */
+    CategoryTreeNode: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Display Name Pt */
+      display_name_pt: string;
+      /** Level */
+      level: number;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Brand Axis */
+      brand_axis: boolean;
+      /** Path */
+      path: string;
+      /** Product Count */
+      product_count: number;
+    };
+    /**
+     * CollectionSummary
+     * @description Totals for the *currently filtered* set of copies, not the whole collection.
+     */
+    CollectionSummary: {
+      /** Copies */
+      copies: number;
+      /** Unique Sets */
+      unique_sets: number;
+      /** Total Cost Eur */
+      total_cost_eur: string;
+      /** Total Value Eur */
+      total_value_eur: string;
+      /** Total Pieces */
+      total_pieces: number;
+    };
+    /** DashboardOut */
+    DashboardOut: {
+      /** Tiles */
+      tiles: components['schemas']['ModuleTile'][];
+      /** Pending Reviews */
+      pending_reviews: number;
+      /** Recent Activity */
+      recent_activity: components['schemas']['ActivityItem'][];
+    };
+    /** EntityCreate */
+    EntityCreate: {
+      /** Name */
+      name: string;
+      /** Member Ids */
+      member_ids: string[];
+      /** Color */
+      color?: string | null;
+    };
+    /** EntityOut */
+    EntityOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Member Ids */
+      member_ids: string[];
+      /** Color */
+      color: string | null;
+      /** Is Readonly */
+      is_readonly: boolean;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /** EntitySwitch */
+    EntitySwitch: {
+      /** Entity Id */
+      entity_id?: string | null;
+    };
+    /** EntitySwitchResult */
+    EntitySwitchResult: {
+      /** Active Entity Id */
+      active_entity_id: string | null;
+      /** Csrf Token */
+      csrf_token: string;
+    };
+    /** EntityUpdate */
+    EntityUpdate: {
+      /** Name */
+      name?: string | null;
+      /** Member Ids */
+      member_ids?: string[] | null;
+      /** Color */
+      color?: string | null;
+    };
+    /**
+     * FsItemCreate
+     * @description An article added by hand during review.
+     *
+     *     ``is_fs`` false means the parser missed a line that **is** on the paper; the
+     *     reconciliation against the printed total is what judges the correction.
+     */
+    FsItemCreate: {
+      /** Description Raw */
+      description_raw: string;
+      /** Unit Price Pvp Eur */
+      unit_price_pvp_eur: number | string;
+      /**
+       * Quantity
+       * @default 1
+       */
+      quantity: number | string;
+      /**
+       * Unit
+       * @default UN
+       */
+      unit: string;
+      /**
+       * Is Fs
+       * @default true
+       */
+      is_fs: boolean;
+      /** Line No */
+      line_no?: number | null;
+      /**
+       * Promo Discount Eur
+       * @default 0
+       */
+      promo_discount_eur: number | string;
+      /**
+       * Notional Value Source
+       * @default MANUAL
+       * @enum {string}
+       */
+      notional_value_source: 'PRICE_HISTORY' | 'MANUAL';
+      /** Notes */
+      notes?: string | null;
+    };
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components['schemas']['ValidationError'][];
+    };
+    /** InstanceDisplayImageUpdate */
+    InstanceDisplayImageUpdate: {
+      /** Document Id */
+      document_id?: string | null;
+    };
+    /**
+     * ItemProductAssignment
+     * @description Re-resolve a line to another product; the correction is learned per merchant.
+     */
+    ItemProductAssignment: {
+      /**
+       * Master Product Id
+       * Format: uuid
+       */
+      master_product_id: string;
+    };
+    /**
+     * LastKnownPrice
+     * @description Derived from the newest price observation; never stored, never a second truth.
+     */
+    LastKnownPrice: {
+      /** Last Pvp Eur */
+      last_pvp_eur?: string | null;
+      /** Last Price Per Kg Eur */
+      last_price_per_kg_eur?: string | null;
+      /** Last Weight Kg */
+      last_weight_kg?: string | null;
+      /** Last Observed On */
+      last_observed_on?: string | null;
+    };
+    /** LearnAliasRequest */
+    LearnAliasRequest: {
+      /**
+       * Master Product Id
+       * Format: uuid
+       */
+      master_product_id: string;
+      /**
+       * Merchant Id
+       * Format: uuid
+       */
+      merchant_id: string;
+      /** Merchant Description */
+      merchant_description: string;
+    };
+    /**
+     * LegacyImportResult
+     * @description The sheet is validated, not trusted: every exception is reported, not repaired.
+     */
+    LegacyImportResult: {
+      /**
+       * Import Batch Id
+       * Format: uuid
+       */
+      import_batch_id: string;
+      /** Row Count */
+      row_count: number;
+      /** Skipped Non Grocery Rows */
+      skipped_non_grocery_rows: number;
+      /** Skipped Non Grocery Merchants */
+      skipped_non_grocery_merchants: string[];
+      /** Receipts Created */
+      receipts_created: number;
+      /** Receipts Reconciled */
+      receipts_reconciled: number;
+      /** Receipts Needing Review */
+      receipts_needing_review: number;
+      /** Fs Rows */
+      fs_rows: number;
+      /** Fs Rows Snapped */
+      fs_rows_snapped: number;
+      /** All Fs Groups */
+      all_fs_groups: number;
+      /** Products Created */
+      products_created: number;
+      /** Aliases Created */
+      aliases_created: number;
+      /** Merchants Created */
+      merchants_created: number;
+      /** Exceptions */
+      exceptions: Record<string, never>[];
+    };
+    /** LegoSetImageOut */
+    LegoSetImageOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Document Id
+       * Format: uuid
+       */
+      document_id: string;
+      /** Url */
+      url?: string | null;
+      /** Caption */
+      caption?: string | null;
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+    };
+    /** LegoSetImageUpdate */
+    LegoSetImageUpdate: {
+      /** Caption */
+      caption?: string | null;
+      /** Position */
+      position?: number | null;
+    };
+    /** LegoSetInstanceCreate */
+    LegoSetInstanceCreate: {
+      /** Acquisition Date */
+      acquisition_date?: string | null;
+      /**
+       * Acquisition Cost Eur
+       * @default 0.00
+       */
+      acquisition_cost_eur: number | string;
+      /** Acquisition Source */
+      acquisition_source?: ('RETAIL' | 'SECONDHAND' | 'GIFT' | 'FS' | 'OTHER') | null;
+      /** Acquisition Transaction Id */
+      acquisition_transaction_id?: string | null;
+      /** Storage Location Id */
+      storage_location_id?: string | null;
+      /** Build State */
+      build_state?: ('SEALED' | 'BUILT' | 'DISASSEMBLED') | null;
+      /** Condition */
+      condition?: ('NEW' | 'GOOD' | 'WORN' | 'DAMAGED') | null;
+      /**
+       * Has Box
+       * @default true
+       */
+      has_box: boolean;
+      /**
+       * Has Instructions
+       * @default true
+       */
+      has_instructions: boolean;
+      /** Missing Parts */
+      missing_parts?: string | null;
+      /** Notes */
+      notes?: string | null;
+      /** Entity Id */
+      entity_id?: string | null;
+      /** Lego Set Model Id */
+      lego_set_model_id?: string | null;
+      new_set?: components['schemas']['LegoSetModelCreate'] | null;
+    };
+    /** LegoSetInstanceOut */
+    LegoSetInstanceOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /**
+       * Lego Set Model Id
+       * Format: uuid
+       */
+      lego_set_model_id: string;
+      /** Acquisition Date */
+      acquisition_date: string | null;
+      /** Acquisition Cost Eur */
+      acquisition_cost_eur: string;
+      /** Acquisition Source */
+      acquisition_source: ('RETAIL' | 'SECONDHAND' | 'GIFT' | 'FS' | 'OTHER') | null;
+      /** Acquisition Transaction Id */
+      acquisition_transaction_id: string | null;
+      /** Storage Location Id */
+      storage_location_id: string | null;
+      /** Build State */
+      build_state: ('SEALED' | 'BUILT' | 'DISASSEMBLED') | null;
+      /** Condition */
+      condition: ('NEW' | 'GOOD' | 'WORN' | 'DAMAGED') | null;
+      /** Has Box */
+      has_box: boolean;
+      /** Has Instructions */
+      has_instructions: boolean;
+      /** Missing Parts */
+      missing_parts: string | null;
+      /**
+       * Ownership Status
+       * @enum {string}
+       */
+      ownership_status: 'IN_COLLECTION' | 'SOLD' | 'GIFTED';
+      /** Sale Price Eur */
+      sale_price_eur: string | null;
+      /** Sale Date */
+      sale_date: string | null;
+      /** Photo Document Id */
+      photo_document_id: string | null;
+      /** Photo Url */
+      photo_url?: string | null;
+      /** Display Image Document Id */
+      display_image_document_id?: string | null;
+      /** Display Image Url */
+      display_image_url?: string | null;
+      /** Notes */
+      notes: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /**
+       * Is Complete
+       * @default true
+       */
+      is_complete: boolean;
+      /** Current Value Eur */
+      current_value_eur?: string | null;
+      /** Appreciation Eur */
+      appreciation_eur?: string | null;
+      /** Roi Pct */
+      roi_pct?: string | null;
+      /** Storage Label */
+      storage_label?: string | null;
+      set_model?: components['schemas']['LegoSetModelOut'] | null;
+    };
+    /** LegoSetInstancePage */
+    LegoSetInstancePage: {
+      /** Items */
+      items: components['schemas']['LegoSetInstanceOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      summary: components['schemas']['CollectionSummary'];
+    };
+    /** LegoSetInstanceUpdate */
+    LegoSetInstanceUpdate: {
+      /** Acquisition Date */
+      acquisition_date?: string | null;
+      /** Acquisition Cost Eur */
+      acquisition_cost_eur?: number | string | null;
+      /** Acquisition Source */
+      acquisition_source?: ('RETAIL' | 'SECONDHAND' | 'GIFT' | 'FS' | 'OTHER') | null;
+      /** Acquisition Transaction Id */
+      acquisition_transaction_id?: string | null;
+      /** Storage Location Id */
+      storage_location_id?: string | null;
+      /** Build State */
+      build_state?: ('SEALED' | 'BUILT' | 'DISASSEMBLED') | null;
+      /** Condition */
+      condition?: ('NEW' | 'GOOD' | 'WORN' | 'DAMAGED') | null;
+      /** Has Box */
+      has_box?: boolean | null;
+      /** Has Instructions */
+      has_instructions?: boolean | null;
+      /** Missing Parts */
+      missing_parts?: string | null;
+      /** Notes */
+      notes?: string | null;
+      /** Ownership Status */
+      ownership_status?: ('IN_COLLECTION' | 'SOLD' | 'GIFTED') | null;
+      /** Sale Price Eur */
+      sale_price_eur?: number | string | null;
+      /** Sale Date */
+      sale_date?: string | null;
+      /** Entity Id */
+      entity_id?: string | null;
+      /**
+       * Clear Storage Location
+       * @default false
+       */
+      clear_storage_location: boolean;
+      /**
+       * Clear Transaction Link
+       * @default false
+       */
+      clear_transaction_link: boolean;
+    };
+    /** LegoSetInstructionOut */
+    LegoSetInstructionOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Document Id
+       * Format: uuid
+       */
+      document_id: string;
+      /** Url */
+      url?: string | null;
+      /** Description */
+      description: string;
+      /** Language */
+      language?: string | null;
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+    };
+    /** LegoSetModelCreate */
+    LegoSetModelCreate: {
+      /** Set Number */
+      set_number?: string | null;
+      /**
+       * Is Custom
+       * @default false
+       */
+      is_custom: boolean;
+      /** Name */
+      name: string;
+      /** Theme */
+      theme?: string | null;
+      /** Subtheme */
+      subtheme?: string | null;
+      /** Release Date */
+      release_date?: string | null;
+      /** Retirement Date */
+      retirement_date?: string | null;
+      /** Piece Count */
+      piece_count?: number | null;
+      /** Minifig Count */
+      minifig_count?: number | null;
+      /** Age Min */
+      age_min?: number | null;
+      /** Age Max */
+      age_max?: number | null;
+      /** Box Height Cm */
+      box_height_cm?: number | string | null;
+      /** Box Width Cm */
+      box_width_cm?: number | string | null;
+      /** Box Depth Cm */
+      box_depth_cm?: number | string | null;
+      /** Box Weight Kg */
+      box_weight_kg?: number | string | null;
+      /** Rrp Eur */
+      rrp_eur?: number | string | null;
+      /** Current Value Eur */
+      current_value_eur?: number | string | null;
+      /** Short Description */
+      short_description?: string | null;
+      /** Notes */
+      notes?: string | null;
+      /** Entity Id */
+      entity_id?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+    };
+    /** LegoSetModelOut */
+    LegoSetModelOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /** Set Number */
+      set_number: string | null;
+      /** Is Custom */
+      is_custom: boolean;
+      /** Name */
+      name: string;
+      /** Theme */
+      theme: string | null;
+      /** Subtheme */
+      subtheme: string | null;
+      /** Release Date */
+      release_date: string | null;
+      /** Retirement Date */
+      retirement_date: string | null;
+      /** Piece Count */
+      piece_count: number | null;
+      /** Minifig Count */
+      minifig_count: number | null;
+      /** Age Min */
+      age_min: number | null;
+      /** Age Max */
+      age_max: number | null;
+      /** Box Height Cm */
+      box_height_cm: string | null;
+      /** Box Width Cm */
+      box_width_cm: string | null;
+      /** Box Depth Cm */
+      box_depth_cm: string | null;
+      /** Box Weight Kg */
+      box_weight_kg: string | null;
+      /** Rrp Eur */
+      rrp_eur: string | null;
+      /** Current Value Eur */
+      current_value_eur: string | null;
+      /** Value Updated At */
+      value_updated_at: string | null;
+      /** Image Document Id */
+      image_document_id: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /**
+       * Images
+       * @default []
+       */
+      images: components['schemas']['LegoSetImageOut'][];
+      /**
+       * Instructions
+       * @default []
+       */
+      instructions: components['schemas']['LegoSetInstructionOut'][];
+      /** Short Description */
+      short_description: string | null;
+      /** Notes */
+      notes: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /**
+       * Is Retired
+       * @default false
+       */
+      is_retired: boolean;
+      /** Release Year */
+      release_year?: number | null;
+      /** Retired Year */
+      retired_year?: number | null;
+      /**
+       * Value Is Stale
+       * @default false
+       */
+      value_is_stale: boolean;
+      /** Value Age Days */
+      value_age_days?: number | null;
+      /**
+       * Owned Copies Count
+       * @default 0
+       */
+      owned_copies_count: number;
+      /** Rrp Appreciation Eur */
+      rrp_appreciation_eur?: string | null;
+      /** Rrp Roi Pct */
+      rrp_roi_pct?: string | null;
+    };
+    /** LegoSetModelUpdate */
+    LegoSetModelUpdate: {
+      /** Set Number */
+      set_number?: string | null;
+      /** Name */
+      name?: string | null;
+      /** Theme */
+      theme?: string | null;
+      /** Subtheme */
+      subtheme?: string | null;
+      /** Release Date */
+      release_date?: string | null;
+      /** Retirement Date */
+      retirement_date?: string | null;
+      /** Piece Count */
+      piece_count?: number | null;
+      /** Minifig Count */
+      minifig_count?: number | null;
+      /** Age Min */
+      age_min?: number | null;
+      /** Age Max */
+      age_max?: number | null;
+      /** Box Height Cm */
+      box_height_cm?: number | string | null;
+      /** Box Width Cm */
+      box_width_cm?: number | string | null;
+      /** Box Depth Cm */
+      box_depth_cm?: number | string | null;
+      /** Box Weight Kg */
+      box_weight_kg?: number | string | null;
+      /** Rrp Eur */
+      rrp_eur?: number | string | null;
+      /** Current Value Eur */
+      current_value_eur?: number | string | null;
+      /** Short Description */
+      short_description?: string | null;
+      /** Notes */
+      notes?: string | null;
+      /** Entity Id */
+      entity_id?: string | null;
+    };
+    /** LinkRequest */
+    LinkRequest: {
+      /**
+       * Transaction Id
+       * Format: uuid
+       */
+      transaction_id: string;
+    };
+    /** LoginRequest */
+    LoginRequest: {
+      /** Email */
+      email: string;
+      /** Password */
+      password: string;
+    };
+    /** LookupRequest */
+    LookupRequest: {
+      /** Set Number */
+      set_number: string;
+    };
+    /** LookupResult */
+    LookupResult: {
+      /** Found */
+      found: boolean;
+      /**
+       * Provider
+       * @default brickset
+       */
+      provider: string;
+      /** Message */
+      message?: string | null;
+      /** Set Number */
+      set_number?: string | null;
+      /** Name */
+      name?: string | null;
+      /** Theme */
+      theme?: string | null;
+      /** Subtheme */
+      subtheme?: string | null;
+      /** Release Date */
+      release_date?: string | null;
+      /** Retirement Date */
+      retirement_date?: string | null;
+      /** Piece Count */
+      piece_count?: number | null;
+      /** Minifig Count */
+      minifig_count?: number | null;
+      /** Age Min */
+      age_min?: number | null;
+      /** Age Max */
+      age_max?: number | null;
+      /** Box Height Cm */
+      box_height_cm?: string | null;
+      /** Box Width Cm */
+      box_width_cm?: string | null;
+      /** Box Depth Cm */
+      box_depth_cm?: string | null;
+      /** Box Weight Kg */
+      box_weight_kg?: string | null;
+      /** Rrp Eur */
+      rrp_eur?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /** Short Description */
+      short_description?: string | null;
+      /**
+       * Additional Image Count
+       * @default 0
+       */
+      additional_image_count: number;
+      /**
+       * Instruction Count
+       * @default 0
+       */
+      instruction_count: number;
+    };
+    /** LoyaltyAllocationOut */
+    LoyaltyAllocationOut: {
+      /**
+       * Receipt Id
+       * Format: uuid
+       */
+      receipt_id: string;
+      /** Purchase Date */
+      purchase_date: string | null;
+      /** Merchant Name */
+      merchant_name: string | null;
+      /** Total Eur */
+      total_eur: string;
+      /** Loyalty Discount Eur */
+      loyalty_discount_eur: string;
+      /** Loyalty Accrued Eur */
+      loyalty_accrued_eur: string;
+      /** Allocated Across Items Eur */
+      allocated_across_items_eur: string;
+    };
+    /** LoyaltyGroupOut */
+    LoyaltyGroupOut: {
+      /** Scheme */
+      scheme: string | null;
+      /** Card Masked */
+      card_masked: string | null;
+      /** Receipt Count */
+      receipt_count: number;
+      /** Accrued Eur */
+      accrued_eur: string;
+      /** Discount Eur */
+      discount_eur: string;
+      /** First Purchase */
+      first_purchase: string | null;
+      /** Last Purchase */
+      last_purchase: string | null;
+    };
+    /** MasterProductCreate */
+    MasterProductCreate: {
+      /** Canonical Name */
+      canonical_name: string;
+      /** Brand */
+      brand?: string | null;
+      /** Category Id */
+      category_id?: string | null;
+      /**
+       * Sold By Weight
+       * @default false
+       */
+      sold_by_weight: boolean;
+      /** Pack Variants */
+      pack_variants?: components['schemas']['PackVariant'][];
+      /** Dietary Attributes */
+      dietary_attributes?: string[];
+      /** Allergen List */
+      allergen_list?: string[];
+      /** Seasonal Flags */
+      seasonal_flags?: string[];
+      /** Expected Shelf Life Days */
+      expected_shelf_life_days?: number | null;
+      /** Deposit Value Eur */
+      deposit_value_eur?: number | string | null;
+    };
+    /** MasterProductOut */
+    MasterProductOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Canonical Name */
+      canonical_name: string;
+      /** Brand */
+      brand: string | null;
+      /** Category Id */
+      category_id: string | null;
+      /** Category L1 Id */
+      category_l1_id: string | null;
+      /** Category L2 Id */
+      category_l2_id: string | null;
+      /** Category L3 Id */
+      category_l3_id: string | null;
+      /** Category Status */
+      category_status: string;
+      /** Category Confidence */
+      category_confidence: string | null;
+      /** Pack Variants */
+      pack_variants: unknown[];
+      /** Sold By Weight */
+      sold_by_weight: boolean;
+      /** Dietary Attributes */
+      dietary_attributes: unknown[];
+      /** Allergen List */
+      allergen_list: unknown[];
+      /** Seasonal Flags */
+      seasonal_flags: unknown[];
+      /** Expected Shelf Life Days */
+      expected_shelf_life_days: number | null;
+      /** Deposit Value Eur */
+      deposit_value_eur: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Category Path */
+      category_path?: string | null;
+      /**
+       * Alias Count
+       * @default 0
+       */
+      alias_count: number;
+      /**
+       * Occurrence Count
+       * @default 0
+       */
+      occurrence_count: number;
+      last_known_price?: components['schemas']['LastKnownPrice'] | null;
+    };
+    /** MasterProductUpdate */
+    MasterProductUpdate: {
+      /** Canonical Name */
+      canonical_name?: string | null;
+      /** Brand */
+      brand?: string | null;
+      /** Category Id */
+      category_id?: string | null;
+      /** Sold By Weight */
+      sold_by_weight?: boolean | null;
+      /** Pack Variants */
+      pack_variants?: components['schemas']['PackVariant'][] | null;
+      /** Dietary Attributes */
+      dietary_attributes?: string[] | null;
+      /** Allergen List */
+      allergen_list?: string[] | null;
+      /** Seasonal Flags */
+      seasonal_flags?: string[] | null;
+      /** Expected Shelf Life Days */
+      expected_shelf_life_days?: number | null;
+      /** Deposit Value Eur */
+      deposit_value_eur?: number | string | null;
+    };
+    /** MemberCreate */
+    MemberCreate: {
+      /** Display Name */
+      display_name: string;
+      /** Email */
+      email?: string | null;
+      /**
+       * Role
+       * @default MEMBER
+       * @enum {string}
+       */
+      role: 'OWNER' | 'MEMBER' | 'VIEWER';
+      /** Temporary Password */
+      temporary_password?: string | null;
+      /**
+       * Is Dependent
+       * @default false
+       */
+      is_dependent: boolean;
+    };
+    /** MemberOut */
+    MemberOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string;
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: 'OWNER' | 'MEMBER' | 'VIEWER';
+      /**
+       * Joined At
+       * Format: date-time
+       */
+      joined_at: string;
+      /** Left At */
+      left_at: string | null;
+      /** Display Name */
+      display_name: string;
+      /** Email */
+      email: string | null;
+      /** Is Dependent */
+      is_dependent: boolean;
+      /** Is Active */
+      is_active: boolean;
+    };
+    /** MemberUpdate */
+    MemberUpdate: {
+      /** Display Name */
+      display_name?: string | null;
+      /** Email */
+      email?: string | null;
+      /** Role */
+      role?: ('OWNER' | 'MEMBER' | 'VIEWER') | null;
+      /** Is Dependent */
+      is_dependent?: boolean | null;
+      /** New Password */
+      new_password?: string | null;
+    };
+    /** MerchantIn */
+    MerchantIn: {
+      /** Name */
+      name: string;
+      /** Nif */
+      nif?: string | null;
+      /**
+       * Kind
+       * @default OTHER
+       */
+      kind: string;
+      /** Website */
+      website?: string | null;
+      /** Aliases */
+      aliases?: string[];
+    };
+    /** MerchantOut */
+    MerchantOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Nif */
+      nif: string | null;
+      /** Kind */
+      kind: string;
+      /** Website */
+      website: string | null;
+      /** Aliases */
+      aliases: string[];
+    };
+    /** MergeCandidate */
+    MergeCandidate: {
+      /** Key */
+      key: string;
+      /** Products */
+      products: components['schemas']['MergeCandidateProduct'][];
+    };
+    /** MergeCandidateProduct */
+    MergeCandidateProduct: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Canonical Name */
+      canonical_name: string;
+      /** Brand */
+      brand?: string | null;
+    };
+    /** MergeRequest */
+    MergeRequest: {
+      /**
+       * Source Id
+       * Format: uuid
+       */
+      source_id: string;
+    };
+    /**
+     * ModuleBackupReport
+     * @description What one module's restore actually did, in module-agnostic shape.
+     */
+    ModuleBackupReport: {
+      /** Module */
+      module: string;
+      /** Label */
+      label: string;
+      /** Counts */
+      counts: {
+        [key: string]: number;
+      };
+      /** Skipped */
+      skipped: {
+        [key: string]: number;
+      };
+    };
+    /** ModuleTile */
+    ModuleTile: {
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'LIVE' | 'PLANNED';
+      /** Primary Value */
+      primary_value?: string | null;
+      /** Primary Label */
+      primary_label?: string | null;
+      /** Secondary Value */
+      secondary_value?: string | null;
+      /** Secondary Label */
+      secondary_label?: string | null;
+      /** Href */
+      href?: string | null;
+    };
+    /** Ok */
+    Ok: {
+      /**
+       * Ok
+       * @default true
+       */
+      ok: boolean;
+      /** Message */
+      message?: string | null;
+    };
+    /** OverviewOut */
+    OverviewOut: {
+      /** Total Cost Eur */
+      total_cost_eur: string;
+      /** Total Value Eur */
+      total_value_eur: string;
+      /** Unrealized Gain Eur */
+      unrealized_gain_eur: string;
+      /** Roi Pct */
+      roi_pct: string | null;
+      /** Unique Sets */
+      unique_sets: number;
+      /** Copies Owned */
+      copies_owned: number;
+      /** Total Pieces */
+      total_pieces: number;
+      /** Total Minifigs */
+      total_minifigs: number;
+      /** Retired Sets */
+      retired_sets: number;
+      /** Models Without Value */
+      models_without_value: number;
+      /** Stale Value Models */
+      stale_value_models: number;
+      /** Oldest Value Updated At */
+      oldest_value_updated_at: string | null;
+      /** Stale Threshold Days */
+      stale_threshold_days: number;
+      /** Departed Copies */
+      departed_copies: number;
+      /** Departed Sale Total Eur */
+      departed_sale_total_eur: string;
+      /** Themes */
+      themes: components['schemas']['ThemeBreakdown'][];
+      /** Timeline */
+      timeline: components['schemas']['TimelinePoint'][];
+      /** Copies Without Date */
+      copies_without_date: number;
+      /** Top Gainers */
+      top_gainers: components['schemas']['LegoSetInstanceOut'][];
+      /** Top Losers */
+      top_losers: components['schemas']['LegoSetInstanceOut'][];
+      /** Locations Full */
+      locations_full: number;
+      /** Locations Total */
+      locations_total: number;
+    };
+    /**
+     * PackVariant
+     * @description One pack size. A 500 g and a 1 kg bag are one product with two variants.
+     */
+    PackVariant: {
+      /** Label */
+      label?: string | null;
+      /** Weight Kg */
+      weight_kg?: number | string | null;
+      /** Barcode */
+      barcode?: string | null;
+    };
+    /**
+     * PackVariantAdd
+     * @description Append one format to a product. Idempotent on the weight, so the review
+     *     pane can add what it just read off a line without knowing the other formats.
+     */
+    PackVariantAdd: {
+      /** Weight Kg */
+      weight_kg: number | string;
+      /** Label */
+      label?: string | null;
+      /** Barcode */
+      barcode?: string | null;
+    };
+    /** Page[LegoSetModelOut] */
+    Page_LegoSetModelOut_: {
+      /** Items */
+      items: components['schemas']['LegoSetModelOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /** Page[MasterProductOut] */
+    Page_MasterProductOut_: {
+      /** Items */
+      items: components['schemas']['MasterProductOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /** Page[ProductSummary] */
+    Page_ProductSummary_: {
+      /** Items */
+      items: components['schemas']['ProductSummary'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /** Page[ReceiptItemOut] */
+    Page_ReceiptItemOut_: {
+      /** Items */
+      items: components['schemas']['ReceiptItemOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /** Page[ReceiptSummary] */
+    Page_ReceiptSummary_: {
+      /** Items */
+      items: components['schemas']['ReceiptSummary'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /** Page[ReviewTaskOut] */
+    Page_ReviewTaskOut_: {
+      /** Items */
+      items: components['schemas']['ReviewTaskOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /** ParserOption */
+    ParserOption: {
+      /** Parser Key */
+      parser_key: string;
+      /** Display Name */
+      display_name: string;
+    };
+    /** ParserProfileIn */
+    ParserProfileIn: {
+      /** Merchant Id */
+      merchant_id?: string | null;
+      /** Name */
+      name: string;
+      /** Parser Key */
+      parser_key: string;
+      /** Document Kinds */
+      document_kinds?: string[];
+      /** Detection Patterns */
+      detection_patterns?: string[];
+      /** Field Hints */
+      field_hints?: Record<string, never>;
+      /**
+       * Priority
+       * @default 0
+       */
+      priority: number;
+      /**
+       * Is Active
+       * @default true
+       */
+      is_active: boolean;
+    };
+    /** ParserProfileOut */
+    ParserProfileOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Merchant Id */
+      merchant_id: string | null;
+      /** Merchant Name */
+      merchant_name?: string | null;
+      /** Name */
+      name: string;
+      /** Parser Key */
+      parser_key: string;
+      /** Document Kinds */
+      document_kinds: unknown[];
+      /** Detection Patterns */
+      detection_patterns: unknown[];
+      /** Field Hints */
+      field_hints: Record<string, never>;
+      /** Priority */
+      priority: number;
+      /** Success Rate */
+      success_rate: string | null;
+      /** Is Active */
+      is_active: boolean;
+      /**
+       * Is Generic
+       * @default false
+       */
+      is_generic: boolean;
+    };
+    /** ParserProfileUpdate */
+    ParserProfileUpdate: {
+      /** Name */
+      name?: string | null;
+      /** Parser Key */
+      parser_key?: string | null;
+      /** Document Kinds */
+      document_kinds?: string[] | null;
+      /** Detection Patterns */
+      detection_patterns?: string[] | null;
+      /** Field Hints */
+      field_hints?: Record<string, never> | null;
+      /** Priority */
+      priority?: number | null;
+      /** Is Active */
+      is_active?: boolean | null;
+    };
+    /** PasswordChange */
+    PasswordChange: {
+      /** Current Password */
+      current_password: string;
+      /** New Password */
+      new_password: string;
+    };
+    /** PriceHistoryOut */
+    PriceHistoryOut: {
+      /**
+       * Master Product Id
+       * Format: uuid
+       */
+      master_product_id: string;
+      /** Canonical Name */
+      canonical_name: string;
+      /** Sold By Weight */
+      sold_by_weight: boolean;
+      /** Points */
+      points: components['schemas']['PricePointOut'][];
+      /** Shrinkflation */
+      shrinkflation: components['schemas']['ShrinkflationOut'][];
+    };
+    /** PricePointOut */
+    PricePointOut: {
+      /**
+       * Observed On
+       * Format: date
+       */
+      observed_on: string;
+      /**
+       * Merchant Id
+       * Format: uuid
+       */
+      merchant_id: string;
+      /** Merchant Name */
+      merchant_name: string | null;
+      /** Is Fs */
+      is_fs: boolean;
+      /** Weight Kg */
+      weight_kg: string | null;
+      /** List Price Eur */
+      list_price_eur: string;
+      /** Paid Price Eur */
+      paid_price_eur: string;
+      /** List Price Per Kg Eur */
+      list_price_per_kg_eur: string | null;
+      /** Paid Price Per Kg Eur */
+      paid_price_per_kg_eur: string | null;
+    };
+    /** ProductAliasOut */
+    ProductAliasOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Master Product Id
+       * Format: uuid
+       */
+      master_product_id: string;
+      /**
+       * Merchant Id
+       * Format: uuid
+       */
+      merchant_id: string;
+      /** Merchant Name */
+      merchant_name?: string | null;
+      /** Merchant Description */
+      merchant_description: string;
+      /** Confidence */
+      confidence: string;
+      /** Correction Count */
+      correction_count: number;
+      /** Last Used At */
+      last_used_at: string | null;
+    };
+    /** ProductOccurrence */
+    ProductOccurrence: {
+      /**
+       * Receipt Item Id
+       * Format: uuid
+       */
+      receipt_item_id: string;
+      /**
+       * Receipt Id
+       * Format: uuid
+       */
+      receipt_id: string;
+      /** Purchase Date */
+      purchase_date: string | null;
+      /** Merchant Name */
+      merchant_name: string | null;
+      /** Description Raw */
+      description_raw: string;
+      /** Quantity */
+      quantity: string;
+      /** Unit */
+      unit: string;
+      /** Unit Price Pvp Eur */
+      unit_price_pvp_eur: string;
+      /** Paid Price Eur */
+      paid_price_eur: string;
+      /** Price Per Kg Final Eur */
+      price_per_kg_final_eur: string | null;
+      /** Is Fs */
+      is_fs: boolean;
+    };
+    /**
+     * ProductSearchResult
+     * @description What every picker pre-fills from: identity, category and last known price.
+     */
+    ProductSearchResult: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Canonical Name */
+      canonical_name: string;
+      /** Brand */
+      brand: string | null;
+      /** Category Id */
+      category_id: string | null;
+      /** Category Path */
+      category_path: string | null;
+      /** Sold By Weight */
+      sold_by_weight: boolean;
+      /** Score */
+      score: number;
+      last_known_price?: components['schemas']['LastKnownPrice'] | null;
+    };
+    /**
+     * ProductSummary
+     * @description One row per product across every invoice in scope.
+     *
+     *     ``price_per_kg_eur`` is weighted by weight, not an average of the per-line
+     *     quotients: averaging rates would let a 200 g purchase count as much as a 5 kg
+     *     one. Lines with no weight are left out of it entirely rather than guessed.
+     */
+    ProductSummary: {
+      /**
+       * Master Product Id
+       * Format: uuid
+       */
+      master_product_id: string;
+      /** Canonical Name */
+      canonical_name: string;
+      /** Brand */
+      brand: string | null;
+      /** Category Path */
+      category_path: string | null;
+      /** Sold By Weight */
+      sold_by_weight: boolean;
+      /** Line Count */
+      line_count: number;
+      /** Receipt Count */
+      receipt_count: number;
+      /** Total Quantity */
+      total_quantity: string;
+      /** Total Weight Kg */
+      total_weight_kg: string | null;
+      /** Total Paid Eur */
+      total_paid_eur: string;
+      /** Total Notional Eur */
+      total_notional_eur: string;
+      /** Price Per Kg Eur */
+      price_per_kg_eur: string | null;
+      /** First Purchase On */
+      first_purchase_on: string | null;
+      /** Last Purchase On */
+      last_purchase_on: string | null;
+    };
+    /**
+     * ProfileTestResult
+     * @description Re-parse a stored document with a chosen profile and diff the result.
+     */
+    ProfileTestResult: {
+      /** Parser Key */
+      parser_key: string;
+      /** Item Count */
+      item_count: number;
+      /** Total Eur */
+      total_eur: string | null;
+      /** Computed Total Eur */
+      computed_total_eur: string;
+      /** Is Reconciled */
+      is_reconciled: boolean;
+      /** Confidence */
+      confidence: string;
+      /** Decision Reasons */
+      decision_reasons: unknown[];
+      /** Items */
+      items: Record<string, never>[];
+      /** Diff Vs Current */
+      diff_vs_current: Record<string, never>;
+    };
+    /** ProfileUpdate */
+    ProfileUpdate: {
+      /** Display Name */
+      display_name?: string | null;
+      /** Locale */
+      locale?: string | null;
+      /** Timezone */
+      timezone?: string | null;
+    };
+    /** QueueEntry */
+    QueueEntry: {
+      /** Receipt Id */
+      receipt_id: string | null;
+      /**
+       * Processing Job Id
+       * Format: uuid
+       */
+      processing_job_id: string;
+      /** Status */
+      status: string;
+      /** Job Status */
+      job_status: string;
+      /** Attempts */
+      attempts: number;
+      /** Max Attempts */
+      max_attempts: number;
+      /** Last Error */
+      last_error: string | null;
+      /** Parser Profile Name */
+      parser_profile_name: string | null;
+      /** Merchant Name */
+      merchant_name: string | null;
+      /** Filename */
+      filename: string | null;
+      /** Confidence */
+      confidence: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Completed At */
+      completed_at: string | null;
+    };
+    /** ReceiptDerived */
+    ReceiptDerived: {
+      /** Computed Total Eur */
+      computed_total_eur: string;
+      /** Subtotal Eur */
+      subtotal_eur: string;
+      /** Fs Value Eur */
+      fs_value_eur: string;
+      /** Fs Item Count */
+      fs_item_count: number;
+      /** Fs Share Pct */
+      fs_share_pct: string | null;
+      /** Notional Total Eur */
+      notional_total_eur: string;
+      /** Printed Item Count */
+      printed_item_count: number;
+      /** Refund Item Count */
+      refund_item_count: number;
+      /** Is Return */
+      is_return: boolean;
+      /** Is Reconciled */
+      is_reconciled: boolean;
+      /** Reconciliation Delta Eur */
+      reconciliation_delta_eur: string;
+      /** Invoice Discount Ratio */
+      invoice_discount_ratio: string | null;
+      /** Item Count Matches */
+      item_count_matches: boolean;
+      /** Is Complete */
+      is_complete: boolean;
+    };
+    /** ReceiptDetail */
+    ReceiptDetail: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /** Merchant Id */
+      merchant_id: string | null;
+      /** Merchant Name */
+      merchant_name?: string | null;
+      /** Purchase Date */
+      purchase_date: string | null;
+      /** Purchased At */
+      purchased_at: string | null;
+      /** Total Eur */
+      total_eur: string;
+      /** Total Discount Eur */
+      total_discount_eur: string;
+      /** Item Count */
+      item_count: number | null;
+      /** Status */
+      status: string;
+      /** Confidence */
+      confidence: string | null;
+      /** Atcud Code */
+      atcud_code: string | null;
+      /** Document Id */
+      document_id: string | null;
+      /** Loyalty Scheme */
+      loyalty_scheme: string | null;
+      /**
+       * Fs Value Eur
+       * @default 0.00
+       */
+      fs_value_eur: string;
+      /**
+       * Fs Item Count
+       * @default 0
+       */
+      fs_item_count: number;
+      /**
+       * Printed Item Count
+       * @default 0
+       */
+      printed_item_count: number;
+      /**
+       * Notional Total Eur
+       * @default 0.00
+       */
+      notional_total_eur: string;
+      /**
+       * Is Reconciled
+       * @default true
+       */
+      is_reconciled: boolean;
+      /** Parser Profile Id */
+      parser_profile_id?: string | null;
+      /** Parser Profile Name */
+      parser_profile_name?: string | null;
+      /** Processing Job Id */
+      processing_job_id: string | null;
+      /** Import Batch Id */
+      import_batch_id: string | null;
+      /** Atcud Valid */
+      atcud_valid: boolean | null;
+      /** Atcud Reason */
+      atcud_reason: string | null;
+      /** Parsed Payment Methods */
+      parsed_payment_methods: unknown[];
+      /** Loyalty Card Masked */
+      loyalty_card_masked: string | null;
+      /** Loyalty Accrued Eur */
+      loyalty_accrued_eur: string;
+      /** Loyalty Discount Eur */
+      loyalty_discount_eur: string;
+      /** Decision Reasons */
+      decision_reasons: unknown[];
+      /** Notes */
+      notes: string | null;
+      /** Void Reason */
+      void_reason: string | null;
+      /** Document Url */
+      document_url?: string | null;
+      /** Document Mime Type */
+      document_mime_type?: string | null;
+      /** Document Filename */
+      document_filename?: string | null;
+      /** Items */
+      items: components['schemas']['ReceiptItemOut'][];
+      derived: components['schemas']['ReceiptDerived'];
+    };
+    /** ReceiptItemOut */
+    ReceiptItemOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Receipt Id
+       * Format: uuid
+       */
+      receipt_id: string;
+      /** Line No */
+      line_no: number | null;
+      /** Merchant Section */
+      merchant_section: string | null;
+      /** Description Raw */
+      description_raw: string;
+      /** Master Product Id */
+      master_product_id: string | null;
+      /** Quantity */
+      quantity: string;
+      /** Unit */
+      unit: string;
+      /** Quantity Canonical */
+      quantity_canonical: string;
+      /** Unit Canonical */
+      unit_canonical: string;
+      /** Weight Listed Kg */
+      weight_listed_kg: string | null;
+      /** Weight Observed Kg */
+      weight_observed_kg: string | null;
+      /** Is Bulk Weighed */
+      is_bulk_weighed: boolean;
+      /** Unit Price Pvp Eur */
+      unit_price_pvp_eur: string;
+      /** Promo Discount Eur */
+      promo_discount_eur: string;
+      /** Promo Type */
+      promo_type: string | null;
+      /** Invoice Allocated Discount Eur */
+      invoice_allocated_discount_eur: string;
+      /** Paid Price Eur */
+      paid_price_eur: string;
+      /** Iva Class Raw */
+      iva_class_raw: string | null;
+      /** Is Fs */
+      is_fs: boolean;
+      /** Notional Value Source */
+      notional_value_source: string | null;
+      /** Product Flag */
+      product_flag: string | null;
+      /** Notes */
+      notes: string | null;
+      /** Confidence */
+      confidence: string | null;
+      /** Decision Reasons */
+      decision_reasons: unknown[];
+      /** Weight Kg */
+      weight_kg?: string | null;
+      /** Price Per Kg Pvp Eur */
+      price_per_kg_pvp_eur?: string | null;
+      /** Price Per Kg Promo Eur */
+      price_per_kg_promo_eur?: string | null;
+      /** Price Per Kg Final Eur */
+      price_per_kg_final_eur?: string | null;
+      /** Price Per Kg Unavailable Reason */
+      price_per_kg_unavailable_reason?: string | null;
+      /** Notional Value Eur */
+      notional_value_eur?: string | null;
+      /** Display Name */
+      display_name?: string | null;
+      /** Category Path */
+      category_path?: string | null;
+      /** Category Status */
+      category_status?: string | null;
+      /**
+       * Sold By Weight
+       * @default false
+       */
+      sold_by_weight: boolean;
+      /** Pack Weight Is Known */
+      pack_weight_is_known?: boolean | null;
+    };
+    /** ReceiptItemUpdate */
+    ReceiptItemUpdate: {
+      /** Line No */
+      line_no?: number | null;
+      /** Description Raw */
+      description_raw?: string | null;
+      /** Quantity */
+      quantity?: number | string | null;
+      /** Unit */
+      unit?: string | null;
+      /** Unit Price Pvp Eur */
+      unit_price_pvp_eur?: number | string | null;
+      /** Promo Discount Eur */
+      promo_discount_eur?: number | string | null;
+      /** Promo Type */
+      promo_type?: string | null;
+      /** Weight Observed Kg */
+      weight_observed_kg?: number | string | null;
+      /** Weight Listed Kg */
+      weight_listed_kg?: number | string | null;
+      /** Is Bulk Weighed */
+      is_bulk_weighed?: boolean | null;
+      /** Product Flag */
+      product_flag?: string | null;
+      /** Notes */
+      notes?: string | null;
+    };
+    /**
+     * ReceiptLinkOut
+     * @description The receipt↔transaction edge, and whether a ledger exists to link to.
+     */
+    ReceiptLinkOut: {
+      /** Ledger Available */
+      ledger_available: boolean;
+      /** Message */
+      message?: string | null;
+      /** Link Id */
+      link_id?: string | null;
+      /** Transaction Id */
+      transaction_id?: string | null;
+      /** Status */
+      status?: string | null;
+      /** Confidence */
+      confidence?: string | null;
+      /** Decision Reasons */
+      decision_reasons?: unknown[];
+    };
+    /** ReceiptSummary */
+    ReceiptSummary: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /** Merchant Id */
+      merchant_id: string | null;
+      /** Merchant Name */
+      merchant_name?: string | null;
+      /** Purchase Date */
+      purchase_date: string | null;
+      /** Purchased At */
+      purchased_at: string | null;
+      /** Total Eur */
+      total_eur: string;
+      /** Total Discount Eur */
+      total_discount_eur: string;
+      /** Item Count */
+      item_count: number | null;
+      /** Status */
+      status: string;
+      /** Confidence */
+      confidence: string | null;
+      /** Atcud Code */
+      atcud_code: string | null;
+      /** Document Id */
+      document_id: string | null;
+      /** Loyalty Scheme */
+      loyalty_scheme: string | null;
+      /**
+       * Fs Value Eur
+       * @default 0.00
+       */
+      fs_value_eur: string;
+      /**
+       * Fs Item Count
+       * @default 0
+       */
+      fs_item_count: number;
+      /**
+       * Printed Item Count
+       * @default 0
+       */
+      printed_item_count: number;
+      /**
+       * Notional Total Eur
+       * @default 0.00
+       */
+      notional_total_eur: string;
+      /**
+       * Is Reconciled
+       * @default true
+       */
+      is_reconciled: boolean;
+      /** Parser Profile Id */
+      parser_profile_id?: string | null;
+      /** Parser Profile Name */
+      parser_profile_name?: string | null;
+    };
+    /** ReceiptUpdate */
+    ReceiptUpdate: {
+      /** Merchant Id */
+      merchant_id?: string | null;
+      /** Purchase Date */
+      purchase_date?: string | null;
+      /** Total Eur */
+      total_eur?: number | string | null;
+      /** Total Discount Eur */
+      total_discount_eur?: number | string | null;
+      /** Item Count */
+      item_count?: number | null;
+      /** Loyalty Scheme */
+      loyalty_scheme?: string | null;
+      /** Loyalty Discount Eur */
+      loyalty_discount_eur?: number | string | null;
+      /** Loyalty Accrued Eur */
+      loyalty_accrued_eur?: number | string | null;
+      /** Notes */
+      notes?: string | null;
+    };
+    /** ReviewResolution */
+    ReviewResolution: {
+      /**
+       * Action
+       * @enum {string}
+       */
+      action: 'CONFIRMED' | 'FIXED' | 'DISMISSED';
+      /** Payload */
+      payload?: Record<string, never> | null;
+    };
+    /** ReviewSummary */
+    ReviewSummary: {
+      /** Pending */
+      pending: number;
+      /** By Module */
+      by_module: {
+        [key: string]: number;
+      };
+    };
+    /** ReviewTaskOut */
+    ReviewTaskOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /** Module */
+      module: string;
+      /** Subject Type */
+      subject_type: string;
+      /**
+       * Subject Id
+       * Format: uuid
+       */
+      subject_id: string;
+      /** Confidence */
+      confidence: number | null;
+      /** Suggested Payload */
+      suggested_payload: Record<string, never>;
+      /** Decision Reasons */
+      decision_reasons: unknown[];
+      /** Status */
+      status: string;
+      /** Title */
+      title: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Resolved At */
+      resolved_at: string | null;
+    };
+    /** SessionOut */
+    SessionOut: {
+      user: components['schemas']['UserOut'];
+      /**
+       * Household Id
+       * Format: uuid
+       */
+      household_id: string;
+      /** Household Name */
+      household_name: string;
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: 'OWNER' | 'MEMBER' | 'VIEWER';
+      /** Active Entity Id */
+      active_entity_id: string | null;
+      /** Csrf Token */
+      csrf_token: string;
+      /**
+       * Expires At
+       * Format: date-time
+       */
+      expires_at: string;
+    };
+    /** SettingsOut */
+    SettingsOut: {
+      /** Values */
+      values: Record<string, never>;
+    };
+    /** SettingsUpdate */
+    SettingsUpdate: {
+      /** Values */
+      values: Record<string, never>;
+    };
+    /** SetupRequest */
+    SetupRequest: {
+      /** Household Name */
+      household_name: string;
+      /** Display Name */
+      display_name: string;
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Password */
+      password: string;
+    };
+    /**
+     * SetupStatus
+     * @description Public probe: is this installation still waiting to be configured?
+     */
+    SetupStatus: {
+      /** Needs Setup */
+      needs_setup: boolean;
+    };
+    /**
+     * ShrinkflationOut
+     * @description ``(current_weight / avg_weight_12m) - (current_price / avg_price_12m)``.
+     */
+    ShrinkflationOut: {
+      /**
+       * Master Product Id
+       * Format: uuid
+       */
+      master_product_id: string;
+      /** Canonical Name */
+      canonical_name: string;
+      /**
+       * Merchant Id
+       * Format: uuid
+       */
+      merchant_id: string;
+      /** Merchant Name */
+      merchant_name: string | null;
+      /** Observations */
+      observations: number;
+      /** Current Weight Kg */
+      current_weight_kg: string;
+      /** Average Weight Kg */
+      average_weight_kg: string;
+      /** Current Price Eur */
+      current_price_eur: string;
+      /** Average Price Eur */
+      average_price_eur: string;
+      /** Margin Signal */
+      margin_signal: string;
+      /**
+       * Observed On
+       * Format: date
+       */
+      observed_on: string;
+    };
+    /**
+     * StatusBoard
+     * @description UX-1.5 «Estado» — every figure links to the list that resolves it.
+     */
+    StatusBoard: {
+      /** Total Receipts */
+      total_receipts: number;
+      /** To Process */
+      to_process: number;
+      /** Failed Jobs */
+      failed_jobs: number;
+      /** To Validate */
+      to_validate: number;
+      /** Total Lines */
+      total_lines: number;
+      /** Unresolved Lines */
+      unresolved_lines: number;
+      /** Resolved Lines */
+      resolved_lines: number;
+      /** Uncategorized Products */
+      uncategorized_products: number;
+      /** Total Products */
+      total_products: number;
+      /** Merge Candidates */
+      merge_candidates: number;
+      /** Observed Auto Accept Rate */
+      observed_auto_accept_rate: number | null;
+      /** Decided Receipts */
+      decided_receipts: number;
+    };
+    /** StorageLocationCreate */
+    StorageLocationCreate: {
+      /** Area */
+      area: string;
+      /** Container */
+      container?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Capacity Pct */
+      capacity_pct?: number | null;
+    };
+    /** StorageLocationOut */
+    StorageLocationOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Area */
+      area: string;
+      /** Container */
+      container: string | null;
+      /** Description */
+      description: string | null;
+      /** Capacity Pct */
+      capacity_pct: number | null;
+      /** Label */
+      label: string;
+      /**
+       * Stored Count
+       * @default 0
+       */
+      stored_count: number;
+      /**
+       * Stored Value Eur
+       * @default 0.00
+       */
+      stored_value_eur: string;
+      /** Remaining Capacity Pct */
+      remaining_capacity_pct?: number | null;
+      /**
+       * Is Full
+       * @default false
+       */
+      is_full: boolean;
+    };
+    /** StorageLocationUpdate */
+    StorageLocationUpdate: {
+      /** Area */
+      area?: string | null;
+      /** Container */
+      container?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Capacity Pct */
+      capacity_pct?: number | null;
+    };
+    /** SuggestionResponse */
+    SuggestionResponse: {
+      /** Ledger Available */
+      ledger_available: boolean;
+      /** Message */
+      message?: string | null;
+      /** Items */
+      items: components['schemas']['TransactionSuggestion'][];
+    };
+    /** TagIn */
+    TagIn: {
+      /** Name */
+      name: string;
+      /** Color */
+      color?: string | null;
+    };
+    /** TagOut */
+    TagOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Color */
+      color: string | null;
+    };
+    /**
+     * TagsUpdate
+     * @description Open user labels with **no effect on any total** (FR-1.5).
+     */
+    TagsUpdate: {
+      /** Tags */
+      tags: string[];
+    };
+    /** ThemeBreakdown */
+    ThemeBreakdown: {
+      /** Theme */
+      theme: string;
+      /** Copies */
+      copies: number;
+      /** Unique Sets */
+      unique_sets: number;
+      /** Cost Eur */
+      cost_eur: string;
+      /** Value Eur */
+      value_eur: string;
+    };
+    /**
+     * TimelinePoint
+     * @description One month of the acquisition curve.
+     *
+     *     ``value_eur`` is **today's** market value of everything acquired up to that
+     *     month — not a historical quote. There is no valuation snapshot table by design
+     *     (ADR-0008), so a true market-value history cannot be drawn.
+     */
+    TimelinePoint: {
+      /** Month */
+      month: string;
+      /** Copies */
+      copies: number;
+      /** Cost Eur */
+      cost_eur: string;
+      /** Value Eur */
+      value_eur: string;
+    };
+    /** TransactionSuggestion */
+    TransactionSuggestion: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Booked Date
+       * Format: date
+       */
+      booked_date: string;
+      /** Description */
+      description: string;
+      /** Amount Eur */
+      amount_eur: string;
+      /** Account Label */
+      account_label?: string | null;
+      /** Score */
+      score: number;
+    };
+    /** UploadResponse */
+    UploadResponse: {
+      /** Items */
+      items: components['schemas']['UploadedReceipt'][];
+    };
+    /** UploadedReceipt */
+    UploadedReceipt: {
+      /**
+       * Receipt Id
+       * Format: uuid
+       */
+      receipt_id: string;
+      /**
+       * Processing Job Id
+       * Format: uuid
+       */
+      processing_job_id: string;
+      /** Filename */
+      filename: string | null;
+      /** Created */
+      created: boolean;
+      /** Message */
+      message?: string | null;
+    };
+    /** UserOut */
+    UserOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Email */
+      email: string | null;
+      /** Display Name */
+      display_name: string;
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: 'OWNER' | 'MEMBER' | 'VIEWER';
+      /** Is Dependent */
+      is_dependent: boolean;
+      /** Must Change Password */
+      must_change_password: boolean;
+      /** Locale */
+      locale: string;
+      /** Timezone */
+      timezone: string;
+      /** Is Deleted */
+      is_deleted: boolean;
+    };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+    };
+    /** VoidRequest */
+    VoidRequest: {
+      /** Reason */
+      reason: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    health_api_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
-        };
-    };
-    status_api_setup_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SetupStatus"];
-                };
-            };
-        };
-    };
-    create_first_owner_api_setup_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetupRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    login_api_auth_login_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    logout_api_auth_logout_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-        };
-    };
-    me_api_auth_me_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionOut"];
-                };
-            };
-        };
-    };
-    change_password_api_auth_password_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordChange"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_api_auth_profile_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_members_api_members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberOut"][];
-                };
-            };
-        };
-    };
-    create_member_api_members_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_member_api_members__member_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_member_api_members__member_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_entities_api_entities_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EntityOut"][];
-                };
-            };
-        };
-    };
-    create_entity_api_entities_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EntityCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EntityOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_entity_api_entities__entity_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entity_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EntityUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EntityOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    switch_entity_api_sessions_entity_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EntitySwitch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EntitySwitchResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_merchants_api_merchants_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MerchantOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_merchant_api_merchants_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MerchantIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MerchantOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_merchant_api_merchants__merchant_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                merchant_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_merchant_api_merchants__merchant_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                merchant_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MerchantIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MerchantOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_categories_api_categories_get: {
-        parameters: {
-            query?: {
-                domain?: string | null;
-                level?: number | null;
-                parent_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_category_api_categories_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CategoryCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategorySearchResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_tags_api_tags_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagOut"][];
-                };
-            };
-        };
-    };
-    create_tag_api_tags_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_tag_api_tags__tag_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tag_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    overview_api_lego_overview_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OverviewOut"];
-                };
-            };
-        };
-    };
-    list_models_api_lego_models_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                theme?: string | null;
-                stale_only?: boolean;
-                no_value_only?: boolean;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_LegoSetModelOut_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_model_api_lego_models_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LegoSetModelCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    lookup_api_lego_models_lookup_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LookupRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LookupResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_model_api_lego_models__model_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_model_api_lego_models__model_id__delete: {
-        parameters: {
-            query?: {
-                hard?: boolean;
-            };
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_model_api_lego_models__model_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LegoSetModelUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    model_instances_api_lego_models__model_id__instances_get: {
-        parameters: {
-            query?: {
-                ownership_status?: string | null;
-            };
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstanceOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_model_image_api_lego_models__model_id__image_put: {
-        parameters: {
-            query?: {
-                url?: string | null;
-            };
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_set_model_image_api_lego_models__model_id__image_put"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_model_image_api_lego_models__model_id__images_post: {
-        parameters: {
-            query?: {
-                url?: string | null;
-                caption?: string | null;
-            };
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_add_model_image_api_lego_models__model_id__images_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_model_instruction_api_lego_models__model_id__instructions_post: {
-        parameters: {
-            query: {
-                description: string;
-                url?: string | null;
-                language?: string | null;
-            };
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_add_model_instruction_api_lego_models__model_id__instructions_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_model_image_api_lego_models__model_id__images__image_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-                image_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_model_image_api_lego_models__model_id__images__image_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-                image_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LegoSetImageUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    promote_model_image_api_lego_models__model_id__images__image_id__cover_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-                image_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    import_from_brickset_api_lego_models__model_id__brickset_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BricksetImportOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                model_id: string;
-                instruction_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetModelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_instances_api_lego_instances_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                theme?: string | null;
-                storage_location_id?: string | null;
-                storage_area?: string | null;
-                build_state?: string | null;
-                condition?: string | null;
-                ownership_status?: string | null;
-                completeness?: "all" | "complete" | "incomplete";
-                retirement?: "all" | "retired" | "available";
-                copies?: "all" | "single" | "multiple";
-                sort?: string;
-                direction?: string;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstancePage"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_instance_api_lego_instances_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LegoSetInstanceCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstanceOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_instance_api_lego_instances__instance_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                instance_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstanceOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_instance_api_lego_instances__instance_id__delete: {
-        parameters: {
-            query?: {
-                hard?: boolean;
-            };
-            header?: never;
-            path: {
-                instance_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_instance_api_lego_instances__instance_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                instance_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LegoSetInstanceUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstanceOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_instance_photo_api_lego_instances__instance_id__photo_put: {
-        parameters: {
-            query?: {
-                url?: string | null;
-            };
-            header?: never;
-            path: {
-                instance_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_set_instance_photo_api_lego_instances__instance_id__photo_put"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstanceOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_instance_display_image_api_lego_instances__instance_id__display_image_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                instance_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstanceDisplayImageUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegoSetInstanceOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_storage_api_lego_storage_locations_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StorageLocationOut"][];
-                };
-            };
-        };
-    };
-    create_storage_api_lego_storage_locations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StorageLocationCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StorageLocationOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_storage_api_lego_storage_locations__location_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                location_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StorageLocationOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_storage_api_lego_storage_locations__location_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                location_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_storage_api_lego_storage_locations__location_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                location_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StorageLocationUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StorageLocationOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_workbook_api_lego_export_xlsx_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    list_receipts_api_receipts_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                merchant_id?: string | null;
-                status?: string | null;
-                date_from?: string | null;
-                date_to?: string | null;
-                fs?: "all" | "only" | "exclude";
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_ReceiptSummary_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_api_receipts_post: {
-        parameters: {
-            query?: {
-                entity_id?: string | null;
-                parser_profile_id?: string | null;
-            };
-            header?: {
-                "Idempotency-Key"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_api_receipts_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    queue_api_receipts_queue_get: {
-        parameters: {
-            query?: {
-                status?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QueueEntry"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    status_board_api_receipts_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatusBoard"];
-                };
-            };
-        };
-    };
-    get_receipt_api_receipts__receipt_id__get: {
-        parameters: {
-            query?: {
-                fs?: "all" | "only" | "exclude";
-            };
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_receipt_api_receipts__receipt_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReceiptUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_item_api_receipts__receipt_id__items__item_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_item_api_receipts__receipt_id__items__item_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReceiptItemUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_item_api_receipts__receipt_id__items_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FsItemCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reparse_api_receipts__receipt_id__reparse_post: {
-        parameters: {
-            query?: {
-                parser_profile_id?: string | null;
-            };
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    confirm_api_receipts__receipt_id__confirm_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reopen_api_receipts__receipt_id__reopen_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    confirm_categories_api_receipts__receipt_id__confirm_categories_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    void_api_receipts__receipt_id__void_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VoidRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_profiles_api_parser_profiles_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ParserProfileOut"][];
-                };
-            };
-        };
-    };
-    create_profile_api_parser_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ParserProfileIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ParserProfileOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_parsers_api_parser_profiles_parsers_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ParserOption"][];
-                };
-            };
-        };
-    };
-    delete_profile_api_parser_profiles__profile_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                profile_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_api_parser_profiles__profile_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                profile_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ParserProfileUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ParserProfileOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_profile_api_parser_profiles__profile_id__test_post: {
-        parameters: {
-            query: {
-                receipt_id: string;
-            };
-            header?: never;
-            path: {
-                profile_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileTestResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_items_api_receipt_items_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                merchant_id?: string | null;
-                date_from?: string | null;
-                date_to?: string | null;
-                fs?: "all" | "only" | "exclude";
-                product_flag?: string | null;
-                master_product_id?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_ReceiptItemOut_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reassign_item_product_api_receipt_items__item_id__product_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ItemProductAssignment"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptItemOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    summarise_items_api_receipt_items_summary_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                merchant_id?: string | null;
-                date_from?: string | null;
-                date_to?: string | null;
-                fs?: "all" | "only" | "exclude";
-                product_flag?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_ProductSummary_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_products_api_master_products_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                category_id?: string | null;
-                category_status?: string | null;
-                sold_by_weight?: boolean | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_MasterProductOut_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_product_api_master_products_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MasterProductCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MasterProductOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_products_api_master_products_search_get: {
-        parameters: {
-            query: {
-                q: string;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProductSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_merge_candidates_api_master_products_merge_candidates_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MergeCandidate"][];
-                };
-            };
-        };
-    };
-    get_product_api_master_products__product_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MasterProductOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_product_api_master_products__product_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_product_api_master_products__product_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MasterProductUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MasterProductOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_pack_variant_api_master_products__product_id__pack_variants_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PackVariantAdd"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MasterProductOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    validate_category_api_master_products__product_id__validate_category_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MasterProductOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    product_aliases_api_master_products__product_id__aliases_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProductAliasOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    product_occurrences_api_master_products__product_id__occurrences_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProductOccurrence"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    merge_products_api_master_products__product_id__merge_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MergeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MasterProductOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    learn_alias_api_product_aliases_learn_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LearnAliasRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProductAliasOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_categories_api_categories_search_get: {
-        parameters: {
-            query?: {
-                q?: string;
-                domain?: string;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategorySearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    category_tree_api_categories_tree_get: {
-        parameters: {
-            query?: {
-                domain?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryTreeNode"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    category_impact_api_categories__category_id__impact_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryImpactOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    retire_category_api_categories__category_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    rename_category_api_categories__category_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CategoryRename"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategorySearchResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reparent_category_api_categories__category_id__reparent_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CategoryReparent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryOperationResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    merge_categories_api_categories__category_id__merge_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CategoryMerge"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryOperationResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    import_legacy_api_receipts_import_legacy_post: {
-        parameters: {
-            query?: {
-                entity_id?: string | null;
-                include_non_grocery?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_import_legacy_api_receipts_import_legacy_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegacyImportResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    shrinkflation_api_receipts_analytics_shrinkflation_get: {
-        parameters: {
-            query?: {
-                fs?: "all" | "only" | "exclude";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShrinkflationOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    category_spend_api_receipts_analytics_category_spend_get: {
-        parameters: {
-            query?: {
-                level?: number;
-                fs?: "all" | "only" | "exclude";
-                date_from?: string | null;
-                date_to?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategorySpendOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    loyalty_api_receipts_analytics_loyalty_get: {
-        parameters: {
-            query?: {
-                date_from?: string | null;
-                date_to?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoyaltyGroupOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    loyalty_receipts_api_receipts_analytics_loyalty_receipts_get: {
-        parameters: {
-            query?: {
-                scheme?: string | null;
-                card_masked?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoyaltyAllocationOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    price_history_api_master_products__product_id__price_history_get: {
-        parameters: {
-            query?: {
-                fs?: "all" | "only" | "exclude";
-                date_from?: string | null;
-                date_to?: string | null;
-            };
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PriceHistoryOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    price_history_csv_api_master_products__product_id__price_history_csv_get: {
-        parameters: {
-            query?: {
-                fs?: "all" | "only" | "exclude";
-            };
-            header?: never;
-            path: {
-                product_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_link_api_receipts__receipt_id__link_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptLinkOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_link_api_receipts__receipt_id__link_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LinkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptLinkOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_link_api_receipts__receipt_id__link_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_receipt_tags_api_receipts__receipt_id__tags_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagsUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_item_tags_api_receipts__receipt_id__items__item_id__tags_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagsUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_content_api_documents__document_id__content_get: {
-        parameters: {
-            query: {
-                expires: number;
-                signature: string;
-            };
-            header?: never;
-            path: {
-                document_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    summary_api_review_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReviewSummary"];
-                };
-            };
-        };
-    };
-    list_tasks_api_review_tasks_get: {
-        parameters: {
-            query?: {
-                status?: string;
-                module?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_ReviewTaskOut_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resolve_api_review_tasks__task_id__resolve_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReviewResolution"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReviewTaskOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    suggest_api_transactions_suggest_get: {
-        parameters: {
-            query?: {
-                near_date?: string | null;
-                amount_eur?: number | string | null;
-                search?: string | null;
-                window_days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuggestionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    read_settings_api_settings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettingsOut"];
-                };
-            };
-        };
-    };
-    update_settings_api_settings_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SettingsUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettingsOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_backup_modules_api_settings_backup_modules_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BackupModuleOut"][];
-                };
-            };
-        };
-    };
-    export_backup_api_settings_backup_zip_get: {
-        parameters: {
-            query?: {
-                module?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    import_backup_api_settings_backup_post: {
-        parameters: {
-            query?: {
-                entity_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_import_backup_api_settings_backup_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BackupImportReport"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    dashboard_api_dashboard_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardOut"];
-                };
-            };
-        };
-    };
+  health_api_health_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
+  status_api_setup_status_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SetupStatus'];
+        };
+      };
+    };
+  };
+  create_first_owner_api_setup_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetupRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  login_api_auth_login_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  logout_api_auth_logout_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+    };
+  };
+  me_api_auth_me_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionOut'];
+        };
+      };
+    };
+  };
+  change_password_api_auth_password_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordChange'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_profile_api_auth_profile_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProfileUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_members_api_members_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MemberOut'][];
+        };
+      };
+    };
+  };
+  create_member_api_members_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MemberCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MemberOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  remove_member_api_members__member_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_member_api_members__member_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MemberUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MemberOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_entities_api_entities_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EntityOut'][];
+        };
+      };
+    };
+  };
+  create_entity_api_entities_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EntityCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EntityOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_entity_api_entities__entity_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entity_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EntityUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EntityOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  switch_entity_api_sessions_entity_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EntitySwitch'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EntitySwitchResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_merchants_api_merchants_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_merchant_api_merchants_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MerchantIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_merchant_api_merchants__merchant_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchant_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_merchant_api_merchants__merchant_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchant_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MerchantIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_categories_api_categories_get: {
+    parameters: {
+      query?: {
+        domain?: string | null;
+        level?: number | null;
+        parent_id?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_category_api_categories_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CategoryCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategorySearchResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_tags_api_tags_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TagOut'][];
+        };
+      };
+    };
+  };
+  create_tag_api_tags_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TagIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TagOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_tag_api_tags__tag_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tag_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  overview_api_lego_overview_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OverviewOut'];
+        };
+      };
+    };
+  };
+  list_models_api_lego_models_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+        theme?: string | null;
+        stale_only?: boolean;
+        no_value_only?: boolean;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_LegoSetModelOut_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_model_api_lego_models_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegoSetModelCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  lookup_api_lego_models_lookup_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LookupRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LookupResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_model_api_lego_models__model_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_model_api_lego_models__model_id__delete: {
+    parameters: {
+      query?: {
+        hard?: boolean;
+      };
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_model_api_lego_models__model_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegoSetModelUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  model_instances_api_lego_models__model_id__instances_get: {
+    parameters: {
+      query?: {
+        ownership_status?: string | null;
+      };
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstanceOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_model_image_api_lego_models__model_id__image_put: {
+    parameters: {
+      query?: {
+        url?: string | null;
+      };
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_set_model_image_api_lego_models__model_id__image_put'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_model_image_api_lego_models__model_id__images_post: {
+    parameters: {
+      query?: {
+        url?: string | null;
+        caption?: string | null;
+      };
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_add_model_image_api_lego_models__model_id__images_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_model_instruction_api_lego_models__model_id__instructions_post: {
+    parameters: {
+      query: {
+        description: string;
+        url?: string | null;
+        language?: string | null;
+      };
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_add_model_instruction_api_lego_models__model_id__instructions_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_model_image_api_lego_models__model_id__images__image_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+        image_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_model_image_api_lego_models__model_id__images__image_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+        image_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegoSetImageUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  promote_model_image_api_lego_models__model_id__images__image_id__cover_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+        image_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  import_from_brickset_api_lego_models__model_id__brickset_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BricksetImportOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        model_id: string;
+        instruction_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetModelOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_instances_api_lego_instances_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+        theme?: string | null;
+        storage_location_id?: string | null;
+        storage_area?: string | null;
+        build_state?: string | null;
+        condition?: string | null;
+        ownership_status?: string | null;
+        completeness?: 'all' | 'complete' | 'incomplete';
+        retirement?: 'all' | 'retired' | 'available';
+        copies?: 'all' | 'single' | 'multiple';
+        sort?: string;
+        direction?: string;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstancePage'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_instance_api_lego_instances_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegoSetInstanceCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstanceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_instance_api_lego_instances__instance_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        instance_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstanceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_instance_api_lego_instances__instance_id__delete: {
+    parameters: {
+      query?: {
+        hard?: boolean;
+      };
+      header?: never;
+      path: {
+        instance_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_instance_api_lego_instances__instance_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        instance_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegoSetInstanceUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstanceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_instance_photo_api_lego_instances__instance_id__photo_put: {
+    parameters: {
+      query?: {
+        url?: string | null;
+      };
+      header?: never;
+      path: {
+        instance_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_set_instance_photo_api_lego_instances__instance_id__photo_put'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstanceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_instance_display_image_api_lego_instances__instance_id__display_image_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        instance_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InstanceDisplayImageUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegoSetInstanceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_storage_api_lego_storage_locations_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StorageLocationOut'][];
+        };
+      };
+    };
+  };
+  create_storage_api_lego_storage_locations_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StorageLocationCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StorageLocationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_storage_api_lego_storage_locations__location_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        location_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StorageLocationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_storage_api_lego_storage_locations__location_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        location_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_storage_api_lego_storage_locations__location_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        location_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StorageLocationUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StorageLocationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  export_workbook_api_lego_export_xlsx_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_receipts_api_receipts_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+        merchant_id?: string | null;
+        status?: string | null;
+        date_from?: string | null;
+        date_to?: string | null;
+        fs?: 'all' | 'only' | 'exclude';
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_ReceiptSummary_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  upload_api_receipts_post: {
+    parameters: {
+      query?: {
+        entity_id?: string | null;
+        parser_profile_id?: string | null;
+      };
+      header?: {
+        'Idempotency-Key'?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_upload_api_receipts_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UploadResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  queue_api_receipts_queue_get: {
+    parameters: {
+      query?: {
+        status?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['QueueEntry'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  status_board_api_receipts_status_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StatusBoard'];
+        };
+      };
+    };
+  };
+  get_receipt_api_receipts__receipt_id__get: {
+    parameters: {
+      query?: {
+        fs?: 'all' | 'only' | 'exclude';
+      };
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_receipt_api_receipts__receipt_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReceiptUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_item_api_receipts__receipt_id__items__item_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+        item_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_item_api_receipts__receipt_id__items__item_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+        item_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReceiptItemUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_item_api_receipts__receipt_id__items_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FsItemCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reparse_api_receipts__receipt_id__reparse_post: {
+    parameters: {
+      query?: {
+        parser_profile_id?: string | null;
+      };
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  confirm_api_receipts__receipt_id__confirm_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reopen_api_receipts__receipt_id__reopen_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  confirm_categories_api_receipts__receipt_id__confirm_categories_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  void_api_receipts__receipt_id__void_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VoidRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_profiles_api_parser_profiles_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ParserProfileOut'][];
+        };
+      };
+    };
+  };
+  create_profile_api_parser_profiles_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ParserProfileIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ParserProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_parsers_api_parser_profiles_parsers_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ParserOption'][];
+        };
+      };
+    };
+  };
+  delete_profile_api_parser_profiles__profile_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_profile_api_parser_profiles__profile_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ParserProfileUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ParserProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  test_profile_api_parser_profiles__profile_id__test_post: {
+    parameters: {
+      query: {
+        receipt_id: string;
+      };
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProfileTestResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_items_api_receipt_items_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+        merchant_id?: string | null;
+        date_from?: string | null;
+        date_to?: string | null;
+        fs?: 'all' | 'only' | 'exclude';
+        product_flag?: string | null;
+        master_product_id?: string | null;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_ReceiptItemOut_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reassign_item_product_api_receipt_items__item_id__product_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        item_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ItemProductAssignment'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptItemOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  summarise_items_api_receipt_items_summary_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+        merchant_id?: string | null;
+        date_from?: string | null;
+        date_to?: string | null;
+        fs?: 'all' | 'only' | 'exclude';
+        product_flag?: string | null;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_ProductSummary_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_products_api_master_products_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+        category_id?: string | null;
+        category_status?: string | null;
+        sold_by_weight?: boolean | null;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_MasterProductOut_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_product_api_master_products_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MasterProductCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MasterProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  search_products_api_master_products_search_get: {
+    parameters: {
+      query: {
+        q: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductSearchResult'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_merge_candidates_api_master_products_merge_candidates_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MergeCandidate'][];
+        };
+      };
+    };
+  };
+  get_product_api_master_products__product_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MasterProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_product_api_master_products__product_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_product_api_master_products__product_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MasterProductUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MasterProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_pack_variant_api_master_products__product_id__pack_variants_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PackVariantAdd'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MasterProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  validate_category_api_master_products__product_id__validate_category_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MasterProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  product_aliases_api_master_products__product_id__aliases_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductAliasOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  product_occurrences_api_master_products__product_id__occurrences_get: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductOccurrence'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  merge_products_api_master_products__product_id__merge_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MergeRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MasterProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  learn_alias_api_product_aliases_learn_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LearnAliasRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductAliasOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  search_categories_api_categories_search_get: {
+    parameters: {
+      query?: {
+        q?: string;
+        domain?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategorySearchResult'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  category_tree_api_categories_tree_get: {
+    parameters: {
+      query?: {
+        domain?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryTreeNode'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  category_impact_api_categories__category_id__impact_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryImpactOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  retire_category_api_categories__category_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  rename_category_api_categories__category_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CategoryRename'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategorySearchResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reparent_category_api_categories__category_id__reparent_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CategoryReparent'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryOperationResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  merge_categories_api_categories__category_id__merge_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CategoryMerge'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryOperationResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  import_legacy_api_receipts_import_legacy_post: {
+    parameters: {
+      query?: {
+        entity_id?: string | null;
+        include_non_grocery?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_import_legacy_api_receipts_import_legacy_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegacyImportResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  shrinkflation_api_receipts_analytics_shrinkflation_get: {
+    parameters: {
+      query?: {
+        fs?: 'all' | 'only' | 'exclude';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ShrinkflationOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  category_spend_api_receipts_analytics_category_spend_get: {
+    parameters: {
+      query?: {
+        level?: number;
+        fs?: 'all' | 'only' | 'exclude';
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategorySpendOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  loyalty_api_receipts_analytics_loyalty_get: {
+    parameters: {
+      query?: {
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoyaltyGroupOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  loyalty_receipts_api_receipts_analytics_loyalty_receipts_get: {
+    parameters: {
+      query?: {
+        scheme?: string | null;
+        card_masked?: string | null;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoyaltyAllocationOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  price_history_api_master_products__product_id__price_history_get: {
+    parameters: {
+      query?: {
+        fs?: 'all' | 'only' | 'exclude';
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PriceHistoryOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  price_history_csv_api_master_products__product_id__price_history_csv_get: {
+    parameters: {
+      query?: {
+        fs?: 'all' | 'only' | 'exclude';
+      };
+      header?: never;
+      path: {
+        product_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_link_api_receipts__receipt_id__link_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptLinkOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_link_api_receipts__receipt_id__link_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LinkRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReceiptLinkOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_link_api_receipts__receipt_id__link_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_receipt_tags_api_receipts__receipt_id__tags_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TagsUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_item_tags_api_receipts__receipt_id__items__item_id__tags_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receipt_id: string;
+        item_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TagsUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_content_api_documents__document_id__content_get: {
+    parameters: {
+      query: {
+        expires: number;
+        signature: string;
+      };
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  summary_api_review_summary_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewSummary'];
+        };
+      };
+    };
+  };
+  list_tasks_api_review_tasks_get: {
+    parameters: {
+      query?: {
+        status?: string;
+        module?: string | null;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_ReviewTaskOut_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  resolve_api_review_tasks__task_id__resolve_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewResolution'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewTaskOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  suggest_api_transactions_suggest_get: {
+    parameters: {
+      query?: {
+        near_date?: string | null;
+        amount_eur?: number | string | null;
+        search?: string | null;
+        window_days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SuggestionResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  read_settings_api_settings_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettingsOut'];
+        };
+      };
+    };
+  };
+  update_settings_api_settings_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SettingsUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettingsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_backup_modules_api_settings_backup_modules_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BackupModuleOut'][];
+        };
+      };
+    };
+  };
+  export_backup_api_settings_backup_zip_get: {
+    parameters: {
+      query?: {
+        module?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  import_backup_api_settings_backup_post: {
+    parameters: {
+      query?: {
+        entity_id?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_import_backup_api_settings_backup_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BackupImportReport'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  dashboard_api_dashboard_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DashboardOut'];
+        };
+      };
+    };
+  };
 }

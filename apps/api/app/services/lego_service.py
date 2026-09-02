@@ -156,7 +156,6 @@ def _storage_out(
     remaining = None if location.capacity_pct is None else 100 - location.capacity_pct
     return StorageLocationOut(
         id=location.id,
-        entity_id=location.entity_id,
         area=location.area,
         container=location.container,
         description=location.description,
@@ -1057,7 +1056,7 @@ def create_instance(
             db, draft, entity_id=entity_id, actor_user_id=actor_user_id
         )
 
-    _validate_storage(db, payload.storage_location_id, entity_id)
+    _validate_storage(db, payload.storage_location_id)
 
     data = payload.model_dump(exclude={"entity_id", "lego_set_model_id", "new_set"})
     instance = LegoSetInstance(entity_id=entity_id, lego_set_model_id=model.id, **data)
@@ -1093,7 +1092,7 @@ def update_instance(
     )
 
     if changes.get("storage_location_id"):
-        _validate_storage(db, changes["storage_location_id"], instance.entity_id)
+        _validate_storage(db, changes["storage_location_id"])
 
     for field, value in changes.items():
         setattr(instance, field, value)
@@ -1211,7 +1210,9 @@ def set_instance_display_image(
 
 
 # --- Storage locations -------------------------------------------------------
-def _validate_storage(db: DbSession, location_id: uuid.UUID | None, entity_id: uuid.UUID) -> None:
+# Household-level reference data, not entity-scoped (ADR-0046) — a shelf holds
+# anyone's sets, so there is no owning entity to filter or validate against.
+def _validate_storage(db: DbSession, location_id: uuid.UUID | None) -> None:
     if location_id is None:
         return
     location = db.get(StorageLocation, location_id)
@@ -1241,11 +1242,8 @@ def _location_stats(
     return {row[0]: (row[1], Decimal(row[2])) for row in rows}
 
 
-def list_storage_locations(
-    db: DbSession, *, entity_ids: list[uuid.UUID], active_entity_id: uuid.UUID | None
-) -> list[StorageLocationOut]:
+def list_storage_locations(db: DbSession) -> list[StorageLocationOut]:
     stmt = select(StorageLocation).where(StorageLocation.is_deleted.is_(False))
-    stmt = _scope(stmt, StorageLocation.entity_id, entity_ids, active_entity_id)
     rows = list(db.scalars(stmt.order_by(StorageLocation.area, StorageLocation.container)).all())
     stats = _location_stats(db, [r.id for r in rows])
     return [
@@ -1274,12 +1272,10 @@ def create_storage_location(
     db: DbSession,
     payload: StorageLocationCreate,
     *,
-    entity_id: uuid.UUID,
     actor_user_id: uuid.UUID,
 ) -> StorageLocation:
     duplicate = db.scalar(
         select(StorageLocation).where(
-            StorageLocation.entity_id == entity_id,
             StorageLocation.area == payload.area,
             StorageLocation.container.is_not_distinct_from(payload.container),
             StorageLocation.is_deleted.is_(False),
@@ -1288,7 +1284,7 @@ def create_storage_location(
     if duplicate is not None:
         raise Conflict("Já existe um local de arrumação com esta área e contentor.")
 
-    location = StorageLocation(entity_id=entity_id, **payload.model_dump(exclude={"entity_id"}))
+    location = StorageLocation(**payload.model_dump())
     db.add(location)
     db.flush()
     audit.record(
@@ -1296,7 +1292,6 @@ def create_storage_location(
         action="CREATE",
         table_name=STORAGE_TABLE,
         record_id=location.id,
-        entity_id=entity_id,
         actor_user_id=actor_user_id,
         after=audit.snapshot(location),
     )
@@ -1319,7 +1314,6 @@ def update_storage_location(
         action="UPDATE",
         table_name=STORAGE_TABLE,
         record_id=location.id,
-        entity_id=location.entity_id,
         actor_user_id=actor_user_id,
         before=before,
         after=audit.snapshot(location),
@@ -1346,7 +1340,6 @@ def delete_storage_location(
         action="DELETE",
         table_name=STORAGE_TABLE,
         record_id=location.id,
-        entity_id=location.entity_id,
         actor_user_id=actor_user_id,
         before=audit.snapshot(location),
     )
@@ -1491,7 +1484,7 @@ def overview(
         )
     ).one()
 
-    locations = list_storage_locations(db, entity_ids=entity_ids, active_entity_id=active_entity_id)
+    locations = list_storage_locations(db)
 
     return OverviewOut(
         total_cost_eur=total_cost,

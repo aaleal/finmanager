@@ -4,7 +4,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Baby, KeyRound, MoreHorizontal, Palette, Pencil, Plus, ShieldCheck, UserMinus, Users } from 'lucide-react';
+import {
+  Baby,
+  KeyRound,
+  MoreHorizontal,
+  Palette,
+  Pencil,
+  Plus,
+  ShieldCheck,
+  UserMinus,
+  Users,
+} from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import { cn } from '@/lib/utils';
@@ -13,7 +23,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, Input, PasswordInput } from '@/components/ui/input';
-import { Checkbox, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
+import {
+  Checkbox,
+  Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/primitives';
 import {
   Select,
   SelectContent,
@@ -37,7 +54,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { PageHeader, Skeleton } from '@/components/ui/feedback';
 import { date } from '@/lib/format';
 
@@ -425,7 +449,10 @@ export function HouseholdPage() {
   const [passwordFor, setPasswordFor] = React.useState<Member | null>(null);
 
   const members = useQuery({ queryKey: ['members'], queryFn: () => api.get<Member[]>('/members') });
-  const entities = useQuery({ queryKey: ['entities'], queryFn: () => api.get<Entity[]>('/entities') });
+  const entities = useQuery({
+    queryKey: ['entities'],
+    queryFn: () => api.get<Entity[]>('/entities'),
+  });
 
   const changeRole = useMutation({
     mutationFn: ({ id, role }: { id: string; role: Role }) => api.patch(`/members/${id}`, { role }),
@@ -542,9 +569,7 @@ export function HouseholdPage() {
                                     .map((role) => (
                                       <DropdownMenuItem
                                         key={role}
-                                        onSelect={() =>
-                                          changeRole.mutate({ id: member.id, role })
-                                        }
+                                        onSelect={() => changeRole.mutate({ id: member.id, role })}
                                       >
                                         Tornar {ROLE_LABELS[role].toLowerCase()}
                                       </DropdownMenuItem>

@@ -115,7 +115,12 @@ function MoverRow({ instance, rank }: { instance: LegoSetInstance; rank: number 
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <p className={cn('numeric text-sm font-semibold', positive ? 'text-success' : 'text-destructive')}>
+        <p
+          className={cn(
+            'numeric text-sm font-semibold',
+            positive ? 'text-success' : 'text-destructive',
+          )}
+        >
           {signedEur(instance.appreciation_eur)}
         </p>
         <p className="text-xs text-muted-foreground">{percent(instance.roi_pct)}</p>
@@ -208,7 +213,12 @@ export function LegoOverviewPanel({
           value={num(overview.copies_owned)}
           onClick={() => onFilter({ tab: 'colecao' })}
         />
-        <KpiCard icon={Layers} label="Peças" value={num(overview.total_pieces)} hint={`${num(overview.total_minifigs)} minifiguras`} />
+        <KpiCard
+          icon={Layers}
+          label="Peças"
+          value={num(overview.total_pieces)}
+          hint={`${num(overview.total_minifigs)} minifiguras`}
+        />
         <KpiCard
           icon={AlertTriangle}
           label="Conjuntos retirados"
@@ -261,7 +271,11 @@ export function LegoOverviewPanel({
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timelineData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                  />
                   <XAxis
                     dataKey="month"
                     tick={{ fontSize: 11 }}
@@ -347,7 +361,11 @@ export function LegoOverviewPanel({
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="hsl(var(--border))"
+                    />
                     <XAxis
                       dataKey="theme"
                       tick={{ fontSize: 11 }}
@@ -373,8 +391,19 @@ export function LegoOverviewPanel({
                       formatter={(value: number, name: string) => [eur(value), name]}
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="custo" name="Custo" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} opacity={0.35} />
-                    <Bar dataKey="valor" name="Valor atual" fill={THEME_COLORS[0]} radius={[4, 4, 0, 0]}>
+                    <Bar
+                      dataKey="custo"
+                      name="Custo"
+                      fill="hsl(var(--muted-foreground))"
+                      radius={[4, 4, 0, 0]}
+                      opacity={0.35}
+                    />
+                    <Bar
+                      dataKey="valor"
+                      name="Valor atual"
+                      fill={THEME_COLORS[0]}
+                      radius={[4, 4, 0, 0]}
+                    >
                       {chartData.map((entry, index) => (
                         <Cell key={entry.theme} fill={THEME_COLORS[index % THEME_COLORS.length]} />
                       ))}

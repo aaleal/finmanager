@@ -19,7 +19,6 @@ import { EmptyState } from '@/components/ui/feedback';
 import { eur, num } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
-import { EntityField } from './add-set-dialog';
 import { useStorageMutations } from './api';
 
 const PRESETS = [0, 25, 50, 75, 100];
@@ -103,11 +102,7 @@ function AddLocationDialog({ locations }: { locations: StorageLocation[] }) {
   const [area, setArea] = React.useState('');
   const [container, setContainer] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const { activeEntityId } = useSession();
-  const [entityId, setEntityId] = React.useState(activeEntityId ?? '');
   const { create } = useStorageMutations();
-
-  React.useEffect(() => setEntityId(activeEntityId ?? ''), [activeEntityId, open]);
 
   // Suggest what already exists so «Garagem» never becomes «garagem» by accident.
   const areaOptions = React.useMemo(
@@ -141,14 +136,6 @@ function AddLocationDialog({ locations }: { locations: StorageLocation[] }) {
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
-          {/* A record must name its owner; «todas» is refused, never guessed (ADR-0007). */}
-          {!activeEntityId ? (
-            <EntityField
-              value={entityId}
-              onChange={setEntityId}
-              hint="A quem pertence este local. Nunca é adivinhado quando está a ver «todas»."
-            />
-          ) : null}
           <Field label="Área">
             <Input
               list="lego-storage-areas"
@@ -184,11 +171,10 @@ function AddLocationDialog({ locations }: { locations: StorageLocation[] }) {
             Cancelar
           </Button>
           <Button
-            disabled={!area.trim() || !entityId}
+            disabled={!area.trim()}
             loading={create.isPending}
             onClick={async () => {
               await create.mutateAsync({
-                entity_id: entityId,
                 area: area.trim(),
                 container: container.trim() || null,
                 description: description.trim() || null,
@@ -413,7 +399,9 @@ export function StoragePanel({
                         {eur(location.stored_value_eur)}
                       </span>
                       {location.remaining_capacity_pct !== null ? (
-                        <span className={cn('ml-auto text-xs', location.is_full && 'text-destructive')}>
+                        <span
+                          className={cn('ml-auto text-xs', location.is_full && 'text-destructive')}
+                        >
                           {location.remaining_capacity_pct} % livre
                         </span>
                       ) : (

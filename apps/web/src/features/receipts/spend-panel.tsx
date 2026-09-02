@@ -92,8 +92,8 @@ export function SpendPanel() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        "Pago" é o que saiu da carteira; "nocional" é o que os artigos valiam — são iguais em
-        todas as linhas que não são Fs.
+        "Pago" é o que saiu da carteira; "nocional" é o que os artigos valiam — são iguais em todas
+        as linhas que não são Fs.
       </p>
 
       {spend.isLoading ? (

@@ -44,7 +44,11 @@ export const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
 >(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content ref={ref} className={cn('mt-5 focus-visible:outline-none', className)} {...props} />
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn('mt-5 focus-visible:outline-none', className)}
+    {...props}
+  />
 ));
 TabsContent.displayName = 'TabsContent';
 
@@ -149,7 +153,13 @@ export const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = 'TooltipContent';
 
-export function Tooltip({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
+export function Tooltip({
+  label,
+  children,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <TooltipRoot>
       <TooltipTrigger asChild>{children}</TooltipTrigger>

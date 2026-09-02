@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import type { ReceiptStatus } from '@/lib/types';
 
-export type BadgeTone = 'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'muted';
+export type BadgeTone =
+  'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'muted';
 
 interface StatusMeta {
   label: string;

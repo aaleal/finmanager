@@ -48,7 +48,10 @@ export const SelectContent = React.forwardRef<
         <ChevronUp className="size-4" />
       </SelectPrimitive.ScrollUpButton>
       <SelectPrimitive.Viewport
-        className={cn('p-1', position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]')}
+        className={cn(
+          'p-1',
+          position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]',
+        )}
       >
         {children}
       </SelectPrimitive.Viewport>
@@ -89,7 +92,10 @@ export const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn('px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground', className)}
+    className={cn(
+      'px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground',
+      className,
+    )}
     {...props}
   />
 ));

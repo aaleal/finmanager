@@ -59,7 +59,8 @@ import type { InstanceFilters } from './api';
 const ALL = '__all__';
 
 function Thumb({ instance }: { instance: LegoSetInstance }) {
-  const image = instance.photo_url ?? instance.display_image_url ?? instance.set_model?.image_url ?? null;
+  const image =
+    instance.photo_url ?? instance.display_image_url ?? instance.set_model?.image_url ?? null;
   return (
     <div className="size-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
       {image ? (
@@ -84,7 +85,9 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
       const up = Number(model.rrp_roi_pct) >= 0;
       return (
         <span className="block" title="Sem base de custo (prenda). Mostrado face ao PVP original.">
-          <span className={cn('numeric block font-medium', up ? 'text-success' : 'text-destructive')}>
+          <span
+            className={cn('numeric block font-medium', up ? 'text-success' : 'text-destructive')}
+          >
             {percent(model.rrp_roi_pct)}
           </span>
           <span className="block text-xs text-muted-foreground">PVP</span>
@@ -101,7 +104,9 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
   const positive = Number(instance.roi_pct) >= 0;
   return (
     <span className="block">
-      <span className={cn('numeric block font-medium', positive ? 'text-success' : 'text-destructive')}>
+      <span
+        className={cn('numeric block font-medium', positive ? 'text-success' : 'text-destructive')}
+      >
         {percent(instance.roi_pct)}
       </span>
       <span className="numeric block text-xs text-muted-foreground">
@@ -198,7 +203,13 @@ function SortHead({
           setFilters({
             sort: field,
             // A fresh column starts descending for numbers and ascending for text.
-            direction: active ? (descending ? 'asc' : 'desc') : TEXT_FIELDS.has(field) ? 'asc' : 'desc',
+            direction: active
+              ? descending
+                ? 'asc'
+                : 'desc'
+              : TEXT_FIELDS.has(field)
+                ? 'asc'
+                : 'desc',
             page: '1',
           })
         }

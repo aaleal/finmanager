@@ -119,7 +119,9 @@ export function LegoPage() {
           <TabsTrigger value="arrumacao">
             Arrumação
             {overview.data?.locations_total ? (
-              <span className="text-xs text-muted-foreground">({overview.data.locations_total})</span>
+              <span className="text-xs text-muted-foreground">
+                ({overview.data.locations_total})
+              </span>
             ) : null}
           </TabsTrigger>
         </TabsList>

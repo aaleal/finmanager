@@ -69,7 +69,6 @@ def test_every_grid_column_is_sortable(db: Session, entity: Entity, owner: User)
     location = lego_service.create_storage_location(
         db,
         StorageLocationCreate(area="Garagem", container="Caixa A"),
-        entity_id=entity.id,
         actor_user_id=owner.id,
     )
     _copy(db, entity, owner, set_number="2000", name="Beta", storage_location_id=location.id)
@@ -214,9 +213,7 @@ def test_a_copy_can_pick_its_own_table_image(db: Session, entity: Entity, owner:
         db, model, data=PNG[:-1] + b"\x83", filename="alt.png", actor_user_id=owner.id
     )
 
-    lego_service.set_instance_display_image(
-        db, copy, image.document_id, actor_user_id=owner.id
-    )
+    lego_service.set_instance_display_image(db, copy, image.document_id, actor_user_id=owner.id)
     assert lego_service.instance_out(db, copy).display_image_url is not None
 
     lego_service.set_instance_display_image(db, copy, None, actor_user_id=owner.id)

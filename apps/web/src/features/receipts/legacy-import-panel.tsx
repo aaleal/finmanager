@@ -79,7 +79,9 @@ export function LegacyImportPanel() {
           <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">Exceções</p>
-              <p className="text-xs text-muted-foreground">Reportadas, não corrigidas em silêncio.</p>
+              <p className="text-xs text-muted-foreground">
+                Reportadas, não corrigidas em silêncio.
+              </p>
             </div>
             {exceptions.length ? (
               <Table>

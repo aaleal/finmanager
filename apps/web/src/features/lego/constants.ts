@@ -27,7 +27,10 @@ export const OWNERSHIP_LABELS: Record<OwnershipStatus, string> = {
   GIFTED: 'Oferecido',
 };
 
-export const CONDITION_VARIANTS: Record<Condition, 'success' | 'secondary' | 'warning' | 'destructive'> = {
+export const CONDITION_VARIANTS: Record<
+  Condition,
+  'success' | 'secondary' | 'warning' | 'destructive'
+> = {
   NEW: 'success',
   GOOD: 'secondary',
   WORN: 'warning',
@@ -94,7 +97,10 @@ export function externalLinks(setNumber: string) {
   const bare = setNumber.replace(/-\d+$/, '');
   return [
     { label: 'Brickset', href: `https://brickset.com/sets/${bare}-1` },
-    { label: 'BrickLink', href: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${bare}-1` },
+    {
+      label: 'BrickLink',
+      href: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${bare}-1`,
+    },
     { label: 'BrickEconomy', href: `https://www.brickeconomy.com/set/${bare}-1` },
     { label: 'Rebrickable', href: `https://rebrickable.com/sets/${bare}-1/` },
   ];

@@ -166,7 +166,6 @@ def test_storage_delete_is_blocked_while_copies_are_assigned(
     location = lego_service.create_storage_location(
         db,
         StorageLocationCreate(area="Garagem", container="Caixa TV", capacity_pct=75),
-        entity_id=entity.id,
         actor_user_id=owner.id,
     )
     copy = _make_copy(db, entity, owner)
