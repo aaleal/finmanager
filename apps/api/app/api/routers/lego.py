@@ -9,6 +9,7 @@ from app.api.deps import CurrentAuth, Db, Writer, household_entity_ids, resolve_
 from app.core.errors import ValidationError
 from app.schemas.common import Ok, Page
 from app.schemas.lego import (
+    BricksetImportOut,
     CompletenessFilter,
     CopiesFilter,
     ImageSource,
@@ -201,6 +202,33 @@ def delete_model_image(
     model = lego_service.get_model(db, model_id)
     lego_service.delete_model_image(
         db, lego_service.get_model_image(db, image_id), actor_user_id=ctx.user.id
+    )
+    db.refresh(model)
+    return lego_service.model_out(db, model)
+
+
+@router.post("/models/{model_id}/brickset", response_model=BricksetImportOut)
+def import_from_brickset(model_id: uuid.UUID, ctx: Writer, db: Db) -> BricksetImportOut:
+    """Download the set's extra photographs and manuals — on this press only."""
+    model = lego_service.get_model(db, model_id)
+    images, instructions, message = lego_service.import_from_brickset(
+        db, model, actor_user_id=ctx.user.id
+    )
+    return BricksetImportOut(
+        model=lego_service.model_out(db, model),
+        images_added=images,
+        instructions_added=instructions,
+        message=message,
+    )
+
+
+@router.delete("/models/{model_id}/instructions/{instruction_id}", response_model=LegoSetModelOut)
+def delete_model_instruction(
+    model_id: uuid.UUID, instruction_id: uuid.UUID, ctx: Writer, db: Db
+) -> LegoSetModelOut:
+    model = lego_service.get_model(db, model_id)
+    lego_service.delete_model_instruction(
+        db, lego_service.get_model_instruction(db, instruction_id), actor_user_id=ctx.user.id
     )
     db.refresh(model)
     return lego_service.model_out(db, model)

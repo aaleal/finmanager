@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
+  BricksetImport,
   LegoInstancePage,
   LegoOverview,
   LegoSetInstance,
@@ -283,7 +284,45 @@ export function useSetGallery() {
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível remover a imagem.')),
   });
 
-  return { add, promote, remove };
+  // Silent on success — a drag reorders several images at once and one toast per
+  // image would spam the user for what is a single gesture.
+  const reorder = useMutation({
+    mutationFn: ({ id, imageId, position }: { id: string; imageId: string; position: number }) =>
+      api.patch<LegoSetModel>(`/lego/models/${id}/images/${imageId}`, { position }),
+    onSuccess: () => invalidate(),
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível reordenar a galeria.')),
+  });
+
+  return { add, promote, remove, reorder };
+}
+
+/** Manuals and info booklets: pulled from Brickset, then served from disk. */
+export function useSetInstructions() {
+  const invalidate = useInvalidateLego();
+
+  const importFromBrickset = useMutation({
+    mutationFn: (id: string) => api.post<BricksetImport>(`/lego/models/${id}/brickset`),
+    onSuccess: (result) => {
+      toast.success(
+        result.message ??
+          `${result.images_added} imagem(ns) e ${result.instructions_added} manual(is) guardados localmente.`,
+      );
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível importar do Brickset.')),
+  });
+
+  const remove = useMutation({
+    mutationFn: ({ id, instructionId }: { id: string; instructionId: string }) =>
+      api.delete<LegoSetModel>(`/lego/models/${id}/instructions/${instructionId}`),
+    onSuccess: () => {
+      toast.success('Manual removido.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível remover o manual.')),
+  });
+
+  return { importFromBrickset, remove };
 }
 
 export function useStorageMutations() {

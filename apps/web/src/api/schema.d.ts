@@ -483,6 +483,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lego/models/{model_id}/brickset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import From Brickset
+         * @description Download the set's extra photographs and manuals — on this press only.
+         */
+        post: operations["import_from_brickset_api_lego_models__model_id__brickset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/models/{model_id}/instructions/{instruction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Model Instruction */
+        delete: operations["delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lego/instances": {
         parameters: {
             query?: never;
@@ -1679,6 +1716,25 @@ export interface components {
             /** Files */
             files: string[];
         };
+        /**
+         * BricksetImportOut
+         * @description What one press of «Importar do Brickset» actually brought down.
+         */
+        BricksetImportOut: {
+            model: components["schemas"]["LegoSetModelOut"];
+            /**
+             * Images Added
+             * @default 0
+             */
+            images_added: number;
+            /**
+             * Instructions Added
+             * @default 0
+             */
+            instructions_added: number;
+            /** Message */
+            message?: string | null;
+        };
         /** CategoryCreate */
         CategoryCreate: {
             /** Display Name Pt */
@@ -2050,7 +2106,7 @@ export interface components {
              */
             acquisition_cost_eur: number | string;
             /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "OTHER") | null;
+            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
             /** Acquisition Transaction Id */
             acquisition_transaction_id?: string | null;
             /** Storage Location Id */
@@ -2101,7 +2157,7 @@ export interface components {
             /** Acquisition Cost Eur */
             acquisition_cost_eur: string;
             /** Acquisition Source */
-            acquisition_source: ("RETAIL" | "SECONDHAND" | "GIFT" | "OTHER") | null;
+            acquisition_source: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
             /** Acquisition Transaction Id */
             acquisition_transaction_id: string | null;
             /** Storage Location Id */
@@ -2175,7 +2231,7 @@ export interface components {
             /** Acquisition Cost Eur */
             acquisition_cost_eur?: number | string | null;
             /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "OTHER") | null;
+            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
             /** Acquisition Transaction Id */
             acquisition_transaction_id?: string | null;
             /** Storage Location Id */
@@ -2211,6 +2267,30 @@ export interface components {
              */
             clear_transaction_link: boolean;
         };
+        /** LegoSetInstructionOut */
+        LegoSetInstructionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Url */
+            url?: string | null;
+            /** Description */
+            description: string;
+            /** Language */
+            language?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+        };
         /** LegoSetModelCreate */
         LegoSetModelCreate: {
             /** Set Number */
@@ -2234,6 +2314,18 @@ export interface components {
             piece_count?: number | null;
             /** Minifig Count */
             minifig_count?: number | null;
+            /** Age Min */
+            age_min?: number | null;
+            /** Age Max */
+            age_max?: number | null;
+            /** Box Height Cm */
+            box_height_cm?: number | string | null;
+            /** Box Width Cm */
+            box_width_cm?: number | string | null;
+            /** Box Depth Cm */
+            box_depth_cm?: number | string | null;
+            /** Box Weight Kg */
+            box_weight_kg?: number | string | null;
             /** Rrp Eur */
             rrp_eur?: number | string | null;
             /** Current Value Eur */
@@ -2277,6 +2369,18 @@ export interface components {
             piece_count: number | null;
             /** Minifig Count */
             minifig_count: number | null;
+            /** Age Min */
+            age_min: number | null;
+            /** Age Max */
+            age_max: number | null;
+            /** Box Height Cm */
+            box_height_cm: string | null;
+            /** Box Width Cm */
+            box_width_cm: string | null;
+            /** Box Depth Cm */
+            box_depth_cm: string | null;
+            /** Box Weight Kg */
+            box_weight_kg: string | null;
             /** Rrp Eur */
             rrp_eur: string | null;
             /** Current Value Eur */
@@ -2292,6 +2396,11 @@ export interface components {
              * @default []
              */
             images: components["schemas"]["LegoSetImageOut"][];
+            /**
+             * Instructions
+             * @default []
+             */
+            instructions: components["schemas"]["LegoSetInstructionOut"][];
             /** Short Description */
             short_description: string | null;
             /** Notes */
@@ -2350,6 +2459,18 @@ export interface components {
             piece_count?: number | null;
             /** Minifig Count */
             minifig_count?: number | null;
+            /** Age Min */
+            age_min?: number | null;
+            /** Age Max */
+            age_max?: number | null;
+            /** Box Height Cm */
+            box_height_cm?: number | string | null;
+            /** Box Width Cm */
+            box_width_cm?: number | string | null;
+            /** Box Depth Cm */
+            box_depth_cm?: number | string | null;
+            /** Box Weight Kg */
+            box_weight_kg?: number | string | null;
             /** Rrp Eur */
             rrp_eur?: number | string | null;
             /** Current Value Eur */
@@ -2408,12 +2529,34 @@ export interface components {
             piece_count?: number | null;
             /** Minifig Count */
             minifig_count?: number | null;
+            /** Age Min */
+            age_min?: number | null;
+            /** Age Max */
+            age_max?: number | null;
+            /** Box Height Cm */
+            box_height_cm?: string | null;
+            /** Box Width Cm */
+            box_width_cm?: string | null;
+            /** Box Depth Cm */
+            box_depth_cm?: string | null;
+            /** Box Weight Kg */
+            box_weight_kg?: string | null;
             /** Rrp Eur */
             rrp_eur?: string | null;
             /** Image Url */
             image_url?: string | null;
             /** Short Description */
             short_description?: string | null;
+            /**
+             * Additional Image Count
+             * @default 0
+             */
+            additional_image_count: number;
+            /**
+             * Instruction Count
+             * @default 0
+             */
+            instruction_count: number;
         };
         /** LoyaltyAllocationOut */
         LoyaltyAllocationOut: {
@@ -5088,6 +5231,69 @@ export interface operations {
             path: {
                 model_id: string;
                 image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_from_brickset_api_lego_models__model_id__brickset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BricksetImportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+                instruction_id: string;
             };
             cookie?: never;
         };

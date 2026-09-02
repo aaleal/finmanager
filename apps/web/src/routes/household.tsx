@@ -12,7 +12,7 @@ import type { Entity, Member, Role } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/input';
+import { Field, Input, PasswordInput } from '@/components/ui/input';
 import { Checkbox, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
 import {
   Select,
@@ -54,6 +54,7 @@ const memberSchema = z
     email: z.string().email('Email inválido').optional().or(z.literal('')),
     role: z.enum(['OWNER', 'MEMBER', 'VIEWER']),
     temporary_password: z.string().optional().or(z.literal('')),
+    confirm_password: z.string().optional().or(z.literal('')),
   })
   .refine((values) => values.is_dependent || Boolean(values.email), {
     message: 'Indique um email',
@@ -62,7 +63,14 @@ const memberSchema = z
   .refine((values) => values.is_dependent || (values.temporary_password ?? '').length >= 8, {
     message: 'Mínimo 8 caracteres',
     path: ['temporary_password'],
-  });
+  })
+  .refine(
+    (values) => values.is_dependent || values.temporary_password === values.confirm_password,
+    {
+      message: 'As palavras-passe não coincidem',
+      path: ['confirm_password'],
+    },
+  );
 
 type MemberFormValues = z.infer<typeof memberSchema>;
 
@@ -78,6 +86,7 @@ function AddMemberDialog() {
       email: '',
       role: 'MEMBER',
       temporary_password: '',
+      confirm_password: '',
     },
   });
   const isDependent = form.watch('is_dependent');
@@ -162,7 +171,20 @@ function AddMemberDialog() {
                   hint="O membro terá de a alterar no primeiro acesso."
                   error={form.formState.errors.temporary_password?.message}
                 >
-                  <Input type="text" {...form.register('temporary_password')} />
+                  <PasswordInput
+                    autoComplete="new-password"
+                    {...form.register('temporary_password')}
+                  />
+                </Field>
+
+                <Field
+                  label="Repetir palavra-passe"
+                  error={form.formState.errors.confirm_password?.message}
+                >
+                  <PasswordInput
+                    autoComplete="new-password"
+                    {...form.register('confirm_password')}
+                  />
                 </Field>
               </>
             ) : null}

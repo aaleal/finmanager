@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { PiggyBank } from 'lucide-react';
 import { useSession } from '@/features/auth/session';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/input';
+import { Field, Input, PasswordInput } from '@/components/ui/input';
 import { ApiError } from '@/lib/api';
 
 const schema = z.object({
@@ -64,9 +64,8 @@ export function LoginPage() {
               htmlFor="password"
               error={form.formState.errors.password?.message}
             >
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
                 {...form.register('password')}

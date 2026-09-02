@@ -33,12 +33,19 @@ from sqlalchemy.orm import Session as DbSession
 from app.core.errors import ValidationError
 from app.models.core import AuditLog, Document
 from app.models.household import Entity
-from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
+from app.models.lego import (
+    LegoSetImage,
+    LegoSetInstance,
+    LegoSetInstruction,
+    LegoSetModel,
+    StorageLocation,
+)
 from app.schemas.lego import LegoBackupReport
 from app.services import documents
 
 FORMAT = "finmanager.lego.backup"
-VERSION = 1
+#: v2 added ``instructions``; a v1 archive simply has none of them.
+VERSION = 2
 
 MANIFEST_NAME = "manifest.json"
 COLLECTION_NAME = "collection.json"
@@ -78,6 +85,12 @@ _MODEL_FIELDS = (
     "retirement_date",
     "piece_count",
     "minifig_count",
+    "age_min",
+    "age_max",
+    "box_height_cm",
+    "box_width_cm",
+    "box_depth_cm",
+    "box_weight_kg",
     "rrp_eur",
     "current_value_eur",
     "value_updated_at",
@@ -110,6 +123,15 @@ _INSTANCE_FIELDS = (
 )
 
 _IMAGE_FIELDS = ("id", "lego_set_model_id", "document_id", "position", "caption")
+
+_INSTRUCTION_FIELDS = (
+    "id",
+    "lego_set_model_id",
+    "document_id",
+    "description",
+    "language",
+    "position",
+)
 
 _STORAGE_FIELDS = ("id", "area", "container", "description", "capacity_pct")
 
@@ -150,11 +172,13 @@ def build_archive(db: DbSession, *, entity_ids: list[uuid.UUID]) -> bytes:
         )
     )
     images = [image for model in models for image in model.images]
+    instructions = [manual for model in models for manual in model.instructions]
 
     collection = {
         "storage_locations": [_row(row, _STORAGE_FIELDS) for row in locations],
         "models": [_row(row, _MODEL_FIELDS) for row in models],
         "images": [_row(row, _IMAGE_FIELDS) for row in images],
+        "instructions": [_row(row, _INSTRUCTION_FIELDS) for row in instructions],
         "instances": [_row(row, _INSTANCE_FIELDS) for row in instances],
     }
 
@@ -164,6 +188,7 @@ def build_archive(db: DbSession, *, entity_ids: list[uuid.UUID]) -> bytes:
             [model.image_document_id for model in models]
             + [instance.photo_document_id for instance in instances]
             + [image.document_id for image in images]
+            + [manual.document_id for manual in instructions]
         )
         if value is not None
     }
@@ -187,6 +212,7 @@ def build_archive(db: DbSession, *, entity_ids: list[uuid.UUID]) -> bytes:
                         "storage_locations": len(locations),
                         "models": len(models),
                         "images": len(images),
+                        "instructions": len(instructions),
                         "instances": len(instances),
                         "documents": len(written),
                     },
@@ -323,6 +349,7 @@ def restore_archive(
         _restore_locations(db, collection, entity_id, report)
         _restore_models(db, collection, entity_id, document_map, report)
         _restore_images(db, collection, document_map, report)
+        _restore_instructions(db, collection, document_map, report)
         _restore_instances(db, collection, entity_id, document_map, report)
         db.flush()
 
@@ -409,6 +436,12 @@ def _restore_models(
                 retirement_date=_as_date(row.get("retirement_date")),
                 piece_count=row.get("piece_count"),
                 minifig_count=row.get("minifig_count"),
+                age_min=row.get("age_min"),
+                age_max=row.get("age_max"),
+                box_height_cm=_as_decimal(row.get("box_height_cm")),
+                box_width_cm=_as_decimal(row.get("box_width_cm")),
+                box_depth_cm=_as_decimal(row.get("box_depth_cm")),
+                box_weight_kg=_as_decimal(row.get("box_weight_kg")),
                 rrp_eur=_as_decimal(row.get("rrp_eur")),
                 current_value_eur=_as_decimal(row.get("current_value_eur")),
                 value_updated_at=_as_date(row.get("value_updated_at")),
@@ -447,6 +480,40 @@ def _restore_images(
             )
         )
         report.images += 1
+    db.flush()
+
+
+def _restore_instructions(
+    db: DbSession,
+    collection: dict[str, Any],
+    document_map: dict[uuid.UUID, uuid.UUID],
+    report: LegoBackupReport,
+) -> None:
+    for row in collection.get("instructions", []):
+        instruction_id = _as_uuid(row["id"])
+        model_id = _as_uuid(row["lego_set_model_id"])
+        new_document = document_map.get(_as_uuid(row["document_id"]) or uuid.uuid4())
+        if (
+            instruction_id is None
+            or new_document is None
+            or db.get(LegoSetInstruction, instruction_id) is not None
+        ):
+            report.skipped_instructions += 1
+            continue
+        if model_id is None or db.get(LegoSetModel, model_id) is None:
+            report.skipped_instructions += 1
+            continue
+        db.add(
+            LegoSetInstruction(
+                id=instruction_id,
+                lego_set_model_id=model_id,
+                document_id=new_document,
+                description=row.get("description") or "Manual",
+                language=row.get("language"),
+                position=row.get("position") or 0,
+            )
+        )
+        report.instructions += 1
     db.flush()
 
 

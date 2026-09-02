@@ -1,8 +1,10 @@
 """Module 9 — LEGO Collection Catalog.
 
-Three tables only: catalog identity (``LegoSetModel``), the owned physical copy
-(``LegoSetInstance``) and a flat place (``StorageLocation``). No valuation
-history, no galleries, no external-listing table — by explicit design.
+The spine is three tables: catalog identity (``LegoSetModel``), the owned
+physical copy (``LegoSetInstance``) and a flat place (``StorageLocation``). Two
+attachment tables were added since, each with its own ADR: ``LegoSetImage``
+(0013) and ``LegoSetInstruction`` (0040). There is still no valuation history
+and no external-listing table — by explicit design.
 """
 
 from __future__ import annotations
@@ -31,7 +33,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, SoftDeleteMixin, TimestampMixin, uuid_pk
 
-ACQUISITION_SOURCES = ("RETAIL", "SECONDHAND", "GIFT", "OTHER")
+ACQUISITION_SOURCES = ("RETAIL", "SECONDHAND", "GIFT", "FS", "OTHER")
 BUILD_STATES = ("SEALED", "BUILT", "DISASSEMBLED")
 CONDITIONS = ("NEW", "GOOD", "WORN", "DAMAGED")
 OWNERSHIP_STATUSES = ("IN_COLLECTION", "SOLD", "GIFTED")
@@ -60,6 +62,10 @@ class LegoSetModel(Base, TimestampMixin, SoftDeleteMixin):
             "(is_custom = true AND set_number IS NULL) OR is_custom = false",
             name="ck_lego_set_models_custom_has_no_number",
         ),
+        CheckConstraint(
+            "age_min IS NULL OR age_max IS NULL OR age_max >= age_min",
+            name="ck_lego_set_models_age_range",
+        ),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -79,6 +85,13 @@ class LegoSetModel(Base, TimestampMixin, SoftDeleteMixin):
     retirement_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     piece_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     minifig_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Brickset publishes an open-ended range: `18+` is a min with no max.
+    age_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    age_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    box_height_cm: Mapped[Decimal | None] = mapped_column(Numeric(6, 1), nullable=True)
+    box_width_cm: Mapped[Decimal | None] = mapped_column(Numeric(6, 1), nullable=True)
+    box_depth_cm: Mapped[Decimal | None] = mapped_column(Numeric(6, 1), nullable=True)
+    box_weight_kg: Mapped[Decimal | None] = mapped_column(Numeric(7, 3), nullable=True)
     rrp_eur: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     current_value_eur: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     value_updated_at: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
@@ -96,6 +109,13 @@ class LegoSetModel(Base, TimestampMixin, SoftDeleteMixin):
         back_populates="model",
         lazy="selectin",
         order_by="LegoSetImage.position",
+        cascade="all, delete-orphan",
+    )
+    instructions: Mapped[list[LegoSetInstruction]] = relationship(
+        "LegoSetInstruction",
+        back_populates="model",
+        lazy="selectin",
+        order_by="LegoSetInstruction.position",
         cascade="all, delete-orphan",
     )
 
@@ -133,6 +153,39 @@ class LegoSetImage(Base):
     )
 
     model: Mapped[LegoSetModel] = relationship("LegoSetModel", back_populates="images")
+
+
+class LegoSetInstruction(Base):
+    """A building manual or info booklet, downloaded once and kept on disk.
+
+    See docs/decisions/0040-a-manual-is-downloaded-not-linked.md.
+    """
+
+    __tablename__ = "lego_set_instructions"
+    __table_args__ = (
+        UniqueConstraint(
+            "lego_set_model_id", "document_id", name="uq_lego_set_instructions_model_document"
+        ),
+        Index("ix_lego_set_instructions_model_position", "lego_set_model_id", "position"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    lego_set_model_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("lego_set_models.id", ondelete="CASCADE"), nullable=False
+    )
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("documents.id"), nullable=False
+    )
+    description: Mapped[str] = mapped_column(String(250), nullable=False)
+    #: ``None`` means the manual carries no language at all — a picture-only
+    #: building instruction, which is every LEGO manual since 2000.
+    language: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    model: Mapped[LegoSetModel] = relationship("LegoSetModel", back_populates="instructions")
 
 
 class StorageLocation(Base, SoftDeleteMixin):
@@ -173,7 +226,7 @@ class LegoSetInstance(Base, TimestampMixin, SoftDeleteMixin):
         ),
         CheckConstraint(
             "acquisition_source IS NULL OR acquisition_source IN "
-            "('RETAIL', 'SECONDHAND', 'GIFT', 'OTHER')",
+            "('RETAIL', 'SECONDHAND', 'GIFT', 'FS', 'OTHER')",
             name="ck_lego_set_instances_acquisition_source",
         ),
         CheckConstraint(
@@ -251,7 +304,9 @@ __all__ = [
     "BUILD_STATES",
     "CONDITIONS",
     "OWNERSHIP_STATUSES",
+    "LegoSetImage",
     "LegoSetInstance",
+    "LegoSetInstruction",
     "LegoSetModel",
     "StorageLocation",
 ]

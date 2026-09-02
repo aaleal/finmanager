@@ -7,7 +7,7 @@ import { CheckCircle2, PiggyBank } from 'lucide-react';
 import { api, ApiError, setCsrfToken } from '@/lib/api';
 import type { SessionInfo } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/input';
+import { Field, Input, PasswordInput } from '@/components/ui/input';
 
 const schema = z
   .object({
@@ -113,9 +113,8 @@ export function SetupPage() {
               hint="Pelo menos 12 caracteres. Não há recuperação por email — guarde-a."
               error={form.formState.errors.password?.message}
             >
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="new-password"
                 {...form.register('password')}
               />
@@ -126,9 +125,8 @@ export function SetupPage() {
               htmlFor="confirm"
               error={form.formState.errors.confirm?.message}
             >
-              <Input
+              <PasswordInput
                 id="confirm"
-                type="password"
                 autoComplete="new-password"
                 {...form.register('confirm')}
               />

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.schemas.common import ApiModel, Page
 
-AcquisitionSource = Literal["RETAIL", "SECONDHAND", "GIFT", "OTHER"]
+AcquisitionSource = Literal["RETAIL", "SECONDHAND", "GIFT", "FS", "OTHER"]
 BuildState = Literal["SEALED", "BUILT", "DISASSEMBLED"]
 Condition = Literal["NEW", "GOOD", "WORN", "DAMAGED"]
 OwnershipStatus = Literal["IN_COLLECTION", "SOLD", "GIFTED"]
@@ -67,6 +67,16 @@ class LegoSetImageUpdate(BaseModel):
     position: int | None = Field(default=None, ge=0)
 
 
+class LegoSetInstructionOut(ApiModel):
+    id: uuid.UUID
+    document_id: uuid.UUID
+    url: str | None = None
+    description: str
+    #: ``None`` for the language-neutral building instructions.
+    language: str | None = None
+    position: int = 0
+
+
 class LegoSetModelBase(BaseModel):
     set_number: str | None = Field(default=None, max_length=32)
     is_custom: bool = False
@@ -77,6 +87,12 @@ class LegoSetModelBase(BaseModel):
     retirement_date: dt.date | None = None
     piece_count: int | None = Field(default=None, ge=0)
     minifig_count: int | None = Field(default=None, ge=0)
+    age_min: int | None = Field(default=None, ge=0, le=120)
+    age_max: int | None = Field(default=None, ge=0, le=120)
+    box_height_cm: Decimal | None = Field(default=None, ge=0, decimal_places=1)
+    box_width_cm: Decimal | None = Field(default=None, ge=0, decimal_places=1)
+    box_depth_cm: Decimal | None = Field(default=None, ge=0, decimal_places=1)
+    box_weight_kg: Decimal | None = Field(default=None, ge=0, decimal_places=3)
     rrp_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
     current_value_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
     short_description: str | None = Field(default=None, max_length=500)
@@ -94,6 +110,8 @@ class LegoSetModelBase(BaseModel):
             and self.retirement_date < self.release_date
         ):
             raise ValueError("a data de retirada não pode ser anterior à data de lançamento")
+        if self.age_min is not None and self.age_max is not None and self.age_max < self.age_min:
+            raise ValueError("a idade máxima não pode ser inferior à idade mínima")
         return self
 
 
@@ -111,6 +129,12 @@ class LegoSetModelUpdate(BaseModel):
     retirement_date: dt.date | None = None
     piece_count: int | None = Field(default=None, ge=0)
     minifig_count: int | None = Field(default=None, ge=0)
+    age_min: int | None = Field(default=None, ge=0, le=120)
+    age_max: int | None = Field(default=None, ge=0, le=120)
+    box_height_cm: Decimal | None = Field(default=None, ge=0, decimal_places=1)
+    box_width_cm: Decimal | None = Field(default=None, ge=0, decimal_places=1)
+    box_depth_cm: Decimal | None = Field(default=None, ge=0, decimal_places=1)
+    box_weight_kg: Decimal | None = Field(default=None, ge=0, decimal_places=3)
     rrp_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
     current_value_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
     short_description: str | None = Field(default=None, max_length=500)
@@ -130,6 +154,12 @@ class LegoSetModelOut(ApiModel):
     retirement_date: dt.date | None
     piece_count: int | None
     minifig_count: int | None
+    age_min: int | None
+    age_max: int | None
+    box_height_cm: Decimal | None
+    box_width_cm: Decimal | None
+    box_depth_cm: Decimal | None
+    box_weight_kg: Decimal | None
     rrp_eur: Decimal | None
     current_value_eur: Decimal | None
     value_updated_at: dt.date | None
@@ -137,6 +167,8 @@ class LegoSetModelOut(ApiModel):
     image_url: str | None = None
     # The box shot above is always the first frame; these are the extra views.
     images: list[LegoSetImageOut] = []
+    # Manuals and info booklets, downloaded once and served from disk.
+    instructions: list[LegoSetInstructionOut] = []
     short_description: str | None
     notes: str | None
     created_at: dt.datetime
@@ -287,9 +319,28 @@ class LookupResult(BaseModel):
     retirement_date: dt.date | None = None
     piece_count: int | None = None
     minifig_count: int | None = None
+    age_min: int | None = None
+    age_max: int | None = None
+    box_height_cm: Decimal | None = None
+    box_width_cm: Decimal | None = None
+    box_depth_cm: Decimal | None = None
+    box_weight_kg: Decimal | None = None
     rrp_eur: Decimal | None = None
     image_url: str | None = None
     short_description: str | None = None
+    # How much more the provider holds, so the UI can offer the import before
+    # anything is downloaded.
+    additional_image_count: int = 0
+    instruction_count: int = 0
+
+
+class BricksetImportOut(ApiModel):
+    """What one press of «Importar do Brickset» actually brought down."""
+
+    model: LegoSetModelOut
+    images_added: int = 0
+    instructions_added: int = 0
+    message: str | None = None
 
 
 # --- Overview ----------------------------------------------------------------
@@ -322,11 +373,13 @@ class LegoBackupReport(BaseModel):
     storage_locations: int = 0
     models: int = 0
     images: int = 0
+    instructions: int = 0
     instances: int = 0
     documents: int = 0
     skipped_storage_locations: int = 0
     skipped_models: int = 0
     skipped_images: int = 0
+    skipped_instructions: int = 0
     skipped_instances: int = 0
 
 

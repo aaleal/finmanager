@@ -56,11 +56,19 @@ def _lego_module() -> ModuleBackup:
         build_archive=lambda db, entity_ids: lego_backup.build_archive(db, entity_ids=entity_ids),
         restore_archive=lego_backup.restore_archive,
         filename=lego_backup.filename,
-        report_fields=("storage_locations", "models", "images", "instances", "documents"),
+        report_fields=(
+            "storage_locations",
+            "models",
+            "images",
+            "instructions",
+            "instances",
+            "documents",
+        ),
         skipped_fields=(
             "skipped_storage_locations",
             "skipped_models",
             "skipped_images",
+            "skipped_instructions",
             "skipped_instances",
         ),
     )

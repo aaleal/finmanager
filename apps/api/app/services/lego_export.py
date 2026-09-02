@@ -30,6 +30,7 @@ SOURCE_PT = {
     "RETAIL": "Loja",
     "SECONDHAND": "Em segunda mão",
     "GIFT": "Prenda",
+    "FS": "Fs",
     "OTHER": "Outro",
 }
 OWNERSHIP_PT = {"IN_COLLECTION": "Na coleção", "SOLD": "Vendido", "GIFTED": "Oferecido"}

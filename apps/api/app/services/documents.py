@@ -91,11 +91,13 @@ def store_bytes(
     source: str = "UPLOAD",
     url: str | None = None,
     original_filename: str | None = None,
+    max_bytes: int | None = None,
 ) -> Document:
     if not data:
         raise ValidationError("Ficheiro vazio.")
-    if len(data) > settings.max_upload_bytes:
-        raise ValidationError("Ficheiro demasiado grande (máx. 15 MB).")
+    limit = max_bytes or settings.max_upload_bytes
+    if len(data) > limit:
+        raise ValidationError(f"Ficheiro demasiado grande (máx. {limit // (1024 * 1024)} MB).")
 
     mime = _detect_mime(data)
     sha256_hash = hashlib.sha256(data).hexdigest()
@@ -126,20 +128,41 @@ def store_bytes(
     return document
 
 
-def store_from_url(db: DbSession, url: str) -> Document:
+def store_from_url(
+    db: DbSession,
+    url: str,
+    *,
+    max_bytes: int | None = None,
+    original_filename: str | None = None,
+) -> Document:
     if not url.startswith(("http://", "https://")):
         raise ValidationError("O endereço da imagem tem de começar por http:// ou https://.")
+    limit = max_bytes or _MAX_REMOTE_BYTES
+    chunks: list[bytes] = []
+    downloaded = 0
     try:
-        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
-            response = client.get(url)
+        # Streamed so an oversized file is abandoned instead of buffered whole.
+        with (
+            httpx.Client(timeout=60.0, follow_redirects=True) as client,
+            client.stream("GET", url) as response,
+        ):
             response.raise_for_status()
-            data = response.content
+            for chunk in response.iter_bytes():
+                downloaded += len(chunk)
+                if downloaded > limit:
+                    raise ValidationError("Ficheiro remoto demasiado grande.")
+                chunks.append(chunk)
     except httpx.HTTPError as exc:
-        raise ValidationError(f"Não foi possível transferir a imagem: {exc}") from exc
+        raise ValidationError(f"Não foi possível transferir o ficheiro: {exc}") from exc
 
-    if len(data) > _MAX_REMOTE_BYTES:
-        raise ValidationError("Imagem remota demasiado grande.")
-    return store_bytes(db, data, source="URL", url=url)
+    return store_bytes(
+        db,
+        b"".join(chunks),
+        source="URL",
+        url=url,
+        original_filename=original_filename,
+        max_bytes=limit,
+    )
 
 
 def absolute_path(document: Document) -> Path:

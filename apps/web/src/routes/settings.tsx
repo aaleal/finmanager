@@ -7,7 +7,7 @@ import { useSession } from '@/features/auth/session';
 import type { AppSettings } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/input';
+import { Field, Input, PasswordInput } from '@/components/ui/input';
 import { Separator, Switch } from '@/components/ui/primitives';
 import {
   Select,
@@ -54,16 +54,14 @@ function PasswordCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         <Field label="Palavra-passe atual">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="current-password"
             value={current}
             onChange={(event) => setCurrent(event.target.value)}
           />
         </Field>
         <Field label="Nova palavra-passe" hint="Mínimo 8 caracteres.">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             value={next}
             onChange={(event) => setNext(event.target.value)}

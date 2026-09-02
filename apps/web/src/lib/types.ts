@@ -30,6 +30,8 @@ export type TimelinePoint = Schemas['TimelinePoint'];
 export type CollectionSummary = Schemas['CollectionSummary'];
 export type LegoInstancePage = Schemas['LegoSetInstancePage'];
 export type LookupResult = Schemas['LookupResult'];
+export type LegoSetInstruction = Schemas['LegoSetInstructionOut'];
+export type BricksetImport = Schemas['BricksetImportOut'];
 
 export type AcquisitionSource = NonNullable<LegoSetInstance['acquisition_source']>;
 export type BuildState = NonNullable<LegoSetInstance['build_state']>;

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as LabelPrimitive from '@radix-ui/react-label';
+import { CalendarDays, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
@@ -18,6 +19,111 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
   ),
 );
 Input.displayName = 'Input';
+
+/** A password field with a right-hand icon that toggles it in and out of view. */
+export const PasswordInput = React.forwardRef<
+  HTMLInputElement,
+  Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>
+>(({ className, ...props }, ref) => {
+  const [visible, setVisible] = React.useState(false);
+  return (
+    <div className="relative">
+      <Input ref={ref} type={visible ? 'text' : 'password'} className={cn('pr-9', className)} {...props} />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setVisible((value) => !value)}
+        aria-label={visible ? 'Esconder palavra-passe' : 'Mostrar palavra-passe'}
+        className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      </button>
+    </div>
+  );
+});
+PasswordInput.displayName = 'PasswordInput';
+
+/**
+ * A date typed the Portuguese way — `dd/mm/aaaa` — over an ISO value.
+ *
+ * The native `type="date"` renders in the *browser's* locale, so an English
+ * Chrome shows `mm/dd/yyyy` on a pt-PT screen and there is no attribute that
+ * changes it. The text field is therefore ours; the native input survives behind
+ * the calendar icon, so the picker still works.
+ */
+export function DateInput({
+  value,
+  onChange,
+  className,
+  disabled,
+  'aria-label': ariaLabel,
+}: {
+  value: string | null | undefined;
+  onChange: (isoDate: string) => void;
+  className?: string;
+  disabled?: boolean;
+  'aria-label'?: string;
+}) {
+  const iso = value ?? '';
+  const [draft, setDraft] = React.useState(() => isoToPt(iso));
+
+  React.useEffect(() => {
+    setDraft((current) => (ptToIso(current) === iso ? current : isoToPt(iso)));
+  }, [iso]);
+
+  return (
+    <div className={cn('relative', className)}>
+      <Input
+        value={draft}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        inputMode="numeric"
+        maxLength={10}
+        placeholder="dd/mm/aaaa"
+        className="pr-9"
+        onChange={(event) => {
+          const masked = maskPtDate(event.target.value);
+          setDraft(masked);
+          const parsed = ptToIso(masked);
+          if (parsed !== null) onChange(parsed);
+        }}
+      />
+      <CalendarDays className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="date"
+        tabIndex={-1}
+        aria-hidden
+        disabled={disabled}
+        value={iso}
+        onChange={(event) => onChange(event.target.value)}
+        onClick={(event) => event.currentTarget.showPicker?.()}
+        className="absolute inset-y-0 right-0 w-9 cursor-pointer opacity-0"
+      />
+    </div>
+  );
+}
+
+function isoToPt(iso: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+/** `''` for an empty field, `null` while the date is still half-typed. */
+function ptToIso(text: string): string | null {
+  if (!text.trim()) return '';
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text);
+  if (!match) return null;
+  const [, day, month, year] = match;
+  const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  if (date.getUTCDate() !== Number(day) && date.getDate() !== Number(day)) return null;
+  return `${year}-${month}-${day}`;
+}
+
+function maskPtDate(text: string): string {
+  const digits = text.replace(/\D/g, '').slice(0, 8);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+  return parts.join('/');
+}
 
 export const Textarea = React.forwardRef<
   HTMLTextAreaElement,

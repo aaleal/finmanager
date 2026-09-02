@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Boxes, Plus, Trash2 } from 'lucide-react';
+import { Boxes, PencilLine, Plus, Trash2 } from 'lucide-react';
 import type { StorageLocation } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -207,6 +207,109 @@ function AddLocationDialog({ locations }: { locations: StorageLocation[] }) {
   );
 }
 
+/** Renaming an existing local, distinct from `AddLocationDialog`: it edits one
+ * row rather than proposing area/container values already seen elsewhere. */
+function EditLocationDialog({
+  location,
+  locations,
+  onOpenChange,
+}: {
+  location: StorageLocation | null;
+  locations: StorageLocation[];
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [area, setArea] = React.useState('');
+  const [container, setContainer] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const { update } = useStorageMutations();
+
+  React.useEffect(() => {
+    setArea(location?.area ?? '');
+    setContainer(location?.container ?? '');
+    setDescription(location?.description ?? '');
+  }, [location]);
+
+  const areaOptions = React.useMemo(
+    () => [...new Set(locations.map((item) => item.area))].sort(),
+    [locations],
+  );
+  const containerOptions = React.useMemo(
+    () =>
+      [
+        ...new Set(
+          locations
+            .filter((item) => !area.trim() || item.area === area.trim())
+            .map((item) => item.container)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [locations, area],
+  );
+
+  return (
+    <Dialog open={Boolean(location)} onOpenChange={onOpenChange}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>Editar local de arrumação</DialogTitle>
+          <DialogDescription>
+            Renomear não move as cópias já guardadas aqui — continuam ligadas a este local.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
+          <Field label="Área">
+            <Input
+              list="lego-storage-areas-edit"
+              value={area}
+              onChange={(event) => setArea(event.target.value)}
+            />
+            <datalist id="lego-storage-areas-edit">
+              {areaOptions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          </Field>
+          <Field label="Contentor" hint="Caixa, prateleira ou estado (por exemplo, «Montado»).">
+            <Input
+              list="lego-storage-containers-edit"
+              value={container}
+              onChange={(event) => setContainer(event.target.value)}
+            />
+            <datalist id="lego-storage-containers-edit">
+              {containerOptions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          </Field>
+          <Field label="Descrição">
+            <Input value={description} onChange={(event) => setDescription(event.target.value)} />
+          </Field>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!area.trim()}
+            loading={update.isPending}
+            onClick={async () => {
+              if (!location) return;
+              await update.mutateAsync({
+                id: location.id,
+                area: area.trim(),
+                container: container.trim() || null,
+                description: description.trim() || null,
+              });
+              onOpenChange(false);
+            }}
+          >
+            Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** Inline panel, shown as its own tab rather than a sheet (a peer of «Coleção», not a modal). */
 export function StoragePanel({
   locations,
@@ -217,6 +320,7 @@ export function StoragePanel({
 }) {
   const { canWrite } = useSession();
   const { remove } = useStorageMutations();
+  const [editing, setEditing] = React.useState<StorageLocation | null>(null);
 
   const areas = React.useMemo(() => {
     const grouped = new Map<string, StorageLocation[]>();
@@ -273,6 +377,16 @@ export function StoragePanel({
                           <Button
                             variant="ghost"
                             size="icon-sm"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => setEditing(location)}
+                          >
+                            <PencilLine />
+                          </Button>
+                        ) : null}
+                        {canWrite ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
                             className="text-muted-foreground hover:text-destructive"
                             onClick={() =>
                               remove.mutate(location.id, {
@@ -322,6 +436,14 @@ export function StoragePanel({
           ))}
         </div>
       )}
+
+      <EditLocationDialog
+        location={editing}
+        locations={locations}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null);
+        }}
+      />
     </div>
   );
 }

@@ -2,18 +2,22 @@ import * as React from 'react';
 import {
   AlertTriangle,
   Boxes,
+  ChevronRight,
+  Download,
   ExternalLink,
+  FileText,
+  GripVertical,
   Image as ImageIcon,
+  Images,
   Link2,
   PencilLine,
   Plus,
-  Star,
   Trash2,
 } from 'lucide-react';
 import type { LegoSetInstance, LegoSetModel, StorageLocation, TransactionSuggestion } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Field, Input, Textarea } from '@/components/ui/input';
+import { DateInput, Field, Input, Textarea } from '@/components/ui/input';
 import {
   Checkbox,
   Separator,
@@ -40,7 +44,16 @@ import {
 } from '@/components/ui/dialog';
 import { DetailRow } from '@/components/ui/feedback';
 import { TransactionPicker } from '@/components/transaction-picker';
-import { date, eur, num, percent, relativeDays, signedEur, toDateInput } from '@/lib/format';
+import {
+  date,
+  eur,
+  num,
+  percent,
+  relativeDays,
+  signedEur,
+  toDateInput,
+  weightCompact,
+} from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
 import {
@@ -49,6 +62,7 @@ import {
   useModelInstances,
   useSetGallery,
   useSetInstancePhoto,
+  useSetInstructions,
   useSetModelImage,
   useUpdateInstance,
   useUpdateModel,
@@ -57,9 +71,16 @@ import {
   BUILD_STATE_LABELS,
   CONDITION_LABELS,
   CONDITION_VARIANTS,
+  INSTRUCTION_LANGUAGE_LABELS,
   OWNERSHIP_LABELS,
   SOURCE_LABELS,
+  ageRangeInput,
+  ageRangeLabel,
+  boxDimensionsInput,
+  boxDimensionsLabel,
   externalLinks,
+  parseAgeRange,
+  parseBoxDimensions,
 } from './constants';
 import { AddSetDialog } from './add-set-dialog';
 import { SetCarousel, frames } from './set-carousel';
@@ -76,6 +97,13 @@ function count(value: string) {
   if (!trimmed) return null;
   const parsed = Number(trimmed);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function decimals(value: string, places: number) {
+  const normalized = value.trim().replace(',', '.');
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed.toFixed(places) : null;
 }
 
 function RoiPill({ instance }: { instance: LegoSetInstance }) {
@@ -194,11 +222,7 @@ function OwnershipControls({ instance }: { instance: LegoSetInstance }) {
             />
           </Field>
           <Field label="Data">
-            <Input
-              type="date"
-              value={saleDate}
-              onChange={(event) => setSaleDate(event.target.value)}
-            />
+            <DateInput value={saleDate} onChange={setSaleDate} />
           </Field>
         </div>
       ) : (
@@ -248,6 +272,13 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
     retirement_date: toDateInput(model?.retirement_date),
     piece_count: model?.piece_count?.toString() ?? '',
     minifig_count: model?.minifig_count?.toString() ?? '',
+    age_range: ageRangeInput(model?.age_min ?? null, model?.age_max ?? null),
+    box_dimensions: boxDimensionsInput(
+      model?.box_width_cm ?? null,
+      model?.box_depth_cm ?? null,
+      model?.box_height_cm ?? null,
+    ),
+    box_weight_kg: model?.box_weight_kg ?? '',
     rrp_eur: model?.rrp_eur ?? '',
     current_value_eur: model?.current_value_eur ?? '',
     short_description: model?.short_description ?? '',
@@ -283,21 +314,13 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
           <Input value={form.subtheme} onChange={(event) => set('subtheme', event.target.value)} />
         </Field>
         <Field label="Data de lançamento">
-          <Input
-            type="date"
-            value={form.release_date}
-            onChange={(event) => set('release_date', event.target.value)}
-          />
+          <DateInput value={form.release_date} onChange={(iso) => set('release_date', iso)} />
         </Field>
         <Field
           label="Data de retirada"
           hint="Vazio se ainda está à venda. Só conta como retirado depois de a data passar."
         >
-          <Input
-            type="date"
-            value={form.retirement_date}
-            onChange={(event) => set('retirement_date', event.target.value)}
-          />
+          <DateInput value={form.retirement_date} onChange={(iso) => set('retirement_date', iso)} />
         </Field>
         <Field label="Peças">
           <Input
@@ -311,6 +334,28 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
             type="number"
             value={form.minifig_count}
             onChange={(event) => set('minifig_count', event.target.value)}
+          />
+        </Field>
+        <Field label="Idade recomendada" hint="O que está impresso na caixa: «18+», «4+» ou «6-12».">
+          <Input
+            placeholder="18+"
+            value={form.age_range}
+            onChange={(event) => set('age_range', event.target.value)}
+          />
+        </Field>
+        <Field label="Dimensões da caixa (cm)" hint="Largura × profundidade × altura.">
+          <Input
+            placeholder="26,2 × 7,1 × 38,2"
+            value={form.box_dimensions}
+            onChange={(event) => set('box_dimensions', event.target.value)}
+          />
+        </Field>
+        <Field label="Peso da caixa (kg)">
+          <Input
+            inputMode="decimal"
+            placeholder="0,76"
+            value={form.box_weight_kg}
+            onChange={(event) => set('box_weight_kg', event.target.value)}
           />
         </Field>
         <Field label="PVP original (€)">
@@ -348,7 +393,9 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
       <div className="flex flex-wrap items-center gap-2">
         <Button
           loading={update.isPending}
-          onClick={() =>
+          onClick={() => {
+            const age = parseAgeRange(form.age_range);
+            const box = parseBoxDimensions(form.box_dimensions);
             update.mutate({
               id: model.id,
               set_number: model.is_custom ? null : form.set_number.trim().toUpperCase() || null,
@@ -359,12 +406,18 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
               retirement_date: form.retirement_date || null,
               piece_count: count(form.piece_count),
               minifig_count: count(form.minifig_count),
+              age_min: age.min,
+              age_max: age.max,
+              box_width_cm: box.width,
+              box_depth_cm: box.depth,
+              box_height_cm: box.height,
+              box_weight_kg: decimals(form.box_weight_kg, 3),
               rrp_eur: money(form.rrp_eur),
               current_value_eur: money(form.current_value_eur),
               short_description: form.short_description || null,
               notes: form.notes || null,
-            })
-          }
+            });
+          }}
         >
           Guardar conjunto
         </Button>
@@ -389,105 +442,310 @@ function EditSetForm({ instance }: { instance: LegoSetInstance }) {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Estes campos descrevem o conjunto e valem para todas as cópias.
+        Estes campos descrevem o conjunto e valem para todas as cópias. A galeria de imagens
+        gere-se a partir do separador «Resumo».
       </p>
-
-      <Separator />
-      <GalleryEditor model={model} />
     </div>
   );
 }
 
-/** The carousel's contents: the box shot plus every extra view, reorderable by promotion. */
-function GalleryEditor({ model }: { model: LegoSetModel }) {
+/** A chevron toggle shared by the collapsible sections of the summary tab. */
+function CollapseToggle({
+  open,
+  onToggle,
+  label,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={open ? `Fechar ${label}` : `Abrir ${label}`}
+      className="mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+    >
+      <ChevronRight className={cn('size-4 transition-transform', open && 'rotate-90')} />
+    </button>
+  );
+}
+
+const GALLERY_TILE_PX = 64;
+const GALLERY_GAP_PX = 8;
+
+/** How many tiles fit per row at the container's current width, so a gallery
+ * never grows past a fixed number of rows regardless of viewport size. */
+function useTilesPerRow(tilePx: number, gapPx: number) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [perRow, setPerRow] = React.useState(4);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setPerRow(Math.max(1, Math.floor((el.clientWidth + gapPx) / (tilePx + gapPx))));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tilePx, gapPx]);
+
+  return { ref, perRow };
+}
+
+/**
+ * The carousel's contents, laid out as small tiles that always fill the row's
+ * width. The first tile is always the box shot everywhere else in the app, so
+ * the way to change it here is to drag another tile in front of it — see
+ * ADR-0042. Capped at two rows; anything past that is a generic "more" tile,
+ * because the carousel above already shows every frame.
+ */
+function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boolean }) {
   const gallery = useSetGallery();
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [url, setUrl] = React.useState('');
+  const [open, setOpen] = React.useState(false);
+  const [dragKey, setDragKey] = React.useState<string | null>(null);
+
+  const items = frames(model, null);
+  const { ref: gridRef, perRow } = useTilesPerRow(GALLERY_TILE_PX, GALLERY_GAP_PX);
+  const maxVisible = perRow * 2;
+  const overflow = items.length > maxVisible;
+  const shown = overflow ? items.slice(0, Math.max(1, maxVisible - 1)) : items;
+  const hiddenCount = items.length - shown.length;
+
+  async function reorder(fromKey: string, toKey: string) {
+    if (fromKey === toKey) return;
+    const keys = items.map((item) => item.key);
+    const fromIndex = keys.indexOf(fromKey);
+    const toIndex = keys.indexOf(toKey);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const next = [...keys];
+    next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, fromKey);
+
+    let order = next;
+    if (next[0] !== keys[0] && next[0] !== 'cover') {
+      // Whatever lands first becomes the box shot; the previous one (if any)
+      // is demoted back into the gallery by the same endpoint the old "tornar
+      // principal" star used.
+      const previousGalleryIds = new Set(model.images.map((image) => image.id));
+      const updated = await gallery.promote.mutateAsync({ id: model.id, imageId: next[0] });
+      const demotedId = updated.images.find((image) => !previousGalleryIds.has(image.id))?.id;
+      order = next.map((key) => (key === 'cover' && demotedId ? demotedId : key));
+    }
+
+    const rest = order.filter((key) => key !== order[0]);
+    await Promise.all(
+      rest.map((imageId, index) => gallery.reorder.mutateAsync({ id: model.id, imageId, position: index })),
+    );
+  }
 
   return (
     <div className="space-y-3">
-      <div>
-        <p className="text-sm font-medium">Galeria do conjunto</p>
-        <p className="text-xs text-muted-foreground">
-          A caixa é a imagem principal. As restantes servem para inspecionar o conjunto de perto.
-        </p>
+      <div className="flex items-start gap-1.5">
+        <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label="galeria do conjunto" />
+        <div>
+          <p className="text-sm font-medium">
+            Galeria do conjunto{items.length ? ` (${items.length})` : ''}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {canWrite
+              ? 'A primeira imagem é sempre a principal — arraste para reordenar.'
+              : 'A primeira imagem é a principal do conjunto.'}
+          </p>
+        </div>
       </div>
 
-      <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-        <li className="space-y-1">
-          <div className="aspect-square overflow-hidden rounded border-2 border-primary bg-muted">
-            {model.image_url ? (
-              <img src={model.image_url} alt="" className="size-full object-cover" loading="lazy" />
-            ) : null}
-          </div>
-          <p className="text-center text-xs font-medium">Principal</p>
-        </li>
-
-        {model.images.map((image) => (
-          <li key={image.id} className="space-y-1">
-            <div className="aspect-square overflow-hidden rounded border border-border bg-muted">
-              {image.url ? (
-                <img src={image.url} alt="" className="size-full object-cover" loading="lazy" />
+      {open ? (
+        <>
+          {items.length ? (
+            <div ref={gridRef} className="flex flex-wrap gap-2">
+              {shown.map((item, index) => (
+                <div
+                  key={item.key}
+                  draggable={canWrite}
+                  onDragStart={() => setDragKey(item.key)}
+                  onDragOver={(event) => canWrite && event.preventDefault()}
+                  onDrop={() => {
+                    if (dragKey) void reorder(dragKey, item.key);
+                    setDragKey(null);
+                  }}
+                  onDragEnd={() => setDragKey(null)}
+                  title={index === 0 ? 'Principal' : (item.caption ?? undefined)}
+                  className={cn(
+                    'group relative size-16 shrink-0 overflow-hidden rounded border bg-muted',
+                    index === 0 ? 'border-primary' : 'border-border',
+                    canWrite && 'cursor-grab active:cursor-grabbing',
+                    dragKey === item.key && 'opacity-40',
+                  )}
+                >
+                  {item.url ? (
+                    <img src={item.url} alt="" className="size-full object-cover" loading="lazy" />
+                  ) : null}
+                  {canWrite ? (
+                    <span className="pointer-events-none absolute left-0.5 top-0.5 rounded bg-black/40 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                      <GripVertical className="size-3" />
+                    </span>
+                  ) : null}
+                  {canWrite && item.key !== 'cover' ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Remover da galeria"
+                      className="absolute right-0.5 top-0.5 size-6 bg-black/40 text-white opacity-0 hover:bg-black/60 hover:text-destructive group-hover:opacity-100"
+                      onClick={() => gallery.remove.mutate({ id: model.id, imageId: item.key })}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+              {hiddenCount > 0 ? (
+                <div
+                  className="flex size-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded border border-dashed border-border bg-muted text-muted-foreground"
+                  title="Mais imagens disponíveis no carrossel, acima"
+                >
+                  <Images className="size-4" />
+                  <span className="text-xs font-medium">+{hiddenCount}</span>
+                </div>
               ) : null}
             </div>
-            <div className="flex justify-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Tornar principal"
-                onClick={() => gallery.promote.mutate({ id: model.id, imageId: image.id })}
-              >
-                <Star className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Remover da galeria"
-                className="text-destructive"
-                onClick={() => gallery.remove.mutate({ id: model.id, imageId: image.id })}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">Ainda sem imagens neste conjunto.</p>
+          )}
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) gallery.add.mutate({ id: model.id, file });
-          event.target.value = '';
-        }}
-      />
-      <div className="flex flex-wrap items-end gap-2">
-        <Field label="Endereço de uma imagem" className="min-w-[12rem] flex-1">
-          <Input
-            placeholder="https://…"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
+          {canWrite ? (
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) gallery.add.mutate({ id: model.id, file });
+                  event.target.value = '';
+                }}
+              />
+              <div className="flex flex-wrap items-end gap-2">
+                <Field label="Endereço de uma imagem" className="min-w-[12rem] flex-1">
+                  <Input
+                    placeholder="https://…"
+                    value={url}
+                    onChange={(event) => setUrl(event.target.value)}
+                  />
+                </Field>
+                <Button
+                  variant="outline"
+                  loading={gallery.add.isPending}
+                  disabled={!url.trim()}
+                  onClick={async () => {
+                    await gallery.add.mutateAsync({ id: model.id, url: url.trim() });
+                    setUrl('');
+                  }}
+                >
+                  Adicionar
+                </Button>
+                <Button variant="outline" onClick={() => fileRef.current?.click()}>
+                  <ImageIcon />
+                  Carregar ficheiro
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The manuals, kept on disk so they open with the router unplugged (ADR-0040).
+ * A PDF is opened in a new tab through the same signed URL an image uses.
+ */
+function InstructionsPanel({ model, canWrite }: { model: LegoSetModel; canWrite: boolean }) {
+  const instructions = useSetInstructions();
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex items-start gap-1.5">
+          <CollapseToggle
+            open={open}
+            onToggle={() => setOpen((v) => !v)}
+            label="manuais e livros de instrução"
           />
-        </Field>
-        <Button
-          variant="outline"
-          loading={gallery.add.isPending}
-          disabled={!url.trim()}
-          onClick={async () => {
-            await gallery.add.mutateAsync({ id: model.id, url: url.trim() });
-            setUrl('');
-          }}
-        >
-          Adicionar
-        </Button>
-        <Button variant="outline" onClick={() => fileRef.current?.click()}>
-          <ImageIcon />
-          Carregar ficheiro
-        </Button>
+          <div>
+            <p className="text-sm font-medium">
+              Manuais e livros de instrução
+              {model.instructions.length ? ` (${model.instructions.length})` : ''}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Guardados localmente em PDF. Só são importados os manuais universais e os que estão em
+              português ou inglês.
+            </p>
+          </div>
+        </div>
+        {canWrite && model.set_number ? (
+          <Button
+            variant="outline"
+            size="sm"
+            title="Traz também as fotografias adicionais do conjunto para a galeria."
+            loading={instructions.importFromBrickset.isPending}
+            onClick={() => instructions.importFromBrickset.mutate(model.id)}
+          >
+            <Download />
+            Importar do Brickset
+          </Button>
+        ) : null}
       </div>
+
+      {open ? (
+        model.instructions.length ? (
+          <ul className="divide-y divide-border rounded-lg border border-border">
+            {model.instructions.map((manual) => (
+              <li key={manual.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                <FileText className="size-4 shrink-0 text-muted-foreground" />
+                <a
+                  href={manual.url ?? '#'}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="min-w-0 flex-1 truncate hover:underline"
+                  title={manual.description}
+                >
+                  {manual.description}
+                </a>
+                <Badge variant="muted">
+                  {manual.language
+                    ? (INSTRUCTION_LANGUAGE_LABELS[manual.language] ?? manual.language)
+                    : 'Sem texto'}
+                </Badge>
+                {canWrite ? (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Remover manual"
+                    className="text-destructive"
+                    onClick={() =>
+                      instructions.remove.mutate({ id: model.id, instructionId: manual.id })
+                    }
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Ainda não há manuais guardados para este conjunto.
+          </p>
+        )
+      ) : null}
     </div>
   );
 }
@@ -534,10 +792,9 @@ function EditCopyForm({
             />
           </Field>
           <Field label="Data de aquisição">
-            <Input
-              type="date"
+            <DateInput
               value={form.acquisition_date}
-              onChange={(event) => set('acquisition_date', event.target.value)}
+              onChange={(iso) => set('acquisition_date', iso)}
             />
           </Field>
           <Field label="Origem">
@@ -802,6 +1059,7 @@ export function CopyDetailSheet({
   const [addCopyOpen, setAddCopyOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [alsoDeleteModel, setAlsoDeleteModel] = React.useState(false);
+  const [confirmDeleteSet, setConfirmDeleteSet] = React.useState(false);
   const deleteInstance = useDeleteInstance();
   const deleteModel = useDeleteModel();
   const siblings = useModelInstances(instance?.lego_set_model_id ?? null);
@@ -957,6 +1215,19 @@ export function CopyDetailSheet({
                         </DetailRow>
                         <DetailRow label="Peças">{num(model.piece_count)}</DetailRow>
                         <DetailRow label="Minifiguras">{num(model.minifig_count)}</DetailRow>
+                        <DetailRow label="Idade recomendada">
+                          {ageRangeLabel(model.age_min, model.age_max) ?? '—'}
+                        </DetailRow>
+                        <DetailRow label="Dimensões da caixa">
+                          {boxDimensionsLabel(
+                            model.box_width_cm,
+                            model.box_depth_cm,
+                            model.box_height_cm,
+                          ) ?? '—'}
+                        </DetailRow>
+                        <DetailRow label="Peso da caixa">
+                          {weightCompact(model.box_weight_kg)}
+                        </DetailRow>
                         <DetailRow label="PVP original">{eur(model.rrp_eur)}</DetailRow>
                         <DetailRow label="Valorização vs PVP">
                           <span
@@ -989,6 +1260,25 @@ export function CopyDetailSheet({
                           </Button>
                         ))}
                       </div>
+                    ) : null}
+
+                    <Separator />
+                    <InstructionsPanel model={model} canWrite={canWrite} />
+                    <Separator />
+                    <GalleryEditor model={model} canWrite={canWrite} />
+
+                    {canWrite ? (
+                      <>
+                        <Separator />
+                        <Button
+                          variant="outline"
+                          className="text-destructive"
+                          onClick={() => setConfirmDeleteSet(true)}
+                        >
+                          <Trash2 />
+                          Eliminar conjunto e todas as cópias
+                        </Button>
+                      </>
                     ) : null}
                   </TabsContent>
 
@@ -1162,6 +1452,64 @@ export function CopyDetailSheet({
                   await deleteModel.mutateAsync({ id: instance.lego_set_model_id, hard: true });
                 }
                 setConfirmDelete(false);
+                onOpenChange(false);
+              }}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteSet} onOpenChange={setConfirmDeleteSet}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Boxes className="size-4" />
+              Eliminar conjunto
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">{model?.name}</strong> e{' '}
+              {copies.length === 1 ? 'a sua única cópia' : `as suas ${copies.length} cópias`} — não
+              só a que está a ver.
+            </p>
+            <p>
+              <strong className="text-foreground">Arquivar</strong> mantém o histórico e a auditoria.{' '}
+              <strong className="text-foreground">Eliminar definitivamente</strong> remove as linhas
+              da base de dados; use apenas para enganos.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDeleteSet(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="outline"
+              loading={deleteInstance.isPending || deleteModel.isPending}
+              onClick={async () => {
+                if (!instance) return;
+                for (const copy of copies) {
+                  await deleteInstance.mutateAsync({ id: copy.id });
+                }
+                await deleteModel.mutateAsync({ id: instance.lego_set_model_id });
+                setConfirmDeleteSet(false);
+                onOpenChange(false);
+              }}
+            >
+              Arquivar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={deleteInstance.isPending || deleteModel.isPending}
+              onClick={async () => {
+                if (!instance) return;
+                for (const copy of copies) {
+                  await deleteInstance.mutateAsync({ id: copy.id, hard: true });
+                }
+                await deleteModel.mutateAsync({ id: instance.lego_set_model_id, hard: true });
+                setConfirmDeleteSet(false);
                 onOpenChange(false);
               }}
             >

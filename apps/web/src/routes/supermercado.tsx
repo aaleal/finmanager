@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Search, X } from 'lucide-react';
 import { PageHeader } from '@/components/ui/feedback';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DateInput, Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
 import {
   Select,
@@ -103,22 +103,18 @@ function FilterBar({
       ) : null}
 
       <div className="flex shrink-0 items-center gap-2">
-        <Input
-          type="date"
+        <DateInput
           aria-label="De"
           className="w-40"
           value={filters.date_from ?? ''}
-          onChange={(event) =>
-            setFilters({ date_from: event.target.value || undefined, page: '1' })
-          }
+          onChange={(iso) => setFilters({ date_from: iso || undefined, page: '1' })}
         />
         <span className="text-muted-foreground">–</span>
-        <Input
-          type="date"
+        <DateInput
           aria-label="Até"
           className="w-40"
           value={filters.date_to ?? ''}
-          onChange={(event) => setFilters({ date_to: event.target.value || undefined, page: '1' })}
+          onChange={(iso) => setFilters({ date_to: iso || undefined, page: '1' })}
         />
       </div>
     </div>

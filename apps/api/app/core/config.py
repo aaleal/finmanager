@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     # Signed document URLs are short-lived by design (§1a Document).
     document_url_ttl_minutes: int = 15
     max_upload_bytes: int = 15 * 1024 * 1024
+    #: A building manual is a scanned book, not a photograph: 10–60 MB is normal.
+    max_instruction_bytes: int = 80 * 1024 * 1024
 
     @property
     def database_url(self) -> str:

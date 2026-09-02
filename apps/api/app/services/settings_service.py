@@ -75,3 +75,22 @@ def set_value(
 
 def stale_value_days(db: DbSession) -> int:
     return int(get(db, LEGO_STALE_VALUE_DAYS, default=180))
+
+
+def ensure_brickset_from_env(db: DbSession) -> bool:
+    """A fresh install with ``BRICKSET_API_KEY`` in the environment starts with
+    Brickset already switched on — no visit to Definições required first.
+
+    Gated on the one Setting row this would otherwise create: once it exists,
+    an owner who later clears the key or switches it off from Definições is
+    never overridden by ``.env`` again on a later boot.
+    """
+    from app.core.config import settings as app_settings
+
+    if not app_settings.brickset_api_key:
+        return False
+    if db.scalar(select(Setting).where(Setting.key == BRICKSET_API_KEY, Setting.scope == "GLOBAL")):
+        return False
+    set_value(db, BRICKSET_API_KEY, app_settings.brickset_api_key)
+    set_value(db, BRICKSET_ENABLED, True)
+    return True

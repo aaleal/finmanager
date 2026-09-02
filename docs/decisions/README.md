@@ -42,3 +42,9 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0035](0035-confirming-a-category-is-a-statement-about-the-product.md) | Confirming a category is a statement about the product |
 | [0036](0036-the-comparable-price-per-kg-is-before-the-loyalty-card.md) | The comparable €/kg is the one before the loyalty card (supersedes 0031) |
 | [0037](0037-backup-is-per-module-behind-one-settings-surface.md) | Backup is per-module, behind one Definições surface |
+| [0038](0038-an-env-provided-brickset-key-switches-itself-on.md) | An env-provided Brickset key switches itself on |
+| [0039](0039-the-sets-own-fields-not-a-shops.md) | The set's own fields, not a shop's |
+| [0040](0040-a-manual-is-downloaded-not-linked.md) | A manual is downloaded, not linked |
+| [0041](0041-typed-the-way-it-is-printed.md) | Typed the way it is printed (dates, age, box size) |
+| [0042](0042-gallery-order-is-drag-and-drop-and-position-zero-is-the-cover.md) | Gallery order is drag-and-drop, and position zero is the cover |
+| [0043](0043-a-manuals-identity-is-its-description-not-its-bytes.md) | A manual's identity is its description, not its bytes |

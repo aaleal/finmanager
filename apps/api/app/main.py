@@ -32,7 +32,7 @@ from app.core.config import settings
 from app.core.db import engine, session_scope
 from app.core.errors import AppError
 from app.core.ratelimit import RateLimitMiddleware
-from app.services import reference_data
+from app.services import reference_data, settings_service
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger("finmanager")
@@ -52,6 +52,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             return
         with session_scope() as db:
             created = reference_data.ensure_all(db)
+            if settings_service.ensure_brickset_from_env(db):
+                logger.info("bootstrap: Brickset enabled from BRICKSET_API_KEY")
         if any(created.values()):
             logger.info("bootstrap: reference data created %s", created)
     except Exception:  # pragma: no cover - defensive, boot must not depend on it

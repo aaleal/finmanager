@@ -5,7 +5,7 @@ import { ChevronDown, ImagePlus, Link2, Search, Sparkles, X } from 'lucide-react
 import { ApiError } from '@/lib/api';
 import type { LookupResult, StorageLocation, TransactionSuggestion } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Field, Input, Textarea } from '@/components/ui/input';
+import { DateInput, Field, Input, Textarea } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox, Separator } from '@/components/ui/primitives';
 import {
@@ -26,8 +26,16 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionPicker } from '@/components/transaction-picker';
 import { useSession } from '@/features/auth/session';
-import { useCreateInstance, useLookup, useSetGallery, useStorageLocations } from './api';
-import { BUILD_STATE_LABELS, CONDITION_LABELS, SOURCE_LABELS } from './constants';
+import { useCreateInstance, useLookup, useSetGallery, useSetInstructions, useStorageLocations } from './api';
+import {
+  BUILD_STATE_LABELS,
+  CONDITION_LABELS,
+  SOURCE_LABELS,
+  ageRangeInput,
+  boxDimensionsInput,
+  parseAgeRange,
+  parseBoxDimensions,
+} from './constants';
 import { cn } from '@/lib/utils';
 import { date, eur } from '@/lib/format';
 
@@ -41,6 +49,9 @@ interface FormValues {
   retirement_date: string;
   piece_count: string;
   minifig_count: string;
+  age_range: string;
+  box_dimensions: string;
+  box_weight_kg: string;
   rrp_eur: string;
   current_value_eur: string;
   short_description: string;
@@ -67,6 +78,9 @@ const EMPTY: FormValues = {
   retirement_date: '',
   piece_count: '',
   minifig_count: '',
+  age_range: '',
+  box_dimensions: '',
+  box_weight_kg: '',
   rrp_eur: '',
   current_value_eur: '',
   short_description: '',
@@ -103,6 +117,13 @@ function toMoney(value: string) {
   if (!normalized) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed.toFixed(2) : null;
+}
+
+function toDecimal(value: string, places: number) {
+  const normalized = value.trim().replace(',', '.');
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed.toFixed(places) : null;
 }
 
 function Collapsible({
@@ -287,6 +308,7 @@ export function AddSetDialog({
   const lookup = useLookup();
   const createInstance = useCreateInstance();
   const gallery = useSetGallery();
+  const instructions = useSetInstructions();
   const { activeEntityId } = useSession();
   const [entityId, setEntityId] = React.useState(existingModel?.entityId ?? activeEntityId ?? '');
   const [lookupResult, setLookupResult] = React.useState<LookupResult | null>(null);
@@ -331,6 +353,12 @@ export function AddSetDialog({
     apply('retirement_date', result.retirement_date);
     apply('piece_count', result.piece_count);
     apply('minifig_count', result.minifig_count);
+    apply('age_range', ageRangeInput(result.age_min, result.age_max));
+    apply(
+      'box_dimensions',
+      boxDimensionsInput(result.box_width_cm, result.box_depth_cm, result.box_height_cm),
+    );
+    apply('box_weight_kg', result.box_weight_kg ? Number(result.box_weight_kg).toLocaleString('pt-PT') : null);
     apply('rrp_eur', result.rrp_eur);
     apply('image_url', result.image_url);
     apply('short_description', result.short_description);
@@ -356,6 +384,8 @@ export function AddSetDialog({
     if (existingModel) {
       payload.lego_set_model_id = existingModel.id;
     } else {
+      const age = parseAgeRange(values.age_range);
+      const box = parseBoxDimensions(values.box_dimensions);
       payload.new_set = {
         set_number: values.is_custom ? null : values.set_number.trim().toUpperCase(),
         is_custom: values.is_custom,
@@ -366,6 +396,12 @@ export function AddSetDialog({
         retirement_date: values.retirement_date || null,
         piece_count: toNumber(values.piece_count),
         minifig_count: toNumber(values.minifig_count),
+        age_min: age.min,
+        age_max: age.max,
+        box_width_cm: box.width,
+        box_depth_cm: box.depth,
+        box_height_cm: box.height,
+        box_weight_kg: toDecimal(values.box_weight_kg, 3),
         rrp_eur: toMoney(values.rrp_eur),
         current_value_eur: toMoney(values.current_value_eur),
         short_description: values.short_description || null,
@@ -378,6 +414,11 @@ export function AddSetDialog({
       // Staged before the model existed; the gallery only accepts a real id.
       for (const photo of pendingPhotos) {
         await gallery.add.mutateAsync({ id: instance.lego_set_model_id, file: photo.file });
+      }
+      // A set that came from Brickset gets the rest of what Brickset has: the
+      // extra photographs and the manuals, downloaded in the background.
+      if (!existingModel && !values.is_custom && lookupResult?.found) {
+        instructions.importFromBrickset.mutate(instance.lego_set_model_id);
       }
       onOpenChange(false);
     } catch (error) {
@@ -426,6 +467,12 @@ export function AddSetDialog({
                           disabled={isCustom}
                           autoFocus
                           {...form.register('set_number')}
+                          onKeyDown={(event) => {
+                            // Enter here means «Procurar», not «guardar o conjunto».
+                            if (event.key !== 'Enter') return;
+                            event.preventDefault();
+                            if (!isCustom && setNumber.trim()) void runLookup();
+                          }}
                         />
                       </Field>
                       <Button
@@ -512,22 +559,47 @@ export function AddSetDialog({
                     </Field>
                   </div>
 
-                  <Collapsible title="Detalhes do conjunto">
+                  <Collapsible title="Detalhes do conjunto" defaultOpen>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field label="Data de lançamento">
-                        <Input type="date" {...form.register('release_date')} />
+                        <DateInput
+                          value={form.watch('release_date')}
+                          onChange={(iso) => form.setValue('release_date', iso)}
+                        />
                       </Field>
                       <Field
                         label="Data de retirada"
                         hint="Vazio se ainda está à venda. Só conta como retirado depois de a data passar."
                       >
-                        <Input type="date" {...form.register('retirement_date')} />
+                        <DateInput
+                          value={form.watch('retirement_date')}
+                          onChange={(iso) => form.setValue('retirement_date', iso)}
+                        />
                       </Field>
                       <Field label="Peças">
                         <Input type="number" {...form.register('piece_count')} />
                       </Field>
                       <Field label="Minifiguras">
                         <Input type="number" {...form.register('minifig_count')} />
+                      </Field>
+                      <Field
+                        label="Idade recomendada"
+                        hint="O que está impresso na caixa: «18+», «4+» ou «6-12»."
+                      >
+                        <Input placeholder="18+" {...form.register('age_range')} />
+                      </Field>
+                      <Field
+                        label="Dimensões da caixa (cm)"
+                        hint="Largura × profundidade × altura."
+                      >
+                        <Input placeholder="26,2 × 7,1 × 38,2" {...form.register('box_dimensions')} />
+                      </Field>
+                      <Field label="Peso da caixa (kg)">
+                        <Input
+                          inputMode="decimal"
+                          placeholder="0,76"
+                          {...form.register('box_weight_kg')}
+                        />
                       </Field>
                       <Field label="PVP original (€)">
                         <Input
@@ -574,7 +646,10 @@ export function AddSetDialog({
                   />
                 </Field>
                 <Field label="Data de aquisição">
-                  <Input type="date" {...form.register('acquisition_date')} />
+                  <DateInput
+                    value={form.watch('acquisition_date')}
+                    onChange={(iso) => form.setValue('acquisition_date', iso)}
+                  />
                 </Field>
                 <Field label="Origem">
                   <Select

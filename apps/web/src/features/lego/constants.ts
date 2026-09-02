@@ -17,6 +17,7 @@ export const SOURCE_LABELS: Record<AcquisitionSource, string> = {
   RETAIL: 'Loja',
   SECONDHAND: 'Em segunda mão',
   GIFT: 'Prenda',
+  FS: 'Fs',
   OTHER: 'Outro',
 };
 
@@ -98,3 +99,73 @@ export function externalLinks(setNumber: string) {
     { label: 'Rebrickable', href: `https://rebrickable.com/sets/${bare}-1/` },
   ];
 }
+
+/** `18+` when the box has no upper age, `6-12` when it does. */
+export function ageRangeLabel(
+  min: number | null | undefined,
+  max: number | null | undefined,
+): string | null {
+  if (min == null && max == null) return null;
+  if (min != null && max != null) return min === max ? `${min}` : `${min}–${max}`;
+  return min != null ? `${min}+` : `até ${max}`;
+}
+
+/** The box prints one age, so the form asks for one: `18+`, `+4` or `6-12`. */
+export function ageRangeInput(
+  min: number | null | undefined,
+  max: number | null | undefined,
+): string {
+  return ageRangeLabel(min, max) ?? '';
+}
+
+export function parseAgeRange(text: string): { min: number | null; max: number | null } {
+  const trimmed = text.trim();
+  const range = /^(\d{1,3})\s*[-–]\s*(\d{1,3})$/.exec(trimmed);
+  if (range) return { min: Number(range[1]), max: Number(range[2]) };
+  const single = /^\+?(\d{1,3})\+?$/.exec(trimmed);
+  return single ? { min: Number(single[1]), max: null } : { min: null, max: null };
+}
+
+/** The box as it is printed on the back: comprimento × largura × altura. */
+export function boxDimensionsLabel(
+  width: string | null | undefined,
+  depth: string | null | undefined,
+  height: string | null | undefined,
+): string | null {
+  const parts = [width, depth, height];
+  if (parts.every((part) => !part)) return null;
+  return `${parts.map((part) => (part ? Number(part).toLocaleString('pt-PT') : '?')).join(' × ')} cm`;
+}
+
+/** The same three sides in one editable field, without the unit. */
+export function boxDimensionsInput(
+  width: string | null | undefined,
+  depth: string | null | undefined,
+  height: string | null | undefined,
+): string {
+  const parts = [width, depth, height];
+  if (parts.every((part) => !part)) return '';
+  return parts.map((part) => (part ? Number(part).toLocaleString('pt-PT') : '')).join(' × ');
+}
+
+export function parseBoxDimensions(text: string): {
+  width: string | null;
+  depth: string | null;
+  height: string | null;
+} {
+  const [width, depth, height] = text.split(/[x×*]/i).map((part) => part.trim().replace(',', '.'));
+  const side = (part: string | undefined) => {
+    const parsed = Number(part);
+    return part && Number.isFinite(parsed) && parsed >= 0 ? parsed.toFixed(1) : null;
+  };
+  return { width: side(width), depth: side(depth), height: side(height) };
+}
+
+/** The two languages this household reads; anything else is never imported. */
+export const INSTRUCTION_LANGUAGE_LABELS: Record<string, string> = {
+  EN: 'Inglês',
+  ENGB: 'Inglês (GB)',
+  ENUS: 'Inglês (US)',
+  PT: 'Português',
+  PTBR: 'Português (BR)',
+};

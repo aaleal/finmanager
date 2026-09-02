@@ -11,11 +11,13 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
+import httpx
 from sqlalchemy import Select, and_, case, func, or_, select
 from sqlalchemy.orm import Session as DbSession
 from sqlalchemy.orm import aliased, selectinload
 
 from app.core import audit
+from app.core.config import settings as app_settings
 from app.core.errors import Conflict, NotFound, ValidationError
 from app.core.money import ZERO, appreciation_eur, roi_pct
 from app.core.security import signed_document_url
@@ -24,6 +26,7 @@ from app.models.lego import (
     CONDITIONS,
     LegoSetImage,
     LegoSetInstance,
+    LegoSetInstruction,
     LegoSetModel,
     StorageLocation,
 )
@@ -36,6 +39,7 @@ from app.schemas.lego import (
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
     LegoSetInstanceUpdate,
+    LegoSetInstructionOut,
     LegoSetModelCreate,
     LegoSetModelOut,
     LegoSetModelUpdate,
@@ -47,12 +51,13 @@ from app.schemas.lego import (
     ThemeBreakdown,
     TimelinePoint,
 )
-from app.services import documents, settings_service
+from app.services import documents, lego_provider, settings_service
 
 MODEL_TABLE = "lego_set_models"
 INSTANCE_TABLE = "lego_set_instances"
 STORAGE_TABLE = "lego_storage_locations"
 IMAGE_TABLE = "lego_set_images"
+INSTRUCTION_TABLE = "lego_set_instructions"
 
 
 # --- Serialization -----------------------------------------------------------
@@ -76,6 +81,17 @@ def _model_out(
                 position=image.position,
             )
             for image in model.images
+        ],
+        instructions=[
+            LegoSetInstructionOut(
+                id=manual.id,
+                document_id=manual.document_id,
+                url=signed_document_url(manual.document_id),
+                description=manual.description,
+                language=manual.language,
+                position=manual.position,
+            )
+            for manual in model.instructions
         ],
         is_retired=model.is_retired,
         release_year=model.release_date.year if model.release_date else None,
@@ -547,6 +563,171 @@ def delete_model_image(db: DbSession, image: LegoSetImage, *, actor_user_id: uui
     # The Document row itself stays: it is content-addressed and may be shared.
     db.delete(image)
     db.flush()
+
+
+# --- Instruction manuals -----------------------------------------------------
+def get_model_instruction(db: DbSession, instruction_id: uuid.UUID) -> LegoSetInstruction:
+    manual = db.get(LegoSetInstruction, instruction_id)
+    if manual is None:
+        raise NotFound("Manual não encontrado.")
+    return manual
+
+
+def delete_model_instruction(
+    db: DbSession, manual: LegoSetInstruction, *, actor_user_id: uuid.UUID
+) -> None:
+    audit.record(
+        db,
+        action="DELETE",
+        table_name=INSTRUCTION_TABLE,
+        record_id=manual.id,
+        entity_id=manual.model.entity_id,
+        actor_user_id=actor_user_id,
+        before=audit.snapshot(manual),
+    )
+    db.delete(manual)
+    db.flush()
+
+
+def import_from_brickset(
+    db: DbSession, model: LegoSetModel, *, actor_user_id: uuid.UUID
+) -> tuple[int, int, str | None]:
+    """Pull the set's extra photographs and its manuals down onto this disk.
+
+    Contacts Brickset only from here, on an explicit press. Whatever is already
+    stored is left alone, so pressing twice costs nothing (ADR-0040).
+    """
+    provider = lego_provider.get_provider(db)
+    if not getattr(provider, "enabled", False):
+        raise ValidationError(lego_provider.DISABLED_MESSAGE)
+    if not model.set_number:
+        raise ValidationError("Um MOC não existe no Brickset.")
+
+    try:
+        remote_images = provider.additional_images(model.set_number)
+        remote_manuals = provider.instructions(model.set_number)
+    except (httpx.HTTPError, ValueError) as exc:
+        raise ValidationError(
+            f"Brickset indisponível ({exc.__class__.__name__}). Tente novamente mais tarde."
+        ) from exc
+
+    images_added = _import_images(db, model, remote_images, actor_user_id=actor_user_id)
+    manuals_added = _import_instructions(db, model, remote_manuals, actor_user_id=actor_user_id)
+    db.refresh(model)
+
+    message = None
+    if not images_added and not manuals_added:
+        message = "Nada de novo no Brickset para este conjunto."
+    return images_added, manuals_added, message
+
+
+def _import_images(
+    db: DbSession,
+    model: LegoSetModel,
+    remote: list[lego_provider.RemoteImage],
+    *,
+    actor_user_id: uuid.UUID,
+) -> int:
+    added = 0
+    for image in remote:
+        try:
+            document = documents.store_from_url(db, image.url)
+        except ValidationError:
+            # One unreachable photograph must not abandon the whole import.
+            continue
+        if document.id == model.image_document_id:
+            continue
+        clash = db.scalar(
+            select(LegoSetImage).where(
+                LegoSetImage.lego_set_model_id == model.id,
+                LegoSetImage.document_id == document.id,
+            )
+        )
+        if clash is not None:
+            continue
+        row = LegoSetImage(
+            lego_set_model_id=model.id,
+            document_id=document.id,
+            position=_next_image_position(db, model.id),
+        )
+        db.add(row)
+        db.flush()
+        audit.record(
+            db,
+            action="CREATE",
+            table_name=IMAGE_TABLE,
+            record_id=row.id,
+            entity_id=model.entity_id,
+            actor_user_id=actor_user_id,
+            after=audit.snapshot(row),
+            reason="brickset import",
+        )
+        added += 1
+    return added
+
+
+def _import_instructions(
+    db: DbSession,
+    model: LegoSetModel,
+    remote: list[lego_provider.RemoteInstruction],
+    *,
+    actor_user_id: uuid.UUID,
+) -> int:
+    position = db.scalar(
+        select(func.max(LegoSetInstruction.position)).where(
+            LegoSetInstruction.lego_set_model_id == model.id
+        )
+    )
+    position = 0 if position is None else position + 1
+    seen_descriptions = {manual.description for manual in model.instructions}
+
+    added = 0
+    for manual in remote:
+        # The description is the manual's real identity: Brickset re-serves the
+        # same booklet with different bytes on every download, so a content hash
+        # alone lets the same manual back in under a fresh document (ADR-0042).
+        if manual.description in seen_descriptions:
+            continue
+        try:
+            document = documents.store_from_url(
+                db,
+                manual.url,
+                max_bytes=app_settings.max_instruction_bytes,
+                original_filename=f"{manual.description}.pdf",
+            )
+        except ValidationError:
+            continue
+        clash = db.scalar(
+            select(LegoSetInstruction).where(
+                LegoSetInstruction.lego_set_model_id == model.id,
+                LegoSetInstruction.document_id == document.id,
+            )
+        )
+        if clash is not None:
+            continue
+        row = LegoSetInstruction(
+            lego_set_model_id=model.id,
+            document_id=document.id,
+            description=manual.description,
+            language=manual.language,
+            position=position,
+        )
+        db.add(row)
+        db.flush()
+        audit.record(
+            db,
+            action="CREATE",
+            table_name=INSTRUCTION_TABLE,
+            record_id=row.id,
+            entity_id=model.entity_id,
+            actor_user_id=actor_user_id,
+            after=audit.snapshot(row),
+            reason="brickset import",
+        )
+        seen_descriptions.add(manual.description)
+        position += 1
+        added += 1
+    return added
 
 
 # --- Instances ---------------------------------------------------------------
