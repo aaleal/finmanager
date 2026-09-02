@@ -14,7 +14,7 @@ import zipfile
 from typing import Any
 
 import pytest
-from app.core.errors import ValidationError
+from app.core.errors import Conflict, ValidationError
 from app.models import Entity, User
 from app.models.lego import LegoSetInstance, LegoSetInstruction, LegoSetModel, StorageLocation
 from app.schemas.lego import LegoSetModelCreate
@@ -99,6 +99,45 @@ def test_one_press_brings_the_photographs_and_the_manuals(
     stored = db.get(LegoSetInstruction, model.instructions[0].id)
     assert stored is not None
     assert documents.get(db, stored.document_id) is not None
+
+
+def test_a_manual_can_be_added_by_hand(
+    db: Session, owner: User, model: LegoSetModel, brickset: None
+) -> None:
+    manual = lego_service.add_model_instruction(
+        db,
+        model,
+        url="https://household.test/scan.pdf",
+        description="Caderno de notas da avó",
+        language=None,
+        actor_user_id=owner.id,
+    )
+
+    assert manual.description == "Caderno de notas da avó"
+    assert [m.description for m in model.instructions] == ["Caderno de notas da avó"]
+
+
+def test_a_hand_added_manual_refuses_a_repeated_description(
+    db: Session, owner: User, model: LegoSetModel, brickset: None
+) -> None:
+    lego_service.add_model_instruction(
+        db,
+        model,
+        url="https://household.test/scan.pdf",
+        description="Caderno de notas da avó",
+        language=None,
+        actor_user_id=owner.id,
+    )
+
+    with pytest.raises(Conflict):
+        lego_service.add_model_instruction(
+            db,
+            model,
+            url="https://household.test/scan-2.pdf",
+            description="Caderno de notas da avó",
+            language=None,
+            actor_user_id=owner.id,
+        )
 
 
 def test_pressing_twice_adds_nothing(

@@ -11,7 +11,7 @@ import datetime as dt
 from decimal import Decimal
 
 import pytest
-from app.core.errors import Conflict
+from app.core.errors import Conflict, ValidationError
 from app.models import Entity, LegoSetInstance, User
 from app.schemas.lego import (
     LegoSetInstanceCreate,
@@ -150,14 +150,46 @@ def test_gallery_adds_promotes_and_removes(db: Session, entity: Entity, owner: U
         )
 
     lego_service.promote_model_image(db, image, actor_user_id=owner.id)
-    assert model.image_document_id != box
-    # The old box shot is not lost, it just moves into the gallery.
+    promoted = image.document_id
+    assert model.image_document_id == promoted
+    # Nothing moved: the promoted image keeps its row, and the old box shot —
+    # not lost — is simply appended as a new one.
+    assert [i.document_id for i in lego_service.model_out(db, model).images] == [
+        promoted,
+        box,
+    ]
+
+    # Deleting the (now-cover) gallery row loses nothing either: the model still
+    # points at the same document, just no longer duplicated in the gallery.
+    lego_service.delete_model_image(db, image, actor_user_id=owner.id)
+    db.refresh(model)
+    assert model.image_document_id == promoted
     assert [i.document_id for i in lego_service.model_out(db, model).images] == [box]
 
-    demoted = model.images[0]
-    lego_service.delete_model_image(db, demoted, actor_user_id=owner.id)
-    db.refresh(model)
-    assert lego_service.model_out(db, model).images == []
+
+def test_promoting_a_second_image_does_not_duplicate_the_first(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    copy = _copy(db, entity, owner, set_number="1000", name="Alfa")
+    model = copy.model
+    lego_service.set_model_image(db, model, data=PNG, filename="box.png", actor_user_id=owner.id)
+    box = model.image_document_id
+    first = lego_service.add_model_image(
+        db, model, data=PNG[:-1] + b"\x83", filename="alt.png", actor_user_id=owner.id
+    )
+    second = lego_service.add_model_image(
+        db, model, data=PNG[:-1] + b"\x80", filename="alt2.png", actor_user_id=owner.id
+    )
+
+    lego_service.promote_model_image(db, first, actor_user_id=owner.id)
+    lego_service.promote_model_image(db, second, actor_user_id=owner.id)
+
+    assert model.image_document_id == second.document_id
+    # Nothing is ever removed by a promotion, so all three documents are still
+    # visible — but `first` (the cover in between) appears only once, not twice.
+    docs = [i.document_id for i in lego_service.model_out(db, model).images]
+    assert docs.count(first.document_id) == 1
+    assert set(docs) == {box, first.document_id, second.document_id}
 
 
 def test_a_copy_photograph_leads_the_carousel(db: Session, entity: Entity, owner: User) -> None:
@@ -172,3 +204,33 @@ def test_a_copy_photograph_leads_the_carousel(db: Session, entity: Entity, owner
     assert out.set_model.value_updated_at is None or isinstance(
         out.set_model.value_updated_at, dt.date
     )
+
+
+def test_a_copy_can_pick_its_own_table_image(db: Session, entity: Entity, owner: User) -> None:
+    copy = _copy(db, entity, owner, set_number="1000", name="Alfa")
+    model = copy.model
+    lego_service.set_model_image(db, model, data=PNG, filename="box.png", actor_user_id=owner.id)
+    image = lego_service.add_model_image(
+        db, model, data=PNG[:-1] + b"\x83", filename="alt.png", actor_user_id=owner.id
+    )
+
+    lego_service.set_instance_display_image(
+        db, copy, image.document_id, actor_user_id=owner.id
+    )
+    assert lego_service.instance_out(db, copy).display_image_url is not None
+
+    lego_service.set_instance_display_image(db, copy, None, actor_user_id=owner.id)
+    assert lego_service.instance_out(db, copy).display_image_url is None
+
+
+def test_a_copy_cannot_pick_an_unrelated_image(db: Session, entity: Entity, owner: User) -> None:
+    copy = _copy(db, entity, owner, set_number="1000", name="Alfa")
+    other = _copy(db, entity, owner, set_number="2000", name="Beta")
+    lego_service.set_model_image(
+        db, other.model, data=PNG, filename="box.png", actor_user_id=owner.id
+    )
+
+    with pytest.raises(ValidationError):
+        lego_service.set_instance_display_image(
+            db, copy, other.model.image_document_id, actor_user_id=owner.id
+        )

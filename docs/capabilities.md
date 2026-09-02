@@ -89,11 +89,13 @@ lives here, where it can be corrected when code moves.
 | Real household inventory as seed data (93 sets, 97 copies) | `apps/api/app/seed/data/lego-inventory.json` | Phase 1 (M9.2) |
 | Sort on every grid column, incl. derived `copies` and `roi`, ordinal `condition` | `apps/api/app/services/lego_service.py` | Phase 1 (M9.3) |
 | Set image gallery + carousel (box shot plus extra views) | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/set-carousel.tsx` | Phase 1 (M9.3) |
-| Drag-and-drop gallery reorder on the summary tab — position zero is the cover, capped at two rows with a "+N" overflow tile (ADR-0042) | `apps/web/src/features/lego/detail-sheet.tsx::GalleryEditor` | Phase 1 (M9.4) |
+| Gallery editor on the summary tab — append-only order, a star marks the set's cover, capped at one row with a "+N" overflow tile (ADR-0045) | `apps/web/src/features/lego/detail-sheet.tsx::GalleryEditor` | Phase 1 (M9.4) |
+| Per-copy table image picked from the set's own images, falling back to the set's cover (ADR-0045) | `apps/api/app/services/lego_service.py::set_instance_display_image`, `apps/web/src/features/lego/detail-sheet.tsx::DisplayImagePicker` | Phase 1 (M9.4) |
 | Real Brickset box art downloaded once into the seed | `apps/api/app/seed/__init__.py` | Phase 1 (M9.3) |
 | Set dates read from the set's own `launchDate` / `exitDate`, and the RRP only from the euro store (ADR-0039) | `apps/api/app/services/lego_provider.py` | Phase 1 (M9.4) |
 | Recommended age range and box dimensions (`age_min`/`age_max`, `box_*`), looked up and hand-editable | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/detail-sheet.tsx` | Phase 1 (M9.4) |
-| `POST /lego/models/{id}/brickset` — one press downloads `getAdditionalImages` into the gallery and `getInstructions2` (PT/EN + language-neutral) into `lego_set_instructions`, all stored locally and carried by the backup (ADR-0040). Runs by itself once a set is created from a Brickset lookup | `apps/api/app/services/lego_service.py::import_from_brickset`, `apps/api/app/services/lego_backup.py` | Phase 1 (M9.4) |
+| `POST /lego/models/{id}/brickset` — one press downloads `getAdditionalImages` into the gallery and `getInstructions2` (PT/EN + language-neutral) into `lego_set_instructions`, all stored locally and carried by the backup (ADR-0040). Runs automatically once, from set creation, never again from the sheet (ADR-0044) | `apps/api/app/services/lego_service.py::import_from_brickset`, `apps/api/app/services/lego_backup.py` | Phase 1 (M9.4) |
+| `POST /lego/models/{id}/instructions` — add a manual by hand (file or URL), same storage and dedupe rules as the Brickset import (ADR-0044) | `apps/api/app/services/lego_service.py::add_model_instruction` | Phase 1 (M9.4) |
 | `DateInput` — every date in the application is typed `dd/mm/aaaa` over an ISO value, because the native picker follows the browser's locale (ADR-0041) | `apps/web/src/components/ui/input.tsx` | Phase 1 (M9.4) |
 | Manual import dedupes by description before downloading, not by file content (ADR-0043) | `apps/api/app/services/lego_service.py::_import_instructions` | Phase 1 (M9.4) |
 

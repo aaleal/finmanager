@@ -13,6 +13,7 @@ from app.schemas.lego import (
     CompletenessFilter,
     CopiesFilter,
     ImageSource,
+    InstanceDisplayImageUpdate,
     LegoSetImageUpdate,
     LegoSetInstanceCreate,
     LegoSetInstanceOut,
@@ -164,6 +165,34 @@ async def add_model_image(
         data=data,
         filename=file.filename if file else None,
         caption=caption,
+        actor_user_id=ctx.user.id,
+    )
+    return lego_service.model_out(db, model)
+
+
+@router.post("/models/{model_id}/instructions", response_model=LegoSetModelOut, status_code=201)
+async def add_model_instruction(
+    model_id: uuid.UUID,
+    ctx: Writer,
+    db: Db,
+    description: str,
+    url: str | None = None,
+    language: str | None = None,
+    file: Annotated[UploadFile | None, File()] = None,
+) -> LegoSetModelOut:
+    """Add one manual by hand — a household scan, or a link Brickset doesn't carry."""
+    model = lego_service.get_model(db, model_id)
+    data = await file.read() if file is not None else None
+    if url is None and data is None:
+        raise ValidationError("Indique um endereço do manual ou carregue um ficheiro.")
+    lego_service.add_model_instruction(
+        db,
+        model,
+        url=ImageSource(url=url).url if url else None,
+        data=data,
+        filename=file.filename if file else None,
+        description=description,
+        language=language,
         actor_user_id=ctx.user.id,
     )
     return lego_service.model_out(db, model)
@@ -327,6 +356,18 @@ async def set_instance_photo(
         data=data,
         filename=file.filename if file else None,
         actor_user_id=ctx.user.id,
+    )
+    return lego_service.instance_out(db, instance)
+
+
+@router.put("/instances/{instance_id}/display-image", response_model=LegoSetInstanceOut)
+def set_instance_display_image(
+    instance_id: uuid.UUID, payload: InstanceDisplayImageUpdate, ctx: Writer, db: Db
+) -> LegoSetInstanceOut:
+    """Which of the set's own images stands for this copy in the collection table."""
+    instance = lego_service.get_instance(db, instance_id)
+    lego_service.set_instance_display_image(
+        db, instance, payload.document_id, actor_user_id=ctx.user.id
     )
     return lego_service.instance_out(db, instance)
 

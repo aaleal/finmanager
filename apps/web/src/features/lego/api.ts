@@ -215,6 +215,20 @@ export function useSetInstancePhoto() {
   });
 }
 
+/** Which of the set's own images (cover or gallery) stands for this copy in the table. */
+export function useSetInstanceDisplayImage() {
+  const invalidate = useInvalidateLego();
+  return useMutation({
+    mutationFn: ({ id, documentId }: { id: string; documentId: string | null }) =>
+      api.put<LegoSetInstance>(`/lego/instances/${id}/display-image`, { document_id: documentId }),
+    onSuccess: () => {
+      toast.success('Imagem da cópia atualizada.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível atualizar a imagem.')),
+  });
+}
+
 export function useSetModelImage() {
   const invalidate = useInvalidateLego();
   return useMutation({
@@ -284,16 +298,7 @@ export function useSetGallery() {
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível remover a imagem.')),
   });
 
-  // Silent on success — a drag reorders several images at once and one toast per
-  // image would spam the user for what is a single gesture.
-  const reorder = useMutation({
-    mutationFn: ({ id, imageId, position }: { id: string; imageId: string; position: number }) =>
-      api.patch<LegoSetModel>(`/lego/models/${id}/images/${imageId}`, { position }),
-    onSuccess: () => invalidate(),
-    onError: (error) => toast.error(errorMessage(error, 'Não foi possível reordenar a galeria.')),
-  });
-
-  return { add, promote, remove, reorder };
+  return { add, promote, remove };
 }
 
 /** Manuals and info booklets: pulled from Brickset, then served from disk. */
@@ -322,7 +327,44 @@ export function useSetInstructions() {
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível remover o manual.')),
   });
 
-  return { importFromBrickset, remove };
+  const add = useMutation({
+    mutationFn: async ({
+      id,
+      description,
+      file,
+      url,
+      language,
+    }: {
+      id: string;
+      description: string;
+      file?: File;
+      url?: string;
+      language?: string;
+    }) => {
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.upload<LegoSetModel>(
+          `/lego/models/${id}/instructions`,
+          formData,
+          { description, language },
+          'POST',
+        );
+      }
+      return api.post<LegoSetModel>(`/lego/models/${id}/instructions`, undefined, {
+        description,
+        url,
+        language,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Manual adicionado.');
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível adicionar o manual.')),
+  });
+
+  return { importFromBrickset, add, remove };
 }
 
 export function useStorageMutations() {

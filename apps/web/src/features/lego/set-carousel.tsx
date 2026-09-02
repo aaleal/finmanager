@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Blocks, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Blocks, ChevronLeft, ChevronRight, Images } from 'lucide-react';
 import type { LegoSetModel } from '@/lib/types';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -8,18 +8,51 @@ export interface Frame {
   key: string;
   url: string;
   caption: string | null;
+  /** The underlying `Document` id, so a per-copy pick can be matched back to a frame. */
+  documentId: string | null;
+  /** Whether this is the set's current box shot (ADR-0045: a flag, not a position). */
+  isCover: boolean;
 }
 /**
- * The box shot is always frame zero; the gallery follows in its stored order.
- * A copy photograph, when there is one, comes first — it is *this* box, not the
- * catalog's.
+ * A copy photograph, when there is one, leads — it is *this* box, not the
+ * catalog's. The cover otherwise gets its own leading frame, unless it is
+ * already one of the gallery's own images (promoted there without moving),
+ * in which case it is only shown once, at its own place in the gallery.
  */
 export function frames(model: LegoSetModel | null, photoUrl?: string | null): Frame[] {
   const list: Frame[] = [];
-  if (photoUrl) list.push({ key: 'photo', url: photoUrl, caption: 'Fotografia desta cópia' });
-  if (model?.image_url) list.push({ key: 'cover', url: model.image_url, caption: 'Caixa' });
+  if (photoUrl) {
+    list.push({
+      key: 'photo',
+      url: photoUrl,
+      caption: 'Fotografia desta cópia',
+      documentId: null,
+      isCover: false,
+    });
+  }
+  const coverDocumentId = model?.image_document_id ?? null;
+  const coverInGallery =
+    coverDocumentId !== null &&
+    (model?.images ?? []).some((image) => image.document_id === coverDocumentId);
+  if (model?.image_url && !coverInGallery) {
+    list.push({
+      key: 'cover',
+      url: model.image_url,
+      caption: 'Caixa',
+      documentId: coverDocumentId,
+      isCover: true,
+    });
+  }
   for (const image of model?.images ?? []) {
-    if (image.url) list.push({ key: image.id, url: image.url, caption: image.caption ?? null });
+    if (image.url) {
+      list.push({
+        key: image.id,
+        url: image.url,
+        caption: image.caption ?? null,
+        documentId: image.document_id,
+        isCover: image.document_id === coverDocumentId,
+      });
+    }
   }
   return list;
 }
@@ -89,11 +122,64 @@ function CarouselStage({
   );
 }
 
+/** How many `size-N` tiles (N × 4px, Tailwind's spacing scale) fit per row at
+ * the container's current width — recomputed on resize, not a fixed breakpoint. */
+export function useTilesPerRow(tileSizeClass: string, gapPx = 6) {
+  const tilePx = Number(tileSizeClass.replace('size-', '')) * 4;
+  // State (not a plain ref) so the container mounting *after* the initial
+  // render — e.g. behind a collapsed section — still triggers measurement.
+  const [el, setEl] = React.useState<HTMLDivElement | null>(null);
+  const [perRow, setPerRow] = React.useState(4);
+
+  React.useEffect(() => {
+    if (!el) return;
+    const measure = () =>
+      setPerRow(Math.max(1, Math.floor((el.clientWidth + gapPx) / (tilePx + gapPx))));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [el, tilePx, gapPx]);
+
+  return { ref: setEl, perRow };
+}
+
+/** A "+N" tile that reveals the rest of a row-capped strip or grid on click. */
+export function OverflowTile({
+  count,
+  size,
+  title,
+  onClick,
+}: {
+  count: number;
+  size: string;
+  title: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        size,
+        'flex shrink-0 flex-col items-center justify-center gap-0.5 rounded border border-dashed border-border bg-muted text-muted-foreground hover:bg-muted/70',
+      )}
+    >
+      <Images className="size-4" />
+      <span className="text-xs font-medium">+{count}</span>
+    </button>
+  );
+}
+
+/** The lightbox's thumbnail row: a single line, scrolled horizontally — a mouse
+ * wheel's usual vertical gesture is redirected sideways, since the strip itself
+ * never grows tall enough to need vertical scrolling. */
 function ThumbStrip({
   items,
   index,
   onSelect,
-  size = 'size-12',
+  size = 'size-16',
 }: {
   items: Frame[];
   index: number;
@@ -101,7 +187,14 @@ function ThumbStrip({
   size?: string;
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div
+      className="flex gap-1.5 overflow-x-auto pb-1"
+      onWheel={(event) => {
+        if (event.deltaY === 0) return;
+        event.currentTarget.scrollLeft += event.deltaY;
+        event.preventDefault();
+      }}
+    >
       {items.map((item, position) => (
         <button
           key={item.key}
@@ -121,12 +214,25 @@ function ThumbStrip({
   );
 }
 
+/**
+ * Just the stage, its arrows, and the lightbox it opens into on click — no
+ * inline thumbnail row (that lives, when one is wanted, wherever the caller
+ * puts it, e.g. `GalleryEditor`). The frame shown by default is the copy's own
+ * photograph if there is one, otherwise the set's current cover.
+ */
 export function SetCarousel({ items, className }: { items: Frame[]; className?: string }) {
-  const [index, setIndex] = React.useState(0);
+  const leadIndex = React.useMemo(() => {
+    if (items[0]?.key === 'photo') return 0;
+    const coverIndex = items.findIndex((item) => item.isCover);
+    return coverIndex === -1 ? 0 : coverIndex;
+  }, [items]);
+
+  const [index, setIndex] = React.useState(leadIndex);
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
-  // Deleting or promoting an image reorders the list under us.
-  React.useEffect(() => setIndex((current) => Math.min(current, Math.max(0, items.length - 1))), [items.length]);
+  // Jump to the lead frame whenever it changes — a promotion elsewhere, or the
+  // gallery shrinking under the frame currently shown.
+  React.useEffect(() => setIndex(leadIndex), [leadIndex]);
 
   if (items.length === 0) {
     return (
@@ -142,7 +248,7 @@ export function SetCarousel({ items, className }: { items: Frame[]; className?: 
   }
 
   const current = items[Math.min(index, items.length - 1)];
-  const step = (delta: number) => setIndex((value) => (value + delta + items.length) % items.length);
+  const step = (delta: number) => setIndex((index + delta + items.length) % items.length);
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -155,8 +261,6 @@ export function SetCarousel({ items, className }: { items: Frame[]; className?: 
         onClick={() => setLightboxOpen(true)}
       />
 
-      {items.length > 1 ? <ThumbStrip items={items} index={index} onSelect={setIndex} /> : null}
-
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent size="lg" className="space-y-3 p-4">
           <DialogTitle className="sr-only">Galeria do conjunto</DialogTitle>
@@ -167,9 +271,7 @@ export function SetCarousel({ items, className }: { items: Frame[]; className?: 
             onStep={step}
             rounded={false}
           />
-          {items.length > 1 ? (
-            <ThumbStrip items={items} index={index} onSelect={setIndex} size="size-16" />
-          ) : null}
+          {items.length > 1 ? <ThumbStrip items={items} index={index} onSelect={setIndex} /> : null}
         </DialogContent>
       </Dialog>
     </div>

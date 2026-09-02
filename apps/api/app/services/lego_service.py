@@ -120,6 +120,11 @@ def _instance_out(
         photo_url=(
             signed_document_url(instance.photo_document_id) if instance.photo_document_id else None
         ),
+        display_image_url=(
+            signed_document_url(instance.display_image_document_id)
+            if instance.display_image_document_id
+            else None
+        ),
         is_complete=instance.is_complete,
         current_value_eur=current_value,
         appreciation_eur=appreciation_eur(cost, current_value),
@@ -516,24 +521,35 @@ def update_model_image(
 def promote_model_image(
     db: DbSession, image: LegoSetImage, *, actor_user_id: uuid.UUID
 ) -> LegoSetModel:
-    """Make a gallery image the box shot, demoting the current cover into the gallery."""
+    """Mark a gallery image as the box shot.
+
+    Nothing moves: `image` keeps its row and its position — only the model's
+    cover pointer changes. The previous cover, if it was not already in the
+    gallery itself, is appended there so it is never lost (ADR-0013's promise);
+    if it already was, it simply stays exactly where it already sat.
+    """
     model = image.model
     before = audit.snapshot(model)
     previous_cover = model.image_document_id
 
     model.image_document_id = image.document_id
-    db.delete(image)
     db.flush()
 
-    if previous_cover is not None:
-        db.add(
-            LegoSetImage(
-                lego_set_model_id=model.id,
-                document_id=previous_cover,
-                position=_next_image_position(db, model.id),
-                caption=image.caption,
+    if previous_cover is not None and previous_cover != image.document_id:
+        already_in_gallery = db.scalar(
+            select(LegoSetImage).where(
+                LegoSetImage.lego_set_model_id == model.id,
+                LegoSetImage.document_id == previous_cover,
             )
         )
+        if already_in_gallery is None:
+            db.add(
+                LegoSetImage(
+                    lego_set_model_id=model.id,
+                    document_id=previous_cover,
+                    position=_next_image_position(db, model.id),
+                )
+            )
     db.flush()
     db.refresh(model)
     audit.record(
@@ -545,7 +561,7 @@ def promote_model_image(
         actor_user_id=actor_user_id,
         before=before,
         after=audit.snapshot(model),
-        reason="gallery image promoted to cover",
+        reason="cover changed",
     )
     return model
 
@@ -566,6 +582,73 @@ def delete_model_image(db: DbSession, image: LegoSetImage, *, actor_user_id: uui
 
 
 # --- Instruction manuals -----------------------------------------------------
+def _next_instruction_position(db: DbSession, model_id: uuid.UUID) -> int:
+    highest = db.scalar(
+        select(func.max(LegoSetInstruction.position)).where(
+            LegoSetInstruction.lego_set_model_id == model_id
+        )
+    )
+    return 0 if highest is None else highest + 1
+
+
+def add_model_instruction(
+    db: DbSession,
+    model: LegoSetModel,
+    *,
+    url: str | None = None,
+    data: bytes | None = None,
+    filename: str | None = None,
+    description: str,
+    language: str | None = None,
+    actor_user_id: uuid.UUID,
+) -> LegoSetInstruction:
+    """Add one manual by hand — a household scan, or a link Brickset doesn't carry.
+
+    Same identity rule as the Brickset import (ADR-0043): the description is what
+    makes a manual unique for this set, not the file.
+    """
+    if any(manual.description == description for manual in model.instructions):
+        raise Conflict("Já existe um manual com esta descrição para este conjunto.")
+
+    if url:
+        document = documents.store_from_url(
+            db,
+            url,
+            max_bytes=app_settings.max_instruction_bytes,
+            original_filename=f"{description}.pdf",
+        )
+    elif data is not None:
+        document = documents.store_bytes(
+            db,
+            data,
+            max_bytes=app_settings.max_instruction_bytes,
+            original_filename=filename or f"{description}.pdf",
+        )
+    else:
+        raise ValidationError("Indique um endereço do manual ou carregue um ficheiro.")
+
+    manual = LegoSetInstruction(
+        lego_set_model_id=model.id,
+        document_id=document.id,
+        description=description,
+        language=language,
+        position=_next_instruction_position(db, model.id),
+    )
+    db.add(manual)
+    db.flush()
+    db.refresh(model)
+    audit.record(
+        db,
+        action="CREATE",
+        table_name=INSTRUCTION_TABLE,
+        record_id=manual.id,
+        entity_id=model.entity_id,
+        actor_user_id=actor_user_id,
+        after=audit.snapshot(manual),
+    )
+    return manual
+
+
 def get_model_instruction(db: DbSession, instruction_id: uuid.UUID) -> LegoSetInstruction:
     manual = db.get(LegoSetInstruction, instruction_id)
     if manual is None:
@@ -1091,6 +1174,38 @@ def set_instance_photo(
         before=before,
         after=audit.snapshot(instance),
         reason="photo set",
+    )
+    return instance
+
+
+def set_instance_display_image(
+    db: DbSession,
+    instance: LegoSetInstance,
+    document_id: uuid.UUID | None,
+    *,
+    actor_user_id: uuid.UUID,
+) -> LegoSetInstance:
+    """Pick which of the *set's* own images (cover or gallery) stands for this copy
+    in the table — `None` clears the pick, falling back to the collection's cover."""
+    if document_id is not None:
+        model = instance.model
+        available = {model.image_document_id, *(image.document_id for image in model.images)}
+        if document_id not in available:
+            raise ValidationError("Escolha uma imagem já associada a este conjunto.")
+
+    before = audit.snapshot(instance)
+    instance.display_image_document_id = document_id
+    db.flush()
+    audit.record(
+        db,
+        action="UPDATE",
+        table_name=INSTANCE_TABLE,
+        record_id=instance.id,
+        entity_id=instance.entity_id,
+        actor_user_id=actor_user_id,
+        before=before,
+        after=audit.snapshot(instance),
+        reason="display image set",
     )
     return instance
 

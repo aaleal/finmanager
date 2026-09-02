@@ -1,5 +1,10 @@
 # 0042 — Gallery order is drag-and-drop, and position zero is the cover
 
+> **Partially superseded by [ADR-0045](0045-the-table-image-is-per-copy-the-star-is-per-set.md).**
+> Drag-and-drop reordering (points 1–3 below) is gone — order is now append-only
+> again, and the star is back. The one-row cap, the click-to-expand "+N" tile and
+> the header/editor split (points 4–5) still hold exactly as written here.
+
 ## Context
 
 [ADR-0013](0013-lego-set-gallery.md) shipped the gallery with exactly one way to
@@ -36,21 +41,25 @@ action — the box shot is simply whichever image the user leaves at the front.
 4. **The one editor lives on the summary tab, collapsed by default.** «Editar
    conjunto» no longer carries its own copy. A viewer without write access still
    sees the same thumbnails, just without the drag handles or the delete button.
-5. **Never more than two rows.** However many images a set has, the grid shows
-   only what fits two rows at the container's current width (measured with a
-   `ResizeObserver`, not a fixed breakpoint table) and folds the rest behind a
-   generic "+N" tile — the full set is already one click away in the carousel
-   above, so the editor does not need to repeat it.
+5. **Never more than one row**, and the header carousel's strip follows the same
+   rule as the editor's — full width, capped at one row. However many images a
+   set has, only what fits shows at first; the rest folds behind a "+N" tile
+   that **expands the strip in place** on click, because a tile a user cannot
+   reach is a tile they cannot choose, reorder or delete. The one place a strip
+   still hard-caps itself is the full-screen lightbox, which does the opposite
+   — never wraps, scrolls sideways instead — so a long gallery cannot push the
+   big image down the screen.
 
 ## Consequences
 
-- The star button and its "tornar principal" label are gone from the codebase;
-  `promote` the mutation still exists, now invoked by the drag handler instead
-  of a click.
 - Reordering past the front of the list costs one `PATCH` per affected image, not
   one bulk endpoint — the table's `position` was never given a uniqueness
   constraint, so out-of-order gaps are harmless and no migration was needed.
-- An image beyond the two-row fold cannot be dragged or deleted from the summary
-  tab directly; reaching it means first dragging something else out of the way.
-  Collections large enough for this to bite are rare enough that a dedicated
-  "show all" affordance was left for when one actually shows up.
+- An image beyond the one-row fold cannot be dragged from the summary tab until
+  the fold is expanded; the click-to-expand keeps every image reachable while
+  still opening on a compact view for the common case (a handful of photos).
+- The header carousel's own thumbnail strip moved out from under the box shot,
+  where it was capped to an 11rem column, to a full-width row below it — the
+  carousel component itself is now a controlled component (`index`/
+  `onIndexChange`), so the strip can live outside it and still drive which
+  frame the stage shows.

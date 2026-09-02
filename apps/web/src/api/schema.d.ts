@@ -448,6 +448,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lego/models/{model_id}/instructions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Model Instruction
+         * @description Add one manual by hand — a household scan, or a link Brickset doesn't carry.
+         */
+        post: operations["add_model_instruction_api_lego_models__model_id__instructions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lego/models/{model_id}/images/{image_id}": {
         parameters: {
             query?: never;
@@ -567,6 +587,26 @@ export interface paths {
         get?: never;
         /** Set Instance Photo */
         put: operations["set_instance_photo_api_lego_instances__instance_id__photo_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/instances/{instance_id}/display-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Instance Display Image
+         * @description Which of the set's own images stands for this copy in the collection table.
+         */
+        put: operations["set_instance_display_image_api_lego_instances__instance_id__display_image_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1685,6 +1725,11 @@ export interface components {
             /** File */
             file?: string | null;
         };
+        /** Body_add_model_instruction_api_lego_models__model_id__instructions_post */
+        Body_add_model_instruction_api_lego_models__model_id__instructions_post: {
+            /** File */
+            file?: string | null;
+        };
         /** Body_import_backup_api_settings_backup_post */
         Body_import_backup_api_settings_backup_post: {
             /**
@@ -1990,6 +2035,11 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InstanceDisplayImageUpdate */
+        InstanceDisplayImageUpdate: {
+            /** Document Id */
+            document_id?: string | null;
+        };
         /**
          * ItemProductAssignment
          * @description Re-resolve a line to another product; the correction is learned per merchant.
@@ -2185,6 +2235,10 @@ export interface components {
             photo_document_id: string | null;
             /** Photo Url */
             photo_url?: string | null;
+            /** Display Image Document Id */
+            display_image_document_id?: string | null;
+            /** Display Image Url */
+            display_image_url?: string | null;
             /** Notes */
             notes: string | null;
             /**
@@ -5156,6 +5210,45 @@ export interface operations {
             };
         };
     };
+    add_model_instruction_api_lego_models__model_id__instructions_post: {
+        parameters: {
+            query: {
+                description: string;
+                url?: string | null;
+                language?: string | null;
+            };
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_model_instruction_api_lego_models__model_id__instructions_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_model_image_api_lego_models__model_id__images__image_id__delete: {
         parameters: {
             query?: never;
@@ -5509,6 +5602,41 @@ export interface operations {
         requestBody?: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_set_instance_photo_api_lego_instances__instance_id__photo_put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegoSetInstanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_instance_display_image_api_lego_instances__instance_id__display_image_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstanceDisplayImageUpdate"];
             };
         };
         responses: {

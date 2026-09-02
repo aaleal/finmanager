@@ -3,15 +3,13 @@ import {
   AlertTriangle,
   Boxes,
   ChevronRight,
-  Download,
   ExternalLink,
   FileText,
-  GripVertical,
   Image as ImageIcon,
-  Images,
   Link2,
   PencilLine,
   Plus,
+  Star,
   Trash2,
 } from 'lucide-react';
 import type { LegoSetInstance, LegoSetModel, StorageLocation, TransactionSuggestion } from '@/lib/types';
@@ -61,7 +59,7 @@ import {
   useDeleteModel,
   useModelInstances,
   useSetGallery,
-  useSetInstancePhoto,
+  useSetInstanceDisplayImage,
   useSetInstructions,
   useSetModelImage,
   useUpdateInstance,
@@ -83,7 +81,7 @@ import {
   parseBoxDimensions,
 } from './constants';
 import { AddSetDialog } from './add-set-dialog';
-import { SetCarousel, frames } from './set-carousel';
+import { OverflowTile, SetCarousel, frames, useTilesPerRow } from './set-carousel';
 
 function money(value: string) {
   const normalized = value.trim().replace(',', '.');
@@ -472,76 +470,28 @@ function CollapseToggle({
   );
 }
 
-const GALLERY_TILE_PX = 64;
-const GALLERY_GAP_PX = 8;
-
-/** How many tiles fit per row at the container's current width, so a gallery
- * never grows past a fixed number of rows regardless of viewport size. */
-function useTilesPerRow(tilePx: number, gapPx: number) {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [perRow, setPerRow] = React.useState(4);
-
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => setPerRow(Math.max(1, Math.floor((el.clientWidth + gapPx) / (tilePx + gapPx))));
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [tilePx, gapPx]);
-
-  return { ref, perRow };
-}
+const GALLERY_TILE = 'size-16';
 
 /**
  * The carousel's contents, laid out as small tiles that always fill the row's
- * width. The first tile is always the box shot everywhere else in the app, so
- * the way to change it here is to drag another tile in front of it — see
- * ADR-0042. Capped at two rows; anything past that is a generic "more" tile,
- * because the carousel above already shows every frame.
+ * width. Order never changes — it only ever grows by appending; a filled,
+ * always-visible star marks the current box shot, and hovering any other tile
+ * reveals an outline star to make it the new one instead (ADR-0045). Capped at
+ * one row behind a "+N" tile that expands the grid on click.
  */
 function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boolean }) {
   const gallery = useSetGallery();
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [url, setUrl] = React.useState('');
   const [open, setOpen] = React.useState(false);
-  const [dragKey, setDragKey] = React.useState<string | null>(null);
+  const [expanded, setExpanded] = React.useState(false);
 
   const items = frames(model, null);
-  const { ref: gridRef, perRow } = useTilesPerRow(GALLERY_TILE_PX, GALLERY_GAP_PX);
-  const maxVisible = perRow * 2;
+  const { ref: gridRef, perRow } = useTilesPerRow(GALLERY_TILE);
+  const maxVisible = expanded ? items.length : perRow;
   const overflow = items.length > maxVisible;
   const shown = overflow ? items.slice(0, Math.max(1, maxVisible - 1)) : items;
   const hiddenCount = items.length - shown.length;
-
-  async function reorder(fromKey: string, toKey: string) {
-    if (fromKey === toKey) return;
-    const keys = items.map((item) => item.key);
-    const fromIndex = keys.indexOf(fromKey);
-    const toIndex = keys.indexOf(toKey);
-    if (fromIndex === -1 || toIndex === -1) return;
-
-    const next = [...keys];
-    next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, fromKey);
-
-    let order = next;
-    if (next[0] !== keys[0] && next[0] !== 'cover') {
-      // Whatever lands first becomes the box shot; the previous one (if any)
-      // is demoted back into the gallery by the same endpoint the old "tornar
-      // principal" star used.
-      const previousGalleryIds = new Set(model.images.map((image) => image.id));
-      const updated = await gallery.promote.mutateAsync({ id: model.id, imageId: next[0] });
-      const demotedId = updated.images.find((image) => !previousGalleryIds.has(image.id))?.id;
-      order = next.map((key) => (key === 'cover' && demotedId ? demotedId : key));
-    }
-
-    const rest = order.filter((key) => key !== order[0]);
-    await Promise.all(
-      rest.map((imageId, index) => gallery.reorder.mutateAsync({ id: model.id, imageId, position: index })),
-    );
-  }
 
   return (
     <div className="space-y-3">
@@ -553,8 +503,8 @@ function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boo
           </p>
           <p className="text-xs text-muted-foreground">
             {canWrite
-              ? 'A primeira imagem é sempre a principal — arraste para reordenar.'
-              : 'A primeira imagem é a principal do conjunto.'}
+              ? 'A imagem com a estrela é a principal do conjunto — passe o rato sobre outra para a tornar principal, ou para a remover.'
+              : 'A imagem com a estrela é a principal do conjunto.'}
           </p>
         </div>
       </div>
@@ -563,39 +513,43 @@ function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boo
         <>
           {items.length ? (
             <div ref={gridRef} className="flex flex-wrap gap-2">
-              {shown.map((item, index) => (
+              {shown.map((item) => (
                 <div
                   key={item.key}
-                  draggable={canWrite}
-                  onDragStart={() => setDragKey(item.key)}
-                  onDragOver={(event) => canWrite && event.preventDefault()}
-                  onDrop={() => {
-                    if (dragKey) void reorder(dragKey, item.key);
-                    setDragKey(null);
-                  }}
-                  onDragEnd={() => setDragKey(null)}
-                  title={index === 0 ? 'Principal' : (item.caption ?? undefined)}
+                  title={item.isCover ? 'Principal' : (item.caption ?? undefined)}
                   className={cn(
                     'group relative size-16 shrink-0 overflow-hidden rounded border bg-muted',
-                    index === 0 ? 'border-primary' : 'border-border',
-                    canWrite && 'cursor-grab active:cursor-grabbing',
-                    dragKey === item.key && 'opacity-40',
+                    item.isCover ? 'border-primary' : 'border-border',
                   )}
                 >
                   {item.url ? (
                     <img src={item.url} alt="" className="size-full object-cover" loading="lazy" />
                   ) : null}
-                  {canWrite ? (
-                    <span className="pointer-events-none absolute left-0.5 top-0.5 rounded bg-black/40 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                      <GripVertical className="size-3" />
+                  {item.isCover ? (
+                    <span
+                      aria-hidden
+                      title="Imagem principal do conjunto"
+                      className="pointer-events-none absolute left-0.5 top-0.5 rounded bg-black/40 p-0.5 text-warning"
+                    >
+                      <Star className="size-3.5 fill-current" />
                     </span>
+                  ) : canWrite ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Tornar principal"
+                      className="absolute left-0.5 top-0.5 size-6 bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 hover:text-warning group-hover:opacity-100"
+                      onClick={() => gallery.promote.mutate({ id: model.id, imageId: item.key })}
+                    >
+                      <Star className="size-3.5" />
+                    </Button>
                   ) : null}
                   {canWrite && item.key !== 'cover' ? (
                     <Button
                       variant="ghost"
                       size="icon-sm"
                       title="Remover da galeria"
-                      className="absolute right-0.5 top-0.5 size-6 bg-black/40 text-white opacity-0 hover:bg-black/60 hover:text-destructive group-hover:opacity-100"
+                      className="absolute right-0.5 top-0.5 size-6 bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 hover:text-destructive group-hover:opacity-100"
                       onClick={() => gallery.remove.mutate({ id: model.id, imageId: item.key })}
                     >
                       <Trash2 className="size-3.5" />
@@ -604,13 +558,12 @@ function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boo
                 </div>
               ))}
               {hiddenCount > 0 ? (
-                <div
-                  className="flex size-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded border border-dashed border-border bg-muted text-muted-foreground"
-                  title="Mais imagens disponíveis no carrossel, acima"
-                >
-                  <Images className="size-4" />
-                  <span className="text-xs font-medium">+{hiddenCount}</span>
-                </div>
+                <OverflowTile
+                  count={hiddenCount}
+                  size={GALLERY_TILE}
+                  title="Ver todas as imagens"
+                  onClick={() => setExpanded(true)}
+                />
               ) : null}
             </div>
           ) : (
@@ -668,83 +621,152 @@ function GalleryEditor({ model, canWrite }: { model: LegoSetModel; canWrite: boo
  */
 function InstructionsPanel({ model, canWrite }: { model: LegoSetModel; canWrite: boolean }) {
   const instructions = useSetInstructions();
+  const fileRef = React.useRef<HTMLInputElement>(null);
   const [open, setOpen] = React.useState(false);
+  const [description, setDescription] = React.useState('');
+  const [file, setFile] = React.useState<File | null>(null);
+  const [dragOver, setDragOver] = React.useState(false);
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex items-start gap-1.5">
-          <CollapseToggle
-            open={open}
-            onToggle={() => setOpen((v) => !v)}
-            label="manuais e livros de instrução"
-          />
-          <div>
-            <p className="text-sm font-medium">
-              Manuais e livros de instrução
-              {model.instructions.length ? ` (${model.instructions.length})` : ''}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Guardados localmente em PDF. Só são importados os manuais universais e os que estão em
-              português ou inglês.
-            </p>
-          </div>
+      <div className="flex items-start gap-1.5">
+        <CollapseToggle
+          open={open}
+          onToggle={() => setOpen((v) => !v)}
+          label="manuais e livros de instrução"
+        />
+        <div>
+          <p className="text-sm font-medium">
+            Manuais e livros de instrução
+            {model.instructions.length ? ` (${model.instructions.length})` : ''}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Guardados localmente em PDF, obtidos automaticamente quando o conjunto é criado a partir
+            de uma pesquisa no Brickset.
+          </p>
         </div>
-        {canWrite && model.set_number ? (
-          <Button
-            variant="outline"
-            size="sm"
-            title="Traz também as fotografias adicionais do conjunto para a galeria."
-            loading={instructions.importFromBrickset.isPending}
-            onClick={() => instructions.importFromBrickset.mutate(model.id)}
-          >
-            <Download />
-            Importar do Brickset
-          </Button>
-        ) : null}
       </div>
 
       {open ? (
-        model.instructions.length ? (
-          <ul className="divide-y divide-border rounded-lg border border-border">
-            {model.instructions.map((manual) => (
-              <li key={manual.id} className="flex items-center gap-2 px-3 py-2 text-sm">
-                <FileText className="size-4 shrink-0 text-muted-foreground" />
-                <a
-                  href={manual.url ?? '#'}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="min-w-0 flex-1 truncate hover:underline"
-                  title={manual.description}
-                >
-                  {manual.description}
-                </a>
-                <Badge variant="muted">
-                  {manual.language
-                    ? (INSTRUCTION_LANGUAGE_LABELS[manual.language] ?? manual.language)
-                    : 'Sem texto'}
-                </Badge>
-                {canWrite ? (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Remover manual"
-                    className="text-destructive"
-                    onClick={() =>
-                      instructions.remove.mutate({ id: model.id, instructionId: manual.id })
-                    }
+        <>
+          {model.instructions.length ? (
+            <ul className="divide-y divide-border rounded-lg border border-border">
+              {model.instructions.map((manual) => (
+                <li key={manual.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                  <FileText className="size-4 shrink-0 text-muted-foreground" />
+                  <a
+                    href={manual.url ?? '#'}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="min-w-0 flex-1 truncate hover:underline"
+                    title={manual.description}
                   >
-                    <Trash2 className="size-3.5" />
+                    {manual.description}
+                  </a>
+                  <Badge variant="muted">
+                    {manual.language
+                      ? (INSTRUCTION_LANGUAGE_LABELS[manual.language] ?? manual.language)
+                      : 'Sem texto'}
+                  </Badge>
+                  {canWrite ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Remover manual"
+                      className="text-destructive"
+                      onClick={() =>
+                        instructions.remove.mutate({ id: model.id, instructionId: manual.id })
+                      }
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Ainda não há manuais guardados para este conjunto.
+            </p>
+          )}
+
+          {canWrite ? (
+            <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+              <p className="text-xs font-medium text-muted-foreground">Adicionar um manual</p>
+              <div className="flex flex-wrap items-end gap-2">
+                <Field label="Descrição" className="min-w-[10rem] flex-1">
+                  <Input
+                    placeholder="Ex.: Livro de instruções 1/2"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                  />
+                </Field>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(event) => {
+                    setFile(event.target.files?.[0] ?? null);
+                    event.target.value = '';
+                  }}
+                />
+                {/* An invisible label matches the Field beside it, so both controls sit on the same line. */}
+                <div className="min-w-[12rem] flex-1 space-y-1.5">
+                  <span aria-hidden className="invisible block text-sm font-medium leading-none">
+                    Ficheiro
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDragOver(true);
+                    }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setDragOver(false);
+                      const dropped = event.dataTransfer.files?.[0];
+                      if (dropped) setFile(dropped);
+                    }}
+                    className={cn(
+                      'flex h-9 w-full items-center gap-2 rounded-lg border border-dashed px-3 text-left text-sm text-muted-foreground',
+                      dragOver ? 'border-primary bg-primary/5' : 'border-input',
+                    )}
+                  >
+                    <FileText className="size-4 shrink-0" />
+                    <span className="truncate">
+                      {file ? file.name : 'Arraste um PDF, ou clique para escolher'}
+                    </span>
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <span aria-hidden className="invisible block text-sm font-medium leading-none">
+                    Ação
+                  </span>
+                  <Button
+                    variant="outline"
+                    loading={instructions.add.isPending}
+                    disabled={!description.trim() || !file}
+                    onClick={async () => {
+                      if (!file) return;
+                      await instructions.add.mutateAsync({
+                        id: model.id,
+                        description: description.trim(),
+                        file,
+                      });
+                      setDescription('');
+                      setFile(null);
+                    }}
+                  >
+                    Adicionar
                   </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Ainda não há manuais guardados para este conjunto.
-          </p>
-        )
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
@@ -1011,35 +1033,71 @@ function CopySwitcher({
   );
 }
 
-function PhotoControl({ instance }: { instance: LegoSetInstance }) {
-  const setPhoto = useSetInstancePhoto();
-  const inputRef = React.useRef<HTMLInputElement>(null);
+/**
+ * Which of the *set's* own images (cover or gallery) represents this exact copy
+ * in the collection table — a pick among images the set already has, not an
+ * upload of a new one.
+ */
+function DisplayImagePicker({ instance }: { instance: LegoSetInstance }) {
+  const model = instance.set_model;
+  const setDisplayImage = useSetInstanceDisplayImage();
+  const [expanded, setExpanded] = React.useState(false);
+  const { ref, perRow } = useTilesPerRow('size-14');
+
+  if (!model) return null;
+  const items = frames(model, null);
+  if (items.length === 0) return null;
+
+  const maxVisible = expanded ? items.length : perRow;
+  const overflow = items.length > maxVisible;
+  const shown = overflow ? items.slice(0, Math.max(1, maxVisible - 1)) : items;
+  const hiddenCount = items.length - shown.length;
 
   return (
     <div className="space-y-2">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) setPhoto.mutate({ id: instance.id, file });
-          event.target.value = '';
-        }}
-      />
-      <Button
-        variant="outline"
-        size="sm"
-        loading={setPhoto.isPending}
-        onClick={() => inputRef.current?.click()}
-      >
-        <ImageIcon />
-        {instance.photo_url ? 'Substituir fotografia' : 'Carregar fotografia'}
-      </Button>
+      <p className="text-sm font-medium">Imagem desta cópia na tabela</p>
       <p className="text-xs text-muted-foreground">
-        A imagem é validada e guardada no NAS; só é servida por ligação assinada e temporária.
+        Escolha qual das imagens do conjunto representa esta cópia na coleção. Sem escolha, usa-se
+        a principal do conjunto.
       </p>
+      <div ref={ref} className="flex flex-wrap gap-2">
+        {shown.map((item) => {
+          const active = item.documentId === instance.display_image_document_id;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              title={item.caption ?? undefined}
+              aria-pressed={active}
+              onClick={() =>
+                setDisplayImage.mutate({
+                  id: instance.id,
+                  documentId: active ? null : item.documentId,
+                })
+              }
+              className={cn(
+                'size-14 shrink-0 overflow-hidden rounded border-2 bg-muted',
+                active ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100',
+              )}
+            >
+              {item.url ? (
+                <img src={item.url} alt="" className="size-full object-cover" loading="lazy" />
+              ) : null}
+            </button>
+          );
+        })}
+        {hiddenCount > 0 ? (
+          <OverflowTile
+            count={hiddenCount}
+            size="size-14"
+            title="Ver todas as imagens"
+            onClick={() => setExpanded(true)}
+          />
+        ) : null}
+      </div>
+      {!instance.display_image_document_id ? (
+        <p className="text-xs text-muted-foreground">A usar a principal do conjunto.</p>
+      ) : null}
     </div>
   );
 }
@@ -1293,7 +1351,7 @@ export function CopyDetailSheet({
                       <Separator />
                       <OwnershipControls instance={instance} />
                       <Separator />
-                      <PhotoControl instance={instance} />
+                      <DisplayImagePicker instance={instance} />
                       <Separator />
                       <Button
                         variant="outline"

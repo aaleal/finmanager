@@ -48,3 +48,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0041](0041-typed-the-way-it-is-printed.md) | Typed the way it is printed (dates, age, box size) |
 | [0042](0042-gallery-order-is-drag-and-drop-and-position-zero-is-the-cover.md) | Gallery order is drag-and-drop, and position zero is the cover |
 | [0043](0043-a-manuals-identity-is-its-description-not-its-bytes.md) | A manual's identity is its description, not its bytes |
+| [0044](0044-the-sheet-doesnt-re-run-brickset-manuals-are-added-by-hand.md) | The sheet doesn't re-run Brickset; manuals are added by hand instead |
+| [0045](0045-the-table-image-is-per-copy-the-star-is-per-set.md) | The table image is per copy, the star is per set, and nothing moves (supersedes part of 0042) |

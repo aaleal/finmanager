@@ -283,6 +283,11 @@ class LegoSetInstance(Base, TimestampMixin, SoftDeleteMixin):
     photo_document_id: Mapped[uuid.UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("documents.id"), nullable=True
     )
+    # Which of the set's own images (cover or gallery) stands for this exact copy in
+    # the collection table — distinct from `photo_document_id`, a photo of this box.
+    display_image_document_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("documents.id"), nullable=True
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     model: Mapped[LegoSetModel] = relationship("LegoSetModel", back_populates="instances")

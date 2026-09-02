@@ -255,6 +255,8 @@ class LegoSetInstanceOut(ApiModel):
     sale_date: dt.date | None
     photo_document_id: uuid.UUID | None
     photo_url: str | None = None
+    display_image_document_id: uuid.UUID | None = None
+    display_image_url: str | None = None
     notes: str | None
     created_at: dt.datetime
     updated_at: dt.datetime
@@ -300,6 +302,11 @@ class ImageSource(BaseModel):
         if v and not v.startswith(("http://", "https://")):
             raise ValueError("o endereço da imagem tem de começar por http:// ou https://")
         return v
+
+
+class InstanceDisplayImageUpdate(BaseModel):
+    #: `None` clears the pick — the copy falls back to the collection's own cover.
+    document_id: uuid.UUID | None = None
 
 
 # --- Lookup ------------------------------------------------------------------

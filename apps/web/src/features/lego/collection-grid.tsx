@@ -59,7 +59,7 @@ import type { InstanceFilters } from './api';
 const ALL = '__all__';
 
 function Thumb({ instance }: { instance: LegoSetInstance }) {
-  const image = instance.photo_url ?? instance.set_model?.image_url ?? null;
+  const image = instance.photo_url ?? instance.display_image_url ?? instance.set_model?.image_url ?? null;
   return (
     <div className="size-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
       {image ? (
