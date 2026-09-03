@@ -336,16 +336,17 @@ def restore_archive(
     db: DbSession,
     payload: bytes,
     *,
-    entity_id: uuid.UUID,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None = None,
     actor_user_id: uuid.UUID | None = None,
 ) -> LegoBackupReport:
     """Rebuild a collection from an archive.
 
     A model's or instance's row is attributed to the entity named on it,
-    resolved against the caller's own household — not forced onto whichever
-    entity the caller picked. A row from an archive written before entities
-    travelled by name (v1/v2) falls back to that chosen entity, exactly as it
-    always did.
+    resolved against the caller's own household. A row from an archive
+    written before entities travelled by name (v1/v2) instead falls back to
+    ``fallback_entity_id`` — refused, not guessed, when that is also absent
+    (ADR-0007).
 
     Rows that already exist are **skipped, not merged**: an archive is a snapshot
     of a moment, and silently overwriting today's edits with a month-old value is
@@ -366,10 +367,6 @@ def restore_archive(
         if int(manifest.get("version", 0)) > VERSION:
             raise ValidationError("O arquivo foi criado por uma versão mais recente da aplicação.")
 
-        target_entity = db.get(Entity, entity_id)
-        if target_entity is None:
-            raise ValidationError("Entidade de destino não encontrada.")
-
         collection = _read_json(archive, COLLECTION_NAME)
         report = LegoBackupReport()
         document_map = _restore_documents(db, archive, report)
@@ -379,8 +376,8 @@ def restore_archive(
         _restore_models(
             db,
             collection,
-            target_entity.household_id,
-            entity_id,
+            household_id,
+            fallback_entity_id,
             entity_cache,
             document_map,
             report,
@@ -390,8 +387,8 @@ def restore_archive(
         _restore_instances(
             db,
             collection,
-            target_entity.household_id,
-            entity_id,
+            household_id,
+            fallback_entity_id,
             entity_cache,
             document_map,
             report,
@@ -438,17 +435,23 @@ def _resolve_entity(
     row: dict[str, Any],
     *,
     household_id: uuid.UUID,
-    fallback_entity_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None,
     cache: dict[str, uuid.UUID],
 ) -> uuid.UUID:
     """The entity a restored row is attributed to.
 
     By name, if the archive carries one (v3+) — refused, not guessed, when no
-    entity of that name exists here yet (ADR-0007). Onto the entity the caller
-    chose, for a v1/v2 archive that never recorded a name.
+    entity of that name exists here yet (ADR-0007). Onto ``fallback_entity_id``
+    for a v1/v2 archive that never recorded a name — refused too, when the
+    caller gave none, rather than picking one on their behalf.
     """
     name = row.get("entity")
     if name is None:
+        if fallback_entity_id is None:
+            raise ValidationError(
+                "Este arquivo é de uma versão anterior e não indica a entidade de cada "
+                "registo. Selecione uma entidade específica (não «todas») antes de o importar."
+            )
         return fallback_entity_id
     if name in cache:
         return cache[name]
@@ -491,7 +494,7 @@ def _restore_models(
     db: DbSession,
     collection: dict[str, Any],
     household_id: uuid.UUID,
-    fallback_entity_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None,
     entity_cache: dict[str, uuid.UUID],
     document_map: dict[uuid.UUID, uuid.UUID],
     report: LegoBackupReport,
@@ -607,7 +610,7 @@ def _restore_instances(
     db: DbSession,
     collection: dict[str, Any],
     household_id: uuid.UUID,
-    fallback_entity_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None,
     entity_cache: dict[str, uuid.UUID],
     document_map: dict[uuid.UUID, uuid.UUID],
     report: LegoBackupReport,

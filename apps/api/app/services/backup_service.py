@@ -1,10 +1,12 @@
 """Registry that turns per-module backups into one Definições surface.
 
 Each module owns its own archive shape and its own restore rules — LEGO's are
-ADR-0032 (primary keys travel, only ``entity_id``/``document_id`` are remapped,
-existing rows are skipped). This file never touches those rules; it only routes
-bytes to the module that wrote them, and bundles every module's own archive,
-unmodified, behind one manifest for a "back up everything" export.
+ADR-0032/ADR-0047 (primary keys travel, ``document_id`` is remapped, a row's
+entity is resolved against the caller's household, existing rows are
+skipped). This file never touches those rules; it only routes bytes to the
+module that wrote them, and bundles every module's own archive, unmodified,
+behind one manifest for a "back up everything" export. Restoring only ever
+needs the caller's household — no entity has to be selected first (ADR-0047).
 """
 
 from __future__ import annotations
@@ -158,10 +160,17 @@ def _restore_module_bytes(
     module: ModuleBackup,
     payload: bytes,
     *,
-    entity_id: uuid.UUID,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None,
     actor_user_id: uuid.UUID | None,
 ) -> ModuleBackupReport:
-    report = module.restore_archive(db, payload, entity_id=entity_id, actor_user_id=actor_user_id)
+    report = module.restore_archive(
+        db,
+        payload,
+        household_id=household_id,
+        fallback_entity_id=fallback_entity_id,
+        actor_user_id=actor_user_id,
+    )
     return _report_of(module, report)
 
 
@@ -169,7 +178,8 @@ def restore_any(
     db: DbSession,
     payload: bytes,
     *,
-    entity_id: uuid.UUID,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None = None,
     actor_user_id: uuid.UUID | None = None,
 ) -> BackupImportReport:
     """Restore whatever the archive is — one module's own file, or the global
@@ -200,7 +210,12 @@ def restore_any(
                     continue
                 reports.append(
                     _restore_module_bytes(
-                        db, module, inner, entity_id=entity_id, actor_user_id=actor_user_id
+                        db,
+                        module,
+                        inner,
+                        household_id=household_id,
+                        fallback_entity_id=fallback_entity_id,
+                        actor_user_id=actor_user_id,
                     )
                 )
             if not reports:
@@ -213,6 +228,11 @@ def restore_any(
         if matched is None:
             raise ValidationError("Este arquivo não é uma cópia de segurança reconhecida.")
         report = _restore_module_bytes(
-            db, matched, payload, entity_id=entity_id, actor_user_id=actor_user_id
+            db,
+            matched,
+            payload,
+            household_id=household_id,
+            fallback_entity_id=fallback_entity_id,
+            actor_user_id=actor_user_id,
         )
         return BackupImportReport(modules=[report])

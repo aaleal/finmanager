@@ -179,9 +179,6 @@ def test_the_manuals_survive_a_backup_round_trip(
     assert manifest["counts"]["documents"] == 4
     assert body["instructions"][1]["language"] == "EN"
 
-    target = Entity(household_id=entity.household_id, name="Instalação nova")
-    db.add(target)
-    db.flush()
     for row in db.scalars(select(LegoSetInstance)):
         db.delete(row)
     for row in db.scalars(select(LegoSetModel)):
@@ -190,7 +187,9 @@ def test_the_manuals_survive_a_backup_round_trip(
         db.delete(row)
     db.flush()
 
-    report = lego_backup.restore_archive(db, payload, entity_id=target.id, actor_user_id=owner.id)
+    report = lego_backup.restore_archive(
+        db, payload, household_id=entity.household_id, actor_user_id=owner.id
+    )
 
     assert (report.models, report.images, report.instructions) == (1, 2, 2)
     restored = db.scalars(select(LegoSetModel)).one()

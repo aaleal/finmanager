@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { ChevronDown, ImagePlus, Link2, Search, Sparkles, X } from 'lucide-react';
+import { ChevronDown, Link2, Search, Sparkles, X } from 'lucide-react';
 import { ApiError } from '@/lib/api';
 import type { LookupResult, StorageLocation, TransactionSuggestion } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,6 @@ import { useSession } from '@/features/auth/session';
 import {
   useCreateInstance,
   useLookup,
-  useSetGallery,
   useSetInstructions,
   useStorageLocations,
 } from './api';
@@ -202,99 +201,13 @@ export function EntityField({
  * shortcut dialog silently dropped (M9.1). Passing `existingModel` only locks the
  * catalog identity; everything about the copy stays identical.
  */
-/** A photo staged before the set exists — uploaded to the model's gallery once
- * `createInstance` returns an id. Never sent anywhere until then. */
-interface PendingPhoto {
-  id: string;
-  file: File;
-  previewUrl: string;
-}
-
-/**
- * The box shot (once Brickset answers) plus any extra photos staged for the new
- * set's gallery — shown beside the number field so the picture confirms the
- * lookup found the right set, not just its name.
- */
-function SetImagesPreview({
-  coverUrl,
-  photos,
-  onAdd,
-  onRemove,
-}: {
-  coverUrl: string;
-  photos: PendingPhoto[];
-  onAdd: (file: File) => void;
-  onRemove: (id: string) => void;
-}) {
-  const fileRef = React.useRef<HTMLInputElement>(null);
-
-  if (!coverUrl && photos.length === 0) {
-    return (
-      <div className="flex shrink-0 flex-col items-center gap-1">
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) onAdd(file);
-            event.target.value = '';
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          title="Adicionar fotografia"
-          className="flex size-14 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-        >
-          <ImagePlus className="size-4" />
-        </button>
-      </div>
-    );
-  }
-
+/** The box shot from the Brickset lookup, shown beside the number field so the
+ * picture confirms the lookup found the right set, not just its name. */
+function SetImagesPreview({ coverUrl }: { coverUrl: string }) {
+  if (!coverUrl) return null;
   return (
-    <div className="flex flex-wrap items-start gap-2">
-      {coverUrl ? (
-        <div className="size-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-          <img src={coverUrl} alt="" className="size-full object-contain" loading="lazy" />
-        </div>
-      ) : null}
-      {photos.map((photo) => (
-        <div key={photo.id} className="group relative size-14 shrink-0">
-          <div className="size-full overflow-hidden rounded-lg border border-border bg-muted">
-            <img src={photo.previewUrl} alt="" className="size-full object-cover" loading="lazy" />
-          </div>
-          <button
-            type="button"
-            onClick={() => onRemove(photo.id)}
-            title="Remover"
-            className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-          >
-            <X className="size-3" />
-          </button>
-        </div>
-      ))}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onAdd(file);
-          event.target.value = '';
-        }}
-      />
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        title="Adicionar fotografia"
-        className="flex size-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-      >
-        <ImagePlus className="size-4" />
-      </button>
+    <div className="size-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+      <img src={coverUrl} alt="" className="size-full object-contain" loading="lazy" />
     </div>
   );
 }
@@ -313,7 +226,6 @@ export function AddSetDialog({
   const form = useForm<FormValues>({ defaultValues: EMPTY });
   const lookup = useLookup();
   const createInstance = useCreateInstance();
-  const gallery = useSetGallery();
   const instructions = useSetInstructions();
   const { activeEntityId } = useSession();
   const [entityId, setEntityId] = React.useState(existingModel?.entityId ?? activeEntityId ?? '');
@@ -321,7 +233,6 @@ export function AddSetDialog({
   const [duplicateModelId, setDuplicateModelId] = React.useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [transaction, setTransaction] = React.useState<TransactionSuggestion | null>(null);
-  const [pendingPhotos, setPendingPhotos] = React.useState<PendingPhoto[]>([]);
 
   const isCustom = form.watch('is_custom');
   const setNumber = form.watch('set_number');
@@ -332,10 +243,6 @@ export function AddSetDialog({
       setLookupResult(null);
       setDuplicateModelId(null);
       setTransaction(null);
-      setPendingPhotos((current) => {
-        for (const photo of current) URL.revokeObjectURL(photo.previewUrl);
-        return [];
-      });
     }
     setEntityId(existingModel?.entityId ?? activeEntityId ?? '');
   }, [open, form, activeEntityId, existingModel]);
@@ -420,10 +327,6 @@ export function AddSetDialog({
 
     try {
       const instance = await createInstance.mutateAsync(payload);
-      // Staged before the model existed; the gallery only accepts a real id.
-      for (const photo of pendingPhotos) {
-        await gallery.add.mutateAsync({ id: instance.lego_set_model_id, file: photo.file });
-      }
       // A set that came from Brickset gets the rest of what Brickset has: the
       // extra photographs and the manuals, downloaded in the background.
       if (!existingModel && !values.is_custom && lookupResult?.found) {
@@ -443,7 +346,10 @@ export function AddSetDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent size="lg">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-col">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-col"
+          >
             <DialogHeader>
               <DialogTitle>
                 {existingModel ? 'Adicionar outra cópia' : 'Adicionar conjunto'}
@@ -470,7 +376,7 @@ export function AddSetDialog({
                 <>
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-end gap-3">
-                      <Field label="Número do conjunto" className="min-w-[10rem] flex-1">
+                      <Field label="ID do conjunto" className="min-w-[10rem] flex-1">
                         <Input
                           placeholder="10307"
                           disabled={isCustom}
@@ -494,27 +400,7 @@ export function AddSetDialog({
                         <Search />
                         Procurar
                       </Button>
-                      <SetImagesPreview
-                        coverUrl={form.watch('image_url')}
-                        photos={pendingPhotos}
-                        onAdd={(file) =>
-                          setPendingPhotos((current) => [
-                            ...current,
-                            {
-                              id: crypto.randomUUID(),
-                              file,
-                              previewUrl: URL.createObjectURL(file),
-                            },
-                          ])
-                        }
-                        onRemove={(id) =>
-                          setPendingPhotos((current) => {
-                            const removed = current.find((photo) => photo.id === id);
-                            if (removed) URL.revokeObjectURL(removed.previewUrl);
-                            return current.filter((photo) => photo.id !== id);
-                          })
-                        }
-                      />
+                      <SetImagesPreview coverUrl={form.watch('image_url')} />
                     </div>
 
                     <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
@@ -557,7 +443,7 @@ export function AddSetDialog({
                   <Separator />
 
                   {/* --- Set metadata ---------------------------------------- */}
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-4">
                     <Field label="Nome" className="sm:col-span-2">
                       <Input
                         placeholder="Torre Eiffel"
@@ -572,52 +458,9 @@ export function AddSetDialog({
                     </Field>
                   </div>
 
-                  <Collapsible title="Detalhes do conjunto" defaultOpen>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Field label="Data de lançamento">
-                        <DateInput
-                          value={form.watch('release_date')}
-                          onChange={(iso) => form.setValue('release_date', iso)}
-                        />
-                      </Field>
-                      <Field
-                        label="Data de retirada"
-                        hint="Vazio se ainda está à venda. Só conta como retirado depois de a data passar."
-                      >
-                        <DateInput
-                          value={form.watch('retirement_date')}
-                          onChange={(iso) => form.setValue('retirement_date', iso)}
-                        />
-                      </Field>
-                      <Field label="Peças">
-                        <Input type="number" {...form.register('piece_count')} />
-                      </Field>
-                      <Field label="Minifiguras">
-                        <Input type="number" {...form.register('minifig_count')} />
-                      </Field>
-                      <Field
-                        label="Idade recomendada"
-                        hint="O que está impresso na caixa: «18+», «4+» ou «6-12»."
-                      >
-                        <Input placeholder="18+" {...form.register('age_range')} />
-                      </Field>
-                      <Field
-                        label="Dimensões da caixa (cm)"
-                        hint="Largura × profundidade × altura."
-                      >
-                        <Input
-                          placeholder="26,2 × 7,1 × 38,2"
-                          {...form.register('box_dimensions')}
-                        />
-                      </Field>
-                      <Field label="Peso da caixa (kg)">
-                        <Input
-                          inputMode="decimal"
-                          placeholder="0,76"
-                          {...form.register('box_weight_kg')}
-                        />
-                      </Field>
-                      <Field label="PVP original (€)">
+                  <Collapsible title="Detalhes do conjunto">
+                    <div className="grid gap-4 sm:grid-cols-6">
+                        <Field label="PVP original (€)" className="sm:col-span-3">
                         <Input
                           inputMode="decimal"
                           placeholder="629,99"
@@ -627,116 +470,157 @@ export function AddSetDialog({
                       <Field
                         label="Valor de mercado atual (€)"
                         hint="Mantido à mão. Fica marcado como desatualizado com o tempo."
+                        className="sm:col-span-3"
                       >
                         <Input
                           inputMode="decimal"
                           placeholder="689,00"
                           {...form.register('current_value_eur')}
                         />
-                      </Field>
-                      <Field label="Descrição" className="sm:col-span-2">
-                        <Textarea rows={2} {...form.register('short_description')} />
+                      </Field>                      
+                      <Field label="Data de lançamento" className="sm:col-span-3">
+                        <DateInput
+                          value={form.watch('release_date')}
+                          onChange={(iso) => form.setValue('release_date', iso)}
+                        />
                       </Field>
                       <Field
-                        label="Imagem (endereço)"
-                        className="sm:col-span-2"
-                        hint="A imagem é transferida uma vez e guardada no NAS — nunca é usada por ligação direta."
+                        label="Data de retirada"
+                        hint="Vazio se ainda está à venda."
+                        className="sm:col-span-3"
                       >
-                        <Input placeholder="https://…" {...form.register('image_url')} />
+                        <DateInput
+                          value={form.watch('retirement_date')}
+                          onChange={(iso) => form.setValue('retirement_date', iso)}
+                        />
+                      </Field>
+                      <Field label="Peças" className="sm:col-span-1">
+                        <Input type="number" {...form.register('piece_count')} />
+                      </Field>
+                      <Field label="Minifiguras" className="sm:col-span-1">
+                        <Input type="number" {...form.register('minifig_count')} />
+                      </Field>
+                      <Field
+                        label="Idade"
+                        hint="Valor na caixa."
+                        className="sm:col-span-1"
+                      >
+                        <Input placeholder="18+" {...form.register('age_range')} />
+                      </Field>
+                      <Field label="Peso caixa (kg)" className="sm:col-span-1">
+                        <Input
+                          inputMode="decimal"
+                          placeholder="0,76"
+                          {...form.register('box_weight_kg')}
+                        />
+                      </Field>
+                      <Field
+                        label="Dimensões caixa (cm)"
+                        hint="Largura × profundidade × altura."
+                        className="sm:col-span-2"
+                      >
+                      <Input
+                        placeholder="26,2 × 7,1 × 38,2"
+                        {...form.register('box_dimensions')}
+                      />
+                      </Field>
+                      <Field label="Descrição" className="sm:col-span-6">
+                        <Textarea rows={2} {...form.register('short_description')} />
                       </Field>
                     </div>
                   </Collapsible>
-
                   <Separator />
                 </>
               )}
 
               {/* --- The copy ------------------------------------------------- */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Custo de aquisição (€)" hint="0 para prendas — o ROI fica «—».">
-                  <Input
-                    inputMode="decimal"
-                    placeholder="599,99"
-                    autoFocus={Boolean(existingModel)}
-                    {...form.register('acquisition_cost_eur')}
-                  />
-                </Field>
-                <Field label="Data de aquisição">
-                  <DateInput
-                    value={form.watch('acquisition_date')}
-                    onChange={(iso) => form.setValue('acquisition_date', iso)}
-                  />
-                </Field>
-                <Field label="Origem">
-                  <Select
-                    value={form.watch('acquisition_source')}
-                    onValueChange={(value) => form.setValue('acquisition_source', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(SOURCE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Local de arrumação">
-                  <Select
-                    value={form.watch('storage_location_id')}
-                    onValueChange={(value) => form.setValue('storage_location_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {storageLocations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.label}
-                          {location.is_full ? ' · cheio' : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Estado de construção">
-                  <Select
-                    value={form.watch('build_state')}
-                    onValueChange={(value) => form.setValue('build_state', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(BUILD_STATE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Condição">
-                  <Select
-                    value={form.watch('condition')}
-                    onValueChange={(value) => form.setValue('condition', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(CONDITION_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
+              <Collapsible title="Informação Especifica da Instância" defaultOpen={true}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Custo de aquisição (€)" hint="0 para prendas — o ROI fica «—».">
+                    <Input
+                      inputMode="decimal"
+                      placeholder="599,99"
+                      autoFocus={Boolean(existingModel)}
+                      {...form.register('acquisition_cost_eur')}
+                    />
+                  </Field>
+                  <Field label="Data de aquisição">
+                    <DateInput
+                      value={form.watch('acquisition_date')}
+                      onChange={(iso) => form.setValue('acquisition_date', iso)}
+                    />
+                  </Field>
+                  <Field label="Origem">
+                    <Select
+                      value={form.watch('acquisition_source')}
+                      onValueChange={(value) => form.setValue('acquisition_source', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(SOURCE_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Local de arrumação">
+                    <Select
+                      value={form.watch('storage_location_id')}
+                      onValueChange={(value) => form.setValue('storage_location_id', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {storageLocations.map((location) => (
+                          <SelectItem key={location.id} value={location.id}>
+                            {location.label}
+                            {location.is_full ? ' · cheio' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Estado de construção">
+                    <Select
+                      value={form.watch('build_state')}
+                      onValueChange={(value) => form.setValue('build_state', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(BUILD_STATE_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Condição">
+                    <Select
+                      value={form.watch('condition')}
+                      onValueChange={(value) => form.setValue('condition', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CONDITION_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+              </Collapsible>
 
               <Collapsible title="Estado, peças em falta e notas">
                 <div className="flex flex-wrap gap-5">

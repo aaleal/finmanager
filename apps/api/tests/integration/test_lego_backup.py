@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import io
 import json
-import uuid
 import zipfile
 from decimal import Decimal
 
@@ -107,7 +106,9 @@ def test_a_collection_survives_a_round_trip_onto_another_entity(
         db.delete(location_row)
     db.flush()
 
-    report = lego_backup.restore_archive(db, payload, entity_id=target.id, actor_user_id=owner.id)
+    report = lego_backup.restore_archive(
+        db, payload, household_id=target.household_id, actor_user_id=owner.id
+    )
     assert (report.models, report.instances, report.storage_locations) == (1, 1, 1)
 
     restored = db.scalars(select(LegoSetModel)).one()
@@ -153,9 +154,9 @@ def test_archive_keeps_each_row_on_its_own_entity_not_the_caller(
         db.delete(model_row)
     db.flush()
 
-    # Both entities' names already exist here (as if imported first): the
-    # entity_id given below is only where an unnamed, legacy row would land.
-    lego_backup.restore_archive(db, payload, entity_id=entity.id, actor_user_id=owner.id)
+    # Both entities' names already exist here (as if imported first): no
+    # fallback entity is needed, since every row in this archive carries a name.
+    lego_backup.restore_archive(db, payload, household_id=household.id, actor_user_id=owner.id)
 
     ana_model = db.scalar(select(LegoSetModel).where(LegoSetModel.set_number == "10307"))
     bruno_model = db.scalar(select(LegoSetModel).where(LegoSetModel.set_number == "75192"))
@@ -176,7 +177,9 @@ def test_restoring_a_row_whose_entity_name_is_unknown_here_is_refused(
     db.flush()
 
     with pytest.raises(ValidationError):
-        lego_backup.restore_archive(db, payload, entity_id=entity.id, actor_user_id=owner.id)
+        lego_backup.restore_archive(
+            db, payload, household_id=entity.household_id, actor_user_id=owner.id
+        )
 
 
 def test_importing_the_same_archive_twice_clones_nothing(
@@ -185,7 +188,9 @@ def test_importing_the_same_archive_twice_clones_nothing(
     """Primary keys travel, which is what makes the restore idempotent."""
     payload = lego_backup.build_archive(db, entity_ids=[entity.id])
 
-    report = lego_backup.restore_archive(db, payload, entity_id=entity.id, actor_user_id=owner.id)
+    report = lego_backup.restore_archive(
+        db, payload, household_id=entity.household_id, actor_user_id=owner.id
+    )
 
     assert report.models == 0
     assert report.skipped_models == 1
@@ -200,21 +205,46 @@ def test_a_foreign_archive_is_refused(db: Session, entity: Entity, owner: User) 
 
     with pytest.raises(ValidationError):
         lego_backup.restore_archive(
-            db, buffer.getvalue(), entity_id=entity.id, actor_user_id=owner.id
+            db, buffer.getvalue(), household_id=entity.household_id, actor_user_id=owner.id
         )
 
 
 def test_something_that_is_not_a_zip_is_refused(db: Session, entity: Entity, owner: User) -> None:
     with pytest.raises(ValidationError):
         lego_backup.restore_archive(
-            db, b"nao sou um zip", entity_id=entity.id, actor_user_id=owner.id
+            db, b"nao sou um zip", household_id=entity.household_id, actor_user_id=owner.id
         )
 
 
-def test_restoring_onto_an_unknown_entity_is_refused(
+def test_restoring_a_legacy_row_without_a_fallback_entity_is_refused(
     db: Session, entity: Entity, owner: User, collection: LegoSetModel
 ) -> None:
+    """A v1/v2 archive (or one hand-edited to strip the entity name) needs a
+    fallback entity from the caller — refused, not guessed, without one."""
     payload = lego_backup.build_archive(db, entity_ids=[entity.id])
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        collection_body = json.loads(archive.read(lego_backup.COLLECTION_NAME))
+    for row in collection_body["models"] + collection_body["instances"]:
+        row.pop("entity", None)
+
+    buffer = io.BytesIO()
+    with (
+        zipfile.ZipFile(io.BytesIO(payload)) as source,
+        zipfile.ZipFile(buffer, "w") as rewritten,
+    ):
+        for info in source.infolist():
+            if info.filename == lego_backup.COLLECTION_NAME:
+                rewritten.writestr(info, json.dumps(collection_body))
+            else:
+                rewritten.writestr(info, source.read(info.filename))
+
+    for copy_row in db.scalars(select(LegoSetInstance)):
+        db.delete(copy_row)
+    for model_row in db.scalars(select(LegoSetModel)):
+        db.delete(model_row)
+    db.flush()
 
     with pytest.raises(ValidationError):
-        lego_backup.restore_archive(db, payload, entity_id=uuid.uuid4(), actor_user_id=owner.id)
+        lego_backup.restore_archive(
+            db, buffer.getvalue(), household_id=entity.household_id, actor_user_id=owner.id
+        )

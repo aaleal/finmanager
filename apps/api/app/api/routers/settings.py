@@ -6,7 +6,14 @@ from typing import Annotated, Any
 from fastapi import APIRouter, File, Response, UploadFile
 from pydantic import BaseModel
 
-from app.api.deps import CurrentAuth, Db, Owner, Writer, household_entity_ids, resolve_write_entity
+from app.api.deps import (
+    CurrentAuth,
+    Db,
+    Owner,
+    Writer,
+    household_entity_ids,
+    resolve_optional_entity,
+)
 from app.schemas.backup import BackupImportReport, BackupModuleOut
 from app.services import settings_service
 
@@ -97,11 +104,18 @@ def import_backup(
     file: Annotated[UploadFile, File()],
     entity_id: uuid.UUID | None = None,
 ) -> BackupImportReport:
-    """Restore an archive onto one entity — a single module's, or the global
-    container. Existing rows are kept, never merged (ADR-0032)."""
+    """Restore an archive onto the caller's household — a single module's, or
+    the global container. No entity has to be selected first: a row's entity is
+    resolved by name from the archive itself (ADR-0047), and `entity_id` (or the
+    active selector) is only a fallback for a row an older archive never named.
+    Existing rows are kept, never merged (ADR-0032)."""
     from app.services import backup_service
 
-    target = resolve_write_entity(db, ctx, entity_id)
+    fallback_entity_id = resolve_optional_entity(db, ctx, entity_id)
     return backup_service.restore_any(
-        db, file.file.read(), entity_id=target, actor_user_id=ctx.user.id
+        db,
+        file.file.read(),
+        household_id=ctx.household_id,
+        fallback_entity_id=fallback_entity_id,
+        actor_user_id=ctx.user.id,
     )

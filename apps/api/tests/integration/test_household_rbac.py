@@ -4,8 +4,16 @@ writes require OWNER/MEMBER, VIEWER is read-only» and «Last-OWNER safeguard».
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
-from app.api.deps import AuthContext, require_owner, require_write, resolve_write_entity
+from app.api.deps import (
+    AuthContext,
+    require_owner,
+    require_write,
+    resolve_optional_entity,
+    resolve_write_entity,
+)
 from app.core.errors import Conflict, Forbidden
 from app.core.security import hash_password
 from app.models import Entity, Household, HouseholdMember, User
@@ -67,6 +75,29 @@ def test_readonly_entity_refuses_new_records(
     ctx = _context(owner, "OWNER", household, entity_id=entity.id)
     with pytest.raises(Forbidden):
         resolve_write_entity(db, ctx, entity.id)
+
+
+def test_resolve_optional_entity_returns_none_on_todas_instead_of_refusing(
+    db: Session, household: Household, owner: User, entity: Entity
+) -> None:
+    """Unlike `resolve_write_entity`, an operation — a backup restore — that
+    only sometimes needs an entity must not force the selector off «todas»."""
+    ctx = _context(owner, "OWNER", household, entity_id=None)
+    assert resolve_optional_entity(db, ctx, None) is None
+    assert resolve_optional_entity(db, ctx, entity.id) == entity.id
+
+
+def test_resolve_optional_entity_still_refuses_an_unknown_or_readonly_entity(
+    db: Session, household: Household, owner: User, entity: Entity
+) -> None:
+    ctx = _context(owner, "OWNER", household)
+    with pytest.raises(Forbidden):
+        resolve_optional_entity(db, ctx, uuid.uuid4())
+
+    entity.is_readonly = True
+    db.flush()
+    with pytest.raises(Forbidden):
+        resolve_optional_entity(db, ctx, entity.id)
 
 
 def test_the_last_owner_cannot_be_demoted_or_removed(

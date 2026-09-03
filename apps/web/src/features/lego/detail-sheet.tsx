@@ -1299,7 +1299,7 @@ export function CopyDetailSheet({
                           )}
                         </DetailRow>
                         <DetailRow label="Peças">{num(model.piece_count)}</DetailRow>
-                        <DetailRow label="Minifiguras">{num(model.minifig_count)}</DetailRow>
+                        <DetailRow label="Minifiguras">{num(model.minifig_count, '0')}</DetailRow>
                         <DetailRow label="Idade recomendada">
                           {ageRangeLabel(model.age_min, model.age_max) ?? '—'}
                         </DetailRow>

@@ -39,6 +39,16 @@ installation that has never seen it before.
   `lego`. A global "back up everything" restore walks the registry in order,
   so by the time LEGO's own rows try to resolve an entity by name, that
   entity already exists.
+- **Restoring no longer requires an entity to be selected first.** Every
+  restore path (`POST /settings/backup`, `backup_service.restore_any`, and
+  each module's own `restore_archive`) takes the caller's `household_id`
+  directly rather than resolving one specific entity — there usually is
+  nothing to attribute a restore itself to. An entity (the active selector,
+  or an explicit id) is only consulted as `fallback_entity_id`, and only used
+  when a legacy (v1/v2) row has no name to resolve. `resolve_optional_entity`
+  (`deps.py`) is `resolve_write_entity`'s sibling for exactly this shape: it
+  validates an entity when one is given, but returns `None` instead of
+  refusing «todas» when nothing needs one.
 
 ## Consequences
 

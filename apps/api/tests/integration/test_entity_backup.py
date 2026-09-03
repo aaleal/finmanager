@@ -51,11 +51,10 @@ def test_restoring_creates_a_missing_entity_by_name(
     other_household = Household(name="Outra casa")
     db.add(other_household)
     db.flush()
-    target = Entity(household_id=other_household.id, name="Entidade de destino")
-    db.add(target)
-    db.flush()
 
-    report = entity_backup.restore_archive(db, payload, entity_id=target.id, actor_user_id=owner.id)
+    report = entity_backup.restore_archive(
+        db, payload, household_id=other_household.id, actor_user_id=owner.id
+    )
 
     assert (report.entities, report.skipped_entities) == (1, 0)
     created = db.scalar(
@@ -76,11 +75,10 @@ def test_restoring_never_creates_a_user_or_a_password(
     other_household = Household(name="Outra casa")
     db.add(other_household)
     db.flush()
-    target = Entity(household_id=other_household.id, name="Entidade de destino")
-    db.add(target)
-    db.flush()
 
-    entity_backup.restore_archive(db, payload, entity_id=target.id, actor_user_id=owner.id)
+    entity_backup.restore_archive(
+        db, payload, household_id=other_household.id, actor_user_id=owner.id
+    )
 
     assert set(db.scalars(select(User.id)).all()) == users_before
 
@@ -90,7 +88,9 @@ def test_restoring_the_same_archive_twice_skips_the_second_time(
 ) -> None:
     payload = entity_backup.build_archive(db, [entity.id])
 
-    report = entity_backup.restore_archive(db, payload, entity_id=entity.id, actor_user_id=owner.id)
+    report = entity_backup.restore_archive(
+        db, payload, household_id=household.id, actor_user_id=owner.id
+    )
 
     # "Ana" already exists in this household — matched, not duplicated.
     assert (report.entities, report.skipped_entities) == (0, 1)
@@ -109,12 +109,12 @@ def test_a_foreign_archive_is_refused(db: Session, entity: Entity, owner: User) 
 
     with pytest.raises(ValidationError):
         entity_backup.restore_archive(
-            db, buffer.getvalue(), entity_id=entity.id, actor_user_id=owner.id
+            db, buffer.getvalue(), household_id=entity.household_id, actor_user_id=owner.id
         )
 
 
 def test_something_that_is_not_a_zip_is_refused(db: Session, entity: Entity, owner: User) -> None:
     with pytest.raises(ValidationError):
         entity_backup.restore_archive(
-            db, b"nao sou um zip", entity_id=entity.id, actor_user_id=owner.id
+            db, b"nao sou um zip", household_id=entity.household_id, actor_user_id=owner.id
         )

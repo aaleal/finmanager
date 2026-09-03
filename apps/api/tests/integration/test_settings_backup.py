@@ -82,16 +82,13 @@ def test_restore_any_detects_a_lone_module_archive_without_a_hint(
     # Same test database as the fixture: the primary key already exists unless
     # the original row is cleared first (mirrors test_lego_backup.py's own
     # round-trip fixture — a real installation would simply start empty).
-    target = Entity(household_id=entity.household_id, name="Instalação nova")
-    db.add(target)
-    db.flush()
     for instance_row in db.scalars(select(LegoSetInstance)):
         db.delete(instance_row)
     for model_row in db.scalars(select(LegoSetModel)):
         db.delete(model_row)
     db.flush()
 
-    report = backup_service.restore_any(db, payload, entity_id=target.id)
+    report = backup_service.restore_any(db, payload, household_id=entity.household_id)
 
     assert len(report.modules) == 1
     assert report.modules[0].module == "lego"
@@ -103,16 +100,13 @@ def test_restore_any_unwraps_the_global_container_module_by_module(
 ) -> None:
     payload = backup_service.build_global_archive(db, entity_ids=[entity.id])
 
-    target = Entity(household_id=entity.household_id, name="Instalação nova 2")
-    db.add(target)
-    db.flush()
     for instance_row in db.scalars(select(LegoSetInstance)):
         db.delete(instance_row)
     for model_row in db.scalars(select(LegoSetModel)):
         db.delete(model_row)
     db.flush()
 
-    report = backup_service.restore_any(db, payload, entity_id=target.id)
+    report = backup_service.restore_any(db, payload, household_id=entity.household_id)
 
     assert [entry.module for entry in report.modules] == ["entities", "lego"]
     lego_report = next(entry for entry in report.modules if entry.module == "lego")
@@ -125,4 +119,4 @@ def test_restore_any_refuses_an_archive_it_does_not_recognise(db: Session, entit
         archive.writestr("manifest.json", '{"format": "algo.desconhecido"}')
 
     with pytest.raises(ValidationError):
-        backup_service.restore_any(db, buffer.getvalue(), entity_id=entity.id)
+        backup_service.restore_any(db, buffer.getvalue(), household_id=entity.household_id)

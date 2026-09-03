@@ -122,6 +122,26 @@ def resolve_write_entity(db: DbSession, ctx: AuthContext, entity_id: uuid.UUID |
     return entity.id
 
 
+def resolve_optional_entity(
+    db: DbSession, ctx: AuthContext, entity_id: uuid.UUID | None
+) -> uuid.UUID | None:
+    """Like ``resolve_write_entity``, but for an operation — a backup restore —
+    that only *sometimes* needs an entity (as a fallback for rows an archive
+    does not itself name). Returns ``None`` instead of refusing when neither an
+    explicit id nor the active selector picks one, rather than forcing the
+    caller off «todas» for something that mostly does not need it.
+    """
+    target = entity_id or ctx.active_entity_id
+    if target is None:
+        return None
+    entity = db.get(Entity, target)
+    if entity is None or entity.is_deleted or entity.household_id != ctx.household_id:
+        raise Forbidden("Entidade desconhecida.")
+    if entity.is_readonly:
+        raise Forbidden("Esta entidade está em modo de leitura.")
+    return entity.id
+
+
 def household_entity_ids(db: DbSession, ctx: AuthContext) -> list[uuid.UUID]:
     return list(
         db.scalars(

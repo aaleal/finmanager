@@ -99,12 +99,14 @@ def restore_archive(
     db: DbSession,
     payload: bytes,
     *,
-    entity_id: uuid.UUID,
+    household_id: uuid.UUID,
+    fallback_entity_id: uuid.UUID | None = None,
     actor_user_id: uuid.UUID | None = None,
 ) -> EntityBackupReport:
     """Recreate every entity from the archive that this household does not
-    already have, by name. ``entity_id`` only locates the target household —
-    an entity being restored is not attributed to another entity."""
+    already have, by name. ``fallback_entity_id`` is accepted, unused, only so
+    every module's ``restore_archive`` shares one call shape — an entity being
+    restored is not itself attributed to another entity."""
     try:
         archive = zipfile.ZipFile(io.BytesIO(payload))
     except zipfile.BadZipFile as exc:
@@ -125,11 +127,6 @@ def restore_archive(
             raise ValidationError("Este arquivo não é uma cópia de segurança de entidades.")
         if int(manifest.get("version", 0)) > VERSION:
             raise ValidationError("O arquivo foi criado por uma versão mais recente da aplicação.")
-
-        target_entity = db.get(Entity, entity_id)
-        if target_entity is None:
-            raise ValidationError("Entidade de destino não encontrada.")
-        household_id = target_entity.household_id
 
         try:
             collection = json.loads(archive.read(COLLECTION_NAME))
