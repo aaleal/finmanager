@@ -98,6 +98,8 @@ lives here, where it can be corrected when code moves.
 | `POST /lego/models/{id}/instructions` — add a manual by hand (file or URL), same storage and dedupe rules as the Brickset import (ADR-0044) | `apps/api/app/services/lego_service.py::add_model_instruction` | Phase 1 (M9.4) |
 | `DateInput` — every date in the application is typed `dd/mm/aaaa` over an ISO value, because the native picker follows the browser's locale (ADR-0041) | `apps/web/src/components/ui/input.tsx` | Phase 1 (M9.4) |
 | Manual import dedupes by description before downloading, not by file content (ADR-0043) | `apps/api/app/services/lego_service.py::_import_instructions` | Phase 1 (M9.4) |
+| Bulk import of copies from a spreadsheet — preview resolves entity/storage/enum columns only (no Brickset call), a review table lets errors be fixed inline, commit does one find-or-create-and-Brickset-lookup per row; reads the same PT column headers `export.xlsx` writes, so the export is itself a valid import (ADR-0048) | `apps/api/app/services/lego_bulk_import.py`, `apps/web/src/features/lego/bulk-import-dialog.tsx` | Phase 1 (M9.5) |
+| Bulk import of storage locations — upserted on (área, contentor), so re-importing the exported «Arrumação» sheet is safe (ADR-0048) | `apps/api/app/services/lego_bulk_import.py::import_storage_locations`, `apps/web/src/features/lego/storage-bulk-import-dialog.tsx` | Phase 1 (M9.5) |
 
 ## Settings & backup (Definições)
 

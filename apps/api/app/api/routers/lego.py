@@ -10,6 +10,9 @@ from app.core.errors import ValidationError
 from app.schemas.common import Ok, Page
 from app.schemas.lego import (
     BricksetImportOut,
+    BulkImportCommitIn,
+    BulkImportCommitOut,
+    BulkImportPreviewOut,
     CompletenessFilter,
     CopiesFilter,
     ImageSource,
@@ -26,11 +29,12 @@ from app.schemas.lego import (
     LookupResult,
     OverviewOut,
     RetirementFilter,
+    StorageBulkImportOut,
     StorageLocationCreate,
     StorageLocationOut,
     StorageLocationUpdate,
 )
-from app.services import lego_provider, lego_service
+from app.services import lego_bulk_import, lego_provider, lego_service
 
 router = APIRouter(prefix="/lego", tags=["lego"])
 
@@ -372,6 +376,32 @@ def set_instance_display_image(
     return lego_service.instance_out(db, instance)
 
 
+# --- Bulk import (M9.5) -------------------------------------------------------
+@router.post("/instances/bulk/preview", response_model=BulkImportPreviewOut)
+def bulk_preview_instances(
+    ctx: CurrentAuth, db: Db, file: Annotated[UploadFile, File()]
+) -> BulkImportPreviewOut:
+    """Resolves each row against the household's own entities/locations only —
+    Brickset is never contacted here (M9 guarantee: only on an explicit action)."""
+    data = file.file.read()
+    if not data:
+        raise ValidationError("Ficheiro vazio.")
+    rows = lego_bulk_import.preview_instances(
+        db, data=data, household_id=ctx.household_id, active_entity_id=ctx.active_entity_id
+    )
+    return BulkImportPreviewOut(rows=rows)
+
+
+@router.post("/instances/bulk/commit", response_model=BulkImportCommitOut)
+def bulk_commit_instances(payload: BulkImportCommitIn, ctx: Writer, db: Db) -> BulkImportCommitOut:
+    """One Brickset lookup + registration per row, exactly like the manual form.
+    A row that fails (unknown to Brickset, network error, ...) does not stop the rest."""
+    results = lego_bulk_import.commit_instances(
+        db, payload.rows, household_id=ctx.household_id, actor_user_id=ctx.user.id
+    )
+    return BulkImportCommitOut(results=results)
+
+
 # --- Storage -----------------------------------------------------------------
 @router.get("/storage-locations", response_model=list[StorageLocationOut])
 def list_storage(ctx: CurrentAuth, db: Db) -> list[StorageLocationOut]:
@@ -403,6 +433,17 @@ def delete_storage(location_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
     location = lego_service.get_storage_location(db, location_id)
     lego_service.delete_storage_location(db, location, actor_user_id=ctx.user.id)
     return Ok(message="Local eliminado.")
+
+
+@router.post("/storage-locations/bulk", response_model=StorageBulkImportOut)
+def bulk_import_storage(
+    ctx: Writer, db: Db, file: Annotated[UploadFile, File()]
+) -> StorageBulkImportOut:
+    """Upserted on (área, contentor) — unlike copies, re-running this is safe."""
+    data = file.file.read()
+    if not data:
+        raise ValidationError("Ficheiro vazio.")
+    return lego_bulk_import.import_storage_locations(db, data=data, actor_user_id=ctx.user.id)
 
 
 # --- Export ------------------------------------------------------------------

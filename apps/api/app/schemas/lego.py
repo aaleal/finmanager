@@ -340,6 +340,62 @@ class LookupResult(BaseModel):
     instruction_count: int = 0
 
 
+# --- Bulk import (M9.5) -------------------------------------------------------
+# The same shape travels both ways: the preview response fills in whatever the
+# sheet let it resolve and reports the rest in `errors`; the commit request sends
+# the identical shape back once the table shows every row green. See
+# docs/decisions/0048-bulk-import-mirrors-the-export.md.
+class BulkImportRow(BaseModel):
+    row_number: int
+    set_number: str | None = Field(default=None, max_length=32)
+    entity_id: uuid.UUID | None = None
+    entity_name: str | None = None
+    storage_location_id: uuid.UUID | None = None
+    storage_area: str | None = None
+    storage_container: str | None = None
+    acquisition_cost_eur: Decimal = Field(default=Decimal("0.00"), ge=0, decimal_places=2)
+    acquisition_date: dt.date | None = None
+    acquisition_source: AcquisitionSource | None = None
+    build_state: BuildState | None = None
+    condition: Condition | None = None
+    has_box: bool = True
+    has_instructions: bool = True
+    missing_parts: str | None = None
+    notes: str | None = None
+    #: Keyed by field name, so the review table can highlight just that cell.
+    errors: dict[str, str] = Field(default_factory=dict)
+
+
+class BulkImportPreviewOut(BaseModel):
+    rows: list[BulkImportRow]
+
+
+class BulkImportCommitIn(BaseModel):
+    rows: list[BulkImportRow]
+
+
+class BulkImportRowResult(BaseModel):
+    row_number: int
+    ok: bool
+    message: str
+    lego_set_instance_id: uuid.UUID | None = None
+
+
+class BulkImportCommitOut(BaseModel):
+    results: list[BulkImportRowResult]
+
+
+class StorageBulkImportError(BaseModel):
+    row_number: int
+    message: str
+
+
+class StorageBulkImportOut(BaseModel):
+    created: int
+    updated: int
+    errors: list[StorageBulkImportError]
+
+
 class BricksetImportOut(ApiModel):
     """What one press of «Importar do Brickset» actually brought down."""
 

@@ -4,12 +4,16 @@ import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
   BricksetImport,
+  LegoBulkImportCommitOut,
+  LegoBulkImportPreview,
+  LegoBulkImportRow,
   LegoInstancePage,
   LegoOverview,
   LegoSetInstance,
   LegoSetModel,
   LookupResult,
   Page,
+  StorageBulkImportResult,
   StorageLocation,
 } from '@/lib/types';
 
@@ -397,4 +401,46 @@ export function useStorageMutations() {
   });
 
   return { create, update, remove };
+}
+
+/** Spreadsheet → preview table → commit, mirroring the manual add-copy flow one row
+ * at a time (M9.5). Preview never contacts Brickset; only commit does. */
+export function useBulkImportPreview() {
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.upload<LegoBulkImportPreview>('/lego/instances/bulk/preview', formData, undefined, 'POST');
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, 'Não foi possível ler o ficheiro.')),
+  });
+}
+
+export function useBulkImportCommit() {
+  const invalidate = useInvalidateLego();
+  return useMutation({
+    mutationFn: (rows: LegoBulkImportRow[]) =>
+      api.post<LegoBulkImportCommitOut>('/lego/instances/bulk/commit', { rows }),
+    onSuccess: () => invalidate(),
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível importar as cópias.')),
+  });
+}
+
+export function useStorageBulkImport() {
+  const invalidate = useInvalidateLego();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.upload<StorageBulkImportResult>(
+        '/lego/storage-locations/bulk',
+        formData,
+        undefined,
+        'POST',
+      );
+    },
+    onSuccess: () => invalidate(),
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível importar o ficheiro.')),
+  });
 }

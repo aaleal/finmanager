@@ -325,7 +325,11 @@ export function StoragePanel({
           A percentagem de ocupação é sempre uma estimativa sua — nunca é calculada a partir do
           número de peças.
         </p>
-        {canWrite ? <AddLocationDialog locations={locations} /> : null}
+        {canWrite ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <AddLocationDialog locations={locations} />
+          </div>
+        ) : null}
       </div>
 
       {areas.length === 0 ? (

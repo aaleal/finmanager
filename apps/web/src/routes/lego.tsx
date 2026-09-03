@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Plus, Sheet } from 'lucide-react';
+import { Plus, Sheet, Upload } from 'lucide-react';
 import type { LegoSetInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
@@ -17,6 +17,12 @@ import { CollectionGrid } from '@/features/lego/collection-grid';
 import { CopyDetailSheet } from '@/features/lego/detail-sheet';
 import { StoragePanel } from '@/features/lego/storage-panel';
 import { AddSetDialog } from '@/features/lego/add-set-dialog';
+import { BulkImportDialog } from '@/features/lego/bulk-import-dialog';
+import { StorageBulkImportDialog } from '@/features/lego/storage-bulk-import-dialog';
+import {
+  BulkImportPickerDialog,
+  type BulkImportScope,
+} from '@/features/lego/bulk-import-picker-dialog';
 
 const DEFAULTS = {
   tab: 'overview',
@@ -42,6 +48,20 @@ export function LegoPage() {
   const [filters, setFilters] = useUrlFilters(DEFAULTS);
   const [selected, setSelected] = React.useState<LegoSetInstance | null>(null);
   const [addOpen, setAddOpen] = React.useState(false);
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [storageImportOpen, setStorageImportOpen] = React.useState(false);
+  const [instancesImportOpen, setInstancesImportOpen] = React.useState(false);
+  // «Tudo» chains storage → instances, same workbook read twice by sheet name.
+  const [chainToInstances, setChainToInstances] = React.useState(false);
+
+  function handleBulkImportPick(scope: BulkImportScope) {
+    if (scope === 'instances') {
+      setInstancesImportOpen(true);
+      return;
+    }
+    setChainToInstances(scope === 'all');
+    setStorageImportOpen(true);
+  }
 
   const overview = useLegoOverview();
   const storage = useStorageLocations();
@@ -94,6 +114,12 @@ export function LegoPage() {
               <Sheet />
               Exportar
             </Button>
+            {canWrite ? (
+              <Button variant="outline" onClick={() => setPickerOpen(true)}>
+                <Upload />
+                Importar em lote
+              </Button>
+            ) : null}
             {canWrite ? (
               <Button onClick={() => setAddOpen(true)}>
                 <Plus />
@@ -173,6 +199,33 @@ export function LegoPage() {
           onOpenChange={setAddOpen}
           storageLocations={storage.data ?? []}
         />
+      ) : null}
+
+      {canWrite ? (
+        <>
+          <BulkImportPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            onPick={handleBulkImportPick}
+          />
+          <StorageBulkImportDialog
+            open={storageImportOpen}
+            onOpenChange={(open) => {
+              setStorageImportOpen(open);
+              if (!open && chainToInstances) setInstancesImportOpen(true);
+            }}
+            stepLabel={chainToInstances ? '1 de 2' : undefined}
+          />
+          <BulkImportDialog
+            open={instancesImportOpen}
+            onOpenChange={(open) => {
+              setInstancesImportOpen(open);
+              if (!open) setChainToInstances(false);
+            }}
+            storageLocations={storage.data ?? []}
+            stepLabel={chainToInstances ? '2 de 2' : undefined}
+          />
+        </>
       ) : null}
     </div>
   );

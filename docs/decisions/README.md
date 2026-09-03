@@ -52,3 +52,4 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0045](0045-the-table-image-is-per-copy-the-star-is-per-set.md) | The table image is per copy, the star is per set, and nothing moves (supersedes part of 0042) |
 | [0046](0046-storage-locations-are-shared-not-entity-scoped.md) | Storage locations are shared, not entity-scoped |
 | [0047](0047-restored-entity-is-resolved-by-name-entities-get-their-own-archive.md) | A restored row's entity is resolved by name, and entities get their own archive |
+| [0048](0048-bulk-import-mirrors-the-export.md) | Bulk import mirrors the export, and only local data is checked before Brickset runs |
