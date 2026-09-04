@@ -53,3 +53,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0046](0046-storage-locations-are-shared-not-entity-scoped.md) | Storage locations are shared, not entity-scoped |
 | [0047](0047-restored-entity-is-resolved-by-name-entities-get-their-own-archive.md) | A restored row's entity is resolved by name, and entities get their own archive |
 | [0048](0048-bulk-import-mirrors-the-export.md) | Bulk import mirrors the export, and only local data is checked before Brickset runs |
+| [0049](0049-brickset-assets-are-fetched-in-the-background.md) | Brickset images and manuals are fetched in the background, not inline |
+| [0050](0050-a-bare-number-tries-the-closed-pack-before-the-ordinary-set.md) | A bare number tries the closed pack (`-0`) before the ordinary set (`-1`) |

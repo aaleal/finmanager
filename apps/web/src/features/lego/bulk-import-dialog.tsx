@@ -338,7 +338,7 @@ export function BulkImportDialog({
                               value={row.set_number ?? ''}
                               disabled={commit.isPending}
                               className={cn(
-                                'h-8 w-28',
+                                'h-8 w-16',
                                 row.errors?.set_number && 'border-destructive',
                               )}
                               onChange={(event) =>

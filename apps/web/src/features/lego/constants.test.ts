@@ -28,6 +28,10 @@ describe('externalLinks', () => {
   it('does not double up a variant suffix the user already typed', () => {
     expect(externalLinks('10307-1')[0].href).toBe('https://brickset.com/sets/10307-1');
   });
+
+  it('respects a closed-pack «-0» variant instead of forcing «-1» (ADR-0050)', () => {
+    expect(externalLinks('71046-0')[0].href).toBe('https://brickset.com/sets/71046-0');
+  });
 });
 
 describe('ageRangeLabel', () => {

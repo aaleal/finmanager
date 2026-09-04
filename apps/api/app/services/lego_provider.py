@@ -67,6 +67,19 @@ def normalize_set_number(raw: str) -> str:
     return value if re.search(r"-\d+$", value) else f"{value}-1"
 
 
+def _set_number_candidates(raw: str) -> list[str]:
+    """A bare number (no explicit ``-N``) is ambiguous: most sets are ``-1``, but a
+    closed collectible pack (e.g. the F1 car collectibles) is keyed ``-0`` — the
+    box, not any one item inside. Try the pack first, then the ordinary set
+    (ADR-0050). Once a pack is opened its contents get their own explicit ``-1``,
+    ``-2``, ... numbers typed by hand, which never reach this fallback at all —
+    the regex below only fires for a truly bare number."""
+    value = raw.strip().upper()
+    if re.search(r"-\d+$", value):
+        return [value]
+    return [f"{value}-0", f"{value}-1"]
+
+
 def _decimal(value: Any, places: str = "0.01") -> Decimal | None:
     if value in (None, "", 0):
         return None
@@ -182,15 +195,21 @@ class BricksetProvider:
         return payload if isinstance(payload, dict) else {}
 
     def _set_data(self, set_number: str) -> dict[str, Any] | None:
-        payload = self._call(
-            "getSets",
-            userHash="",
-            params=json.dumps({"setNumber": normalize_set_number(set_number)}),
-        )
-        if payload.get("status") != "success" or not payload.get("sets"):
-            return None
-        first = payload["sets"][0]
-        return first if isinstance(first, dict) else None
+        """Tries each candidate variant in order (ADR-0050) and returns the first
+        one Brickset actually has — the caller can tell which one matched from
+        the returned ``number`` field."""
+        for candidate in _set_number_candidates(set_number):
+            payload = self._call(
+                "getSets",
+                userHash="",
+                params=json.dumps({"setNumber": candidate}),
+            )
+            if payload.get("status") != "success" or not payload.get("sets"):
+                continue
+            first = payload["sets"][0]
+            if isinstance(first, dict):
+                return first
+        return None
 
     def lookup(self, set_number: str) -> LookupResult:
         try:

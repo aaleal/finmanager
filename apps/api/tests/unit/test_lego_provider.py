@@ -10,6 +10,7 @@ entirely for sets Germany never sold.
 from __future__ import annotations
 
 import datetime as dt
+import json
 from decimal import Decimal
 from typing import Any
 
@@ -144,3 +145,51 @@ def test_additional_images_are_looked_up_by_the_internal_set_id() -> None:
 
     assert provider.calls == ["getSets", "getAdditionalImages"]
     assert [image.url for image in images] == ["https://x/alt1.jpg"]
+
+
+class _VariantAwareBrickset(lego_provider.BricksetProvider):
+    """Unlike `_FakeBrickset`, actually inspects the requested `setNumber` — needed
+    to tell the `-0`/`-1` fallback candidates apart (ADR-0050)."""
+
+    def __init__(self, sets_by_number: dict[str, dict[str, Any]]) -> None:
+        super().__init__("test-key")
+        self.sets_by_number = sets_by_number
+        self.queried_numbers: list[str] = []
+
+    def _call(self, method: str, **params: str) -> dict[str, Any]:
+        if method != "getSets":
+            return {"status": "success"}
+        number = json.loads(params["params"])["setNumber"]
+        self.queried_numbers.append(number)
+        data = self.sets_by_number.get(number)
+        return {"status": "success", "sets": [data]} if data else {"status": "success", "sets": []}
+
+
+def test_a_bare_number_tries_the_closed_pack_variant_before_the_ordinary_one() -> None:
+    """The F1 car collectibles case: a closed pack is keyed `-0`, not `-1`."""
+    provider = _VariantAwareBrickset({"71046-0": {**FLOWER_BOUQUET, "number": "71046-0"}})
+
+    result = provider.lookup("71046")
+
+    assert result.found
+    assert result.set_number == "71046-0"
+    assert provider.queried_numbers == ["71046-0"]
+
+
+def test_a_bare_number_falls_back_to_the_ordinary_variant_when_no_pack_exists() -> None:
+    provider = _VariantAwareBrickset({"10280-1": {**FLOWER_BOUQUET, "number": "10280-1"}})
+
+    result = provider.lookup("10280")
+
+    assert result.found
+    assert result.set_number == "10280-1"
+    assert provider.queried_numbers == ["10280-0", "10280-1"]
+
+
+def test_an_explicit_variant_suffix_is_never_second_guessed() -> None:
+    provider = _VariantAwareBrickset({"71046-2": {**FLOWER_BOUQUET, "number": "71046-2"}})
+
+    result = provider.lookup("71046-2")
+
+    assert result.found
+    assert provider.queried_numbers == ["71046-2"]
