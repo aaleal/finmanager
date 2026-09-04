@@ -24,6 +24,7 @@ import io
 import re
 import unicodedata
 import uuid
+from collections.abc import Iterator
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -45,7 +46,7 @@ from app.schemas.lego import (
     StorageLocationCreate,
     StorageLocationUpdate,
 )
-from app.services import lego_provider, lego_service
+from app.services import lego_brickset_jobs, lego_provider, lego_service
 from app.services.lego_export import BUILD_STATE_PT, CONDITION_PT, SOURCE_PT
 
 INSTANCE_SHEET_NAMES = ("Cópias", "Copias")
@@ -60,6 +61,7 @@ INSTANCE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "condition": ("condicao",),
     "has_box": ("tem caixa",),
     "has_instructions": ("tem instrucoes",),
+    "is_fs": ("e fs",),
     "missing_parts": ("pecas em falta",),
     "acquisition_date": ("data de aquisicao",),
     "acquisition_source": ("origem",),
@@ -313,6 +315,7 @@ def _resolve_instance_row(
         condition=condition,  # type: ignore[arg-type]
         has_box=_boolean(raw.get("has_box"), default=True),
         has_instructions=_boolean(raw.get("has_instructions"), default=True),
+        is_fs=_boolean(raw.get("is_fs"), default=False),
         missing_parts=_text(raw.get("missing_parts")),
         notes=_text(raw.get("notes")),
         errors=errors,
@@ -323,23 +326,37 @@ def _resolve_instance_row(
 def commit_instances(
     db: DbSession, rows: list[BulkImportRow], *, household_id: uuid.UUID, actor_user_id: uuid.UUID
 ) -> list[BulkImportRowResult]:
-    results: list[BulkImportRowResult] = []
+    return list(
+        iter_commit_instances(db, rows, household_id=household_id, actor_user_id=actor_user_id)
+    )
+
+
+def iter_commit_instances(
+    db: DbSession, rows: list[BulkImportRow], *, household_id: uuid.UUID, actor_user_id: uuid.UUID
+) -> Iterator[BulkImportRowResult]:
+    """Same row-by-row commit as `commit_instances`, yielded as each row finishes —
+    lets the router stream progress instead of making the client wait for the
+    whole batch (a Brickset lookup per new set can make this a slow request).
+
+    Commits (or rolls back) right here, per row — the router returns a
+    `StreamingResponse` immediately, so the request-scoped session's own
+    commit-on-teardown fires before this generator is ever iterated and would
+    otherwise never persist anything written while streaming (losing exactly
+    the last row committed here, and any row before one that never reached a
+    `db.commit()` of its own — e.g. `queue_brickset_assets`)."""
     for row in rows:
         try:
-            results.append(
-                _commit_instance_row(
-                    db, row, household_id=household_id, actor_user_id=actor_user_id
-                )
+            result = _commit_instance_row(
+                db, row, household_id=household_id, actor_user_id=actor_user_id
             )
+            db.commit()
+            yield result
         except AppError as exc:
-            results.append(
-                BulkImportRowResult(row_number=row.row_number, ok=False, message=str(exc.detail))
-            )
+            db.rollback()
+            yield BulkImportRowResult(row_number=row.row_number, ok=False, message=str(exc.detail))
         except Exception as exc:  # one bad row must not sink the whole batch
-            results.append(
-                BulkImportRowResult(row_number=row.row_number, ok=False, message=str(exc))
-            )
-    return results
+            db.rollback()
+            yield BulkImportRowResult(row_number=row.row_number, ok=False, message=str(exc))
 
 
 def _commit_instance_row(
@@ -424,9 +441,11 @@ def _commit_instance_row(
         model = lego_service.create_model(
             db, draft, entity_id=entity.id, actor_user_id=actor_user_id
         )
-        # The gallery/manuals are a bonus, never worth failing the row over.
-        with contextlib.suppress(ValidationError, httpx.HTTPError):
-            lego_service.import_from_brickset(db, model, actor_user_id=actor_user_id)
+        # The gallery/manuals are a bonus, never worth failing the row over —
+        # and slow enough (one HTTP download each) that they run as background
+        # jobs instead of blocking this row's result (ADR-0049).
+        with contextlib.suppress(ValidationError):
+            lego_brickset_jobs.queue_brickset_assets(db, model, actor_user_id=actor_user_id)
 
     instance_payload = LegoSetInstanceCreate(
         entity_id=entity.id,
@@ -439,6 +458,7 @@ def _commit_instance_row(
         condition=row.condition,
         has_box=row.has_box,
         has_instructions=row.has_instructions,
+        is_fs=row.is_fs,
         missing_parts=row.missing_parts,
         notes=row.notes,
     )

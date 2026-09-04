@@ -33,9 +33,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, SoftDeleteMixin, TimestampMixin, uuid_pk
 
-ACQUISITION_SOURCES = ("RETAIL", "SECONDHAND", "GIFT", "FS", "OTHER")
-BUILD_STATES = ("SEALED", "BUILT", "DISASSEMBLED")
-CONDITIONS = ("NEW", "GOOD", "WORN", "DAMAGED")
+ACQUISITION_SOURCES = ("CONTINENTE", "AMAZON", "OTHER_STORE", "SECONDHAND", "GIFT", "OTHER")
+BUILD_STATES = ("BUILT", "DISASSEMBLED")
+CONDITIONS = ("SEALED", "NEW", "GOOD", "WORN", "DAMAGED")
 OWNERSHIP_STATUSES = ("IN_COLLECTION", "SOLD", "GIFTED")
 
 
@@ -226,15 +226,15 @@ class LegoSetInstance(Base, TimestampMixin, SoftDeleteMixin):
         ),
         CheckConstraint(
             "acquisition_source IS NULL OR acquisition_source IN "
-            "('RETAIL', 'SECONDHAND', 'GIFT', 'FS', 'OTHER')",
+            "('CONTINENTE', 'AMAZON', 'OTHER_STORE', 'SECONDHAND', 'GIFT', 'OTHER')",
             name="ck_lego_set_instances_acquisition_source",
         ),
         CheckConstraint(
-            "build_state IS NULL OR build_state IN ('SEALED', 'BUILT', 'DISASSEMBLED')",
+            "build_state IS NULL OR build_state IN ('BUILT', 'DISASSEMBLED')",
             name="ck_lego_set_instances_build_state",
         ),
         CheckConstraint(
-            "condition IS NULL OR condition IN ('NEW', 'GOOD', 'WORN', 'DAMAGED')",
+            "condition IS NULL OR condition IN ('SEALED', 'NEW', 'GOOD', 'WORN', 'DAMAGED')",
             name="ck_lego_set_instances_condition",
         ),
         CheckConstraint(
@@ -273,6 +273,11 @@ class LegoSetInstance(Base, TimestampMixin, SoftDeleteMixin):
     )
     has_instructions: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
+    )
+    # Manually toggled (FR-9.8 amendment) — never derived from cost/source, only
+    # flagged with a toast when it's set alongside a GIFT origin (odd combination).
+    is_fs: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
     )
     missing_parts: Mapped[str | None] = mapped_column(Text, nullable=True)
     ownership_status: Mapped[str] = mapped_column(

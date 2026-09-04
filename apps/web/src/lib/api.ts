@@ -74,6 +74,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       options.formData ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
   });
 
+  await throwIfError(response);
+
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
+
+async function throwIfError(response: Response): Promise<void> {
   if (response.status === 401) {
     listeners.forEach((listener) => listener());
   }
@@ -98,9 +105,59 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
     throw new ApiError(response.status, message, code, extra);
   }
+}
 
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+/**
+ * POST a JSON body and read back an NDJSON stream (one JSON value per line),
+ * calling `onItem` as each line arrives — lets a slow, per-row backend job
+ * (e.g. lego bulk import commit) show live progress instead of one final
+ * result. Resolves with every parsed item once the stream ends.
+ */
+export async function streamNdjson<T>(
+  path: string,
+  body: unknown,
+  onItem: (item: T) => void,
+  signal?: AbortSignal,
+): Promise<T[]> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+  const response = await fetch(buildUrl(path), {
+    method: 'POST',
+    headers,
+    credentials: 'same-origin',
+    signal,
+    body: JSON.stringify(body),
+  });
+
+  await throwIfError(response);
+
+  const items: T[] = [];
+  const reader = response.body?.getReader();
+  if (!reader) return items;
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const consume = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const item = JSON.parse(trimmed) as T;
+    items.push(item);
+    onItem(item);
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newlineIndex: number;
+    while ((newlineIndex = buffer.indexOf('\n')) >= 0) {
+      consume(buffer.slice(0, newlineIndex));
+      buffer = buffer.slice(newlineIndex + 1);
+    }
+  }
+  consume(buffer);
+  return items;
 }
 
 export const api = {

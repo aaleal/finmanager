@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.schemas.common import ApiModel, Page
 
-AcquisitionSource = Literal["RETAIL", "SECONDHAND", "GIFT", "FS", "OTHER"]
-BuildState = Literal["SEALED", "BUILT", "DISASSEMBLED"]
-Condition = Literal["NEW", "GOOD", "WORN", "DAMAGED"]
+AcquisitionSource = Literal["CONTINENTE", "AMAZON", "OTHER_STORE", "SECONDHAND", "GIFT", "OTHER"]
+BuildState = Literal["BUILT", "DISASSEMBLED"]
+Condition = Literal["SEALED", "NEW", "GOOD", "WORN", "DAMAGED"]
 OwnershipStatus = Literal["IN_COLLECTION", "SOLD", "GIFTED"]
 # Tri-state discovery filters (M9.1): «todos» is always the default.
 CompletenessFilter = Literal["all", "complete", "incomplete"]
@@ -197,6 +197,7 @@ class LegoSetInstanceBase(BaseModel):
     condition: Condition | None = None
     has_box: bool = True
     has_instructions: bool = True
+    is_fs: bool = False
     missing_parts: str | None = None
     notes: str | None = None
 
@@ -224,6 +225,7 @@ class LegoSetInstanceUpdate(BaseModel):
     condition: Condition | None = None
     has_box: bool | None = None
     has_instructions: bool | None = None
+    is_fs: bool | None = None
     missing_parts: str | None = None
     notes: str | None = None
     ownership_status: OwnershipStatus | None = None
@@ -248,6 +250,7 @@ class LegoSetInstanceOut(ApiModel):
     condition: Condition | None
     has_box: bool
     has_instructions: bool
+    is_fs: bool
     missing_parts: str | None
     ownership_status: OwnershipStatus
     sale_price_eur: Decimal | None
@@ -360,6 +363,7 @@ class BulkImportRow(BaseModel):
     condition: Condition | None = None
     has_box: bool = True
     has_instructions: bool = True
+    is_fs: bool = False
     missing_parts: str | None = None
     notes: str | None = None
     #: Keyed by field name, so the review table can highlight just that cell.
@@ -379,10 +383,6 @@ class BulkImportRowResult(BaseModel):
     ok: bool
     message: str
     lego_set_instance_id: uuid.UUID | None = None
-
-
-class BulkImportCommitOut(BaseModel):
-    results: list[BulkImportRowResult]
 
 
 class StorageBulkImportError(BaseModel):
@@ -405,6 +405,23 @@ class BricksetImportOut(ApiModel):
     message: str | None = None
 
 
+class BricksetJobOut(ApiModel):
+    """One row of visibility into a backgrounded images/manuals fetch (ADR-0049)."""
+
+    id: uuid.UUID
+    job_type: str
+    status: str
+    attempts: int
+    max_attempts: int
+    last_error: str | None
+    lego_set_model_id: uuid.UUID
+    set_number: str | None
+    set_name: str
+    created_at: dt.datetime
+    started_at: dt.datetime | None
+    completed_at: dt.datetime | None
+
+
 # --- Overview ----------------------------------------------------------------
 class ThemeBreakdown(BaseModel):
     theme: str
@@ -412,6 +429,7 @@ class ThemeBreakdown(BaseModel):
     unique_sets: int
     cost_eur: Decimal
     value_eur: Decimal
+    rrp_eur: Decimal
 
 
 class TimelinePoint(BaseModel):
@@ -448,6 +466,7 @@ class LegoBackupReport(BaseModel):
 class OverviewOut(BaseModel):
     total_cost_eur: Decimal
     total_value_eur: Decimal
+    total_rrp_eur: Decimal
     unrealized_gain_eur: Decimal
     roi_pct: Decimal | None
     unique_sets: int

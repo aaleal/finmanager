@@ -96,7 +96,7 @@ def test_preview_resolves_local_data_and_never_calls_brickset(
         "Cópias",
         ["Número", "Entidade", "Área", "Contentor", "Origem", "Custo (€)"],
         [
-            ["10280", entity.name, "Garagem", "Caixa A", "Loja", "89.99"],
+            ["10280", entity.name, "Garagem", "Caixa A", "Continente", "89.99"],
             ["10281", "Alguém que não existe", "Sótão", "", "Marciano", "abc"],
         ],
     )
@@ -110,7 +110,7 @@ def test_preview_resolves_local_data_and_never_calls_brickset(
     assert ok.errors == {}
     assert ok.entity_id == entity.id
     assert ok.storage_location_id == storage.id
-    assert ok.acquisition_source == "RETAIL"
+    assert ok.acquisition_source == "CONTINENTE"
 
     assert bad.entity_id is None
     assert "entity_id" in bad.errors

@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, streamNdjson } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
   BricksetImport,
-  LegoBulkImportCommitOut,
+  LegoBricksetJob,
   LegoBulkImportPreview,
   LegoBulkImportRow,
+  LegoBulkImportRowResult,
   LegoInstancePage,
   LegoOverview,
   LegoSetInstance,
@@ -371,6 +372,56 @@ export function useSetInstructions() {
   return { importFromBrickset, add, remove };
 }
 
+/** Queues the images/manuals fetch as two background jobs (ADR-0049) instead of
+ * downloading them inline — this is what the automatic import fired once from
+ * set creation calls now. Fast (DB-only), so it's safe to fire-and-forget. */
+export function useQueueBricksetAssets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<LegoBricksetJob[]>(`/lego/models/${id}/brickset/queue`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lego', 'brickset-jobs'] });
+    },
+  });
+}
+
+const ACTIVE_JOB_STATUSES = new Set(['QUEUED', 'RUNNING']);
+
+/** Visibility panel data: polls while at least one job is still queued/running,
+ * stops polling once everything has settled (succeeded/failed/cancelled). */
+export function useBricksetJobs() {
+  return useQuery({
+    queryKey: ['lego', 'brickset-jobs'],
+    queryFn: () => api.get<LegoBricksetJob[]>('/lego/brickset-jobs'),
+    refetchInterval: (query) => {
+      const jobs = query.state.data;
+      return jobs?.some((job) => ACTIVE_JOB_STATUSES.has(job.status)) ? 4000 : false;
+    },
+  });
+}
+
+export function useCancelBricksetJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<LegoBricksetJob>(`/lego/brickset-jobs/${id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lego', 'brickset-jobs'] });
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível cancelar o processo.')),
+  });
+}
+
+export function useRetryBricksetJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<LegoBricksetJob>(`/lego/brickset-jobs/${id}/retry`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lego', 'brickset-jobs'] });
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível repetir o processo.')),
+  });
+}
+
 export function useStorageMutations() {
   const invalidate = useInvalidateLego();
 
@@ -410,18 +461,30 @@ export function useBulkImportPreview() {
     mutationFn: (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      return api.upload<LegoBulkImportPreview>('/lego/instances/bulk/preview', formData, undefined, 'POST');
+      return api.upload<LegoBulkImportPreview>(
+        '/lego/instances/bulk/preview',
+        formData,
+        undefined,
+        'POST',
+      );
     },
-    onError: (error) =>
-      toast.error(errorMessage(error, 'Não foi possível ler o ficheiro.')),
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível ler o ficheiro.')),
   });
 }
 
 export function useBulkImportCommit() {
   const invalidate = useInvalidateLego();
   return useMutation({
-    mutationFn: (rows: LegoBulkImportRow[]) =>
-      api.post<LegoBulkImportCommitOut>('/lego/instances/bulk/commit', { rows }),
+    mutationFn: ({
+      rows,
+      onRow,
+    }: {
+      rows: LegoBulkImportRow[];
+      onRow?: (result: LegoBulkImportRowResult) => void;
+    }) =>
+      streamNdjson<LegoBulkImportRowResult>('/lego/instances/bulk/commit', { rows }, (result) =>
+        onRow?.(result),
+      ),
     onSuccess: () => invalidate(),
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível importar as cópias.')),
   });

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { toast } from 'sonner';
 import {
   AlertTriangle,
   Boxes,
@@ -802,6 +803,7 @@ function EditCopyForm({
     condition: instance.condition ?? '',
     has_box: instance.has_box,
     has_instructions: instance.has_instructions,
+    is_fs: instance.is_fs,
     missing_parts: instance.missing_parts ?? '',
     notes: instance.notes ?? '',
   });
@@ -914,6 +916,19 @@ function EditCopyForm({
             />
             Tem instruções
           </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox
+              checked={form.is_fs}
+              onCheckedChange={(checked) => {
+                const value = checked === true;
+                set('is_fs', value);
+                if (value && form.acquisition_source === 'GIFT') {
+                  toast.warning('Estranho marcar «É Fs» numa prenda — confirme a origem.');
+                }
+              }}
+            />
+            É Fs
+          </label>
         </div>
 
         <Field label="Peças em falta" hint="Texto livre; não altera o valor de mercado.">
@@ -972,6 +987,7 @@ function EditCopyForm({
               condition: form.condition || null,
               has_box: form.has_box,
               has_instructions: form.has_instructions,
+              is_fs: form.is_fs,
               missing_parts: form.missing_parts || null,
               notes: form.notes || null,
             })
@@ -1156,6 +1172,11 @@ export function CopyDetailSheet({
     [model, instance?.photo_url],
   );
   const isLastCopy = copies.length <= 1;
+  const rrpValue = model?.rrp_eur ? Number(model.rrp_eur) : null;
+  const costPct =
+    rrpValue && instance
+      ? Math.round((Number(instance.acquisition_cost_eur) / rrpValue) * 100)
+      : null;
 
   return (
     <>
@@ -1223,8 +1244,18 @@ export function CopyDetailSheet({
                     </div>
 
                     <dl className="divide-y divide-border">
+                      <DetailRow label="PVP">
+                        <span className="numeric">{eur(model.rrp_eur)}</span>
+                      </DetailRow>
                       <DetailRow label="Custo de aquisição">
-                        <span className="numeric">{eur(instance.acquisition_cost_eur)}</span>
+                        <span className="numeric">
+                          {eur(instance.acquisition_cost_eur)}
+                          {costPct !== null ? (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              ({costPct}%)
+                            </span>
+                          ) : null}
+                        </span>
                       </DetailRow>
                       <DetailRow label="Valorização">
                         <span
@@ -1242,9 +1273,12 @@ export function CopyDetailSheet({
                       <DetailRow label="ROI não realizado">{percent(instance.roi_pct)}</DetailRow>
                       <DetailRow label="Adquirido em">{date(instance.acquisition_date)}</DetailRow>
                       <DetailRow label="Origem">
-                        {instance.acquisition_source
-                          ? SOURCE_LABELS[instance.acquisition_source]
-                          : '—'}
+                        <span className="flex items-center gap-2">
+                          {instance.acquisition_source
+                            ? SOURCE_LABELS[instance.acquisition_source]
+                            : '—'}
+                          {instance.is_fs ? <Badge variant="outline">Fs</Badge> : null}
+                        </span>
                       </DetailRow>
                       <DetailRow label="Arrumação">{instance.storage_label ?? '—'}</DetailRow>
                       <DetailRow label="Estado de construção">

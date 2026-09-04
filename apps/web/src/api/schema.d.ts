@@ -523,6 +523,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lego/models/{model_id}/brickset/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue Model Brickset Assets
+         * @description Queues the images + manuals fetch as two background jobs instead of
+         *     downloading them inline (ADR-0049) — this is what the automatic import
+         *     fired once from set creation calls now, both from the manual add-set form
+         *     and from bulk import.
+         */
+        post: operations["queue_model_brickset_assets_api_lego_models__model_id__brickset_queue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/brickset-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Brickset Jobs
+         * @description Visibility into every background images/manuals fetch for this household.
+         */
+        get: operations["list_brickset_jobs_api_lego_brickset_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/brickset-jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Brickset Job */
+        post: operations["cancel_brickset_job_api_lego_brickset_jobs__job_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lego/brickset-jobs/{job_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Brickset Job */
+        post: operations["retry_brickset_job_api_lego_brickset_jobs__job_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lego/models/{model_id}/instructions/{instruction_id}": {
         parameters: {
             query?: never;
@@ -648,6 +725,8 @@ export interface paths {
          * Bulk Commit Instances
          * @description One Brickset lookup + registration per row, exactly like the manual form.
          *     A row that fails (unknown to Brickset, network error, ...) does not stop the rest.
+         *     Streamed as NDJSON (one `BulkImportRowResult` per line) so the client can show
+         *     progress as each row lands instead of waiting for the whole batch.
          */
         post: operations["bulk_commit_instances_api_lego_instances_bulk_commit_post"];
         delete?: never;
@@ -1861,15 +1940,49 @@ export interface components {
             /** Message */
             message?: string | null;
         };
+        /**
+         * BricksetJobOut
+         * @description One row of visibility into a backgrounded images/manuals fetch (ADR-0049).
+         */
+        BricksetJobOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Type */
+            job_type: string;
+            /** Status */
+            status: string;
+            /** Attempts */
+            attempts: number;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Last Error */
+            last_error: string | null;
+            /**
+             * Lego Set Model Id
+             * Format: uuid
+             */
+            lego_set_model_id: string;
+            /** Set Number */
+            set_number: string | null;
+            /** Set Name */
+            set_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Started At */
+            started_at: string | null;
+            /** Completed At */
+            completed_at: string | null;
+        };
         /** BulkImportCommitIn */
         BulkImportCommitIn: {
             /** Rows */
             rows: components["schemas"]["BulkImportRow-Input"][];
-        };
-        /** BulkImportCommitOut */
-        BulkImportCommitOut: {
-            /** Results */
-            results: components["schemas"]["BulkImportRowResult"][];
         };
         /** BulkImportPreviewOut */
         BulkImportPreviewOut: {
@@ -1900,11 +2013,11 @@ export interface components {
             /** Acquisition Date */
             acquisition_date?: string | null;
             /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
+            acquisition_source?: ("CONTINENTE" | "AMAZON" | "OTHER_STORE" | "SECONDHAND" | "GIFT" | "OTHER") | null;
             /** Build State */
-            build_state?: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
+            build_state?: ("BUILT" | "DISASSEMBLED") | null;
             /** Condition */
-            condition?: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
+            condition?: ("SEALED" | "NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
             /**
              * Has Box
              * @default true
@@ -1915,6 +2028,11 @@ export interface components {
              * @default true
              */
             has_instructions: boolean;
+            /**
+             * Is Fs
+             * @default false
+             */
+            is_fs: boolean;
             /** Missing Parts */
             missing_parts?: string | null;
             /** Notes */
@@ -1948,11 +2066,11 @@ export interface components {
             /** Acquisition Date */
             acquisition_date?: string | null;
             /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
+            acquisition_source?: ("CONTINENTE" | "AMAZON" | "OTHER_STORE" | "SECONDHAND" | "GIFT" | "OTHER") | null;
             /** Build State */
-            build_state?: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
+            build_state?: ("BUILT" | "DISASSEMBLED") | null;
             /** Condition */
-            condition?: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
+            condition?: ("SEALED" | "NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
             /**
              * Has Box
              * @default true
@@ -1963,6 +2081,11 @@ export interface components {
              * @default true
              */
             has_instructions: boolean;
+            /**
+             * Is Fs
+             * @default false
+             */
+            is_fs: boolean;
             /** Missing Parts */
             missing_parts?: string | null;
             /** Notes */
@@ -2359,15 +2482,15 @@ export interface components {
              */
             acquisition_cost_eur: number | string;
             /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
+            acquisition_source?: ("CONTINENTE" | "AMAZON" | "OTHER_STORE" | "SECONDHAND" | "GIFT" | "OTHER") | null;
             /** Acquisition Transaction Id */
             acquisition_transaction_id?: string | null;
             /** Storage Location Id */
             storage_location_id?: string | null;
             /** Build State */
-            build_state?: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
+            build_state?: ("BUILT" | "DISASSEMBLED") | null;
             /** Condition */
-            condition?: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
+            condition?: ("SEALED" | "NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
             /**
              * Has Box
              * @default true
@@ -2378,6 +2501,11 @@ export interface components {
              * @default true
              */
             has_instructions: boolean;
+            /**
+             * Is Fs
+             * @default false
+             */
+            is_fs: boolean;
             /** Missing Parts */
             missing_parts?: string | null;
             /** Notes */
@@ -2410,19 +2538,21 @@ export interface components {
             /** Acquisition Cost Eur */
             acquisition_cost_eur: string;
             /** Acquisition Source */
-            acquisition_source: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
+            acquisition_source: ("CONTINENTE" | "AMAZON" | "OTHER_STORE" | "SECONDHAND" | "GIFT" | "OTHER") | null;
             /** Acquisition Transaction Id */
             acquisition_transaction_id: string | null;
             /** Storage Location Id */
             storage_location_id: string | null;
             /** Build State */
-            build_state: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
+            build_state: ("BUILT" | "DISASSEMBLED") | null;
             /** Condition */
-            condition: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
+            condition: ("SEALED" | "NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
             /** Has Box */
             has_box: boolean;
             /** Has Instructions */
             has_instructions: boolean;
+            /** Is Fs */
+            is_fs: boolean;
             /** Missing Parts */
             missing_parts: string | null;
             /**
@@ -2488,19 +2618,21 @@ export interface components {
             /** Acquisition Cost Eur */
             acquisition_cost_eur?: number | string | null;
             /** Acquisition Source */
-            acquisition_source?: ("RETAIL" | "SECONDHAND" | "GIFT" | "FS" | "OTHER") | null;
+            acquisition_source?: ("CONTINENTE" | "AMAZON" | "OTHER_STORE" | "SECONDHAND" | "GIFT" | "OTHER") | null;
             /** Acquisition Transaction Id */
             acquisition_transaction_id?: string | null;
             /** Storage Location Id */
             storage_location_id?: string | null;
             /** Build State */
-            build_state?: ("SEALED" | "BUILT" | "DISASSEMBLED") | null;
+            build_state?: ("BUILT" | "DISASSEMBLED") | null;
             /** Condition */
-            condition?: ("NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
+            condition?: ("SEALED" | "NEW" | "GOOD" | "WORN" | "DAMAGED") | null;
             /** Has Box */
             has_box?: boolean | null;
             /** Has Instructions */
             has_instructions?: boolean | null;
+            /** Is Fs */
+            is_fs?: boolean | null;
             /** Missing Parts */
             missing_parts?: string | null;
             /** Notes */
@@ -3140,6 +3272,8 @@ export interface components {
             total_cost_eur: string;
             /** Total Value Eur */
             total_value_eur: string;
+            /** Total Rrp Eur */
+            total_rrp_eur: string;
             /** Unrealized Gain Eur */
             unrealized_gain_eur: string;
             /** Roi Pct */
@@ -4245,6 +4379,8 @@ export interface components {
             cost_eur: string;
             /** Value Eur */
             value_eur: string;
+            /** Rrp Eur */
+            rrp_eur: string;
         };
         /**
          * TimelinePoint
@@ -5592,6 +5728,119 @@ export interface operations {
             };
         };
     };
+    queue_model_brickset_assets_api_lego_models__model_id__brickset_queue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BricksetJobOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_brickset_jobs_api_lego_brickset_jobs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BricksetJobOut"][];
+                };
+            };
+        };
+    };
+    cancel_brickset_job_api_lego_brickset_jobs__job_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BricksetJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_brickset_job_api_lego_brickset_jobs__job_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BricksetJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_model_instruction_api_lego_models__model_id__instructions__instruction_id__delete: {
         parameters: {
             query?: never;
@@ -5918,13 +6167,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description NDJSON stream, one BulkImportRowResult per line. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkImportCommitOut"];
+                    "application/json": components["schemas"]["BulkImportRowResult"];
                 };
             };
             /** @description Validation Error */

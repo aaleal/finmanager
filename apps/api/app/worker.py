@@ -1,13 +1,15 @@
 """Celery application.
 
-No M9 work is queued — the module has no background jobs by design. The worker is
-provisioned in Phase 0 so ingestion-heavy modules land on a proven runtime, and it
-already carries the `ProcessingJob` idempotency contract.
+The worker was provisioned in Phase 0, ahead of any actual job, so
+ingestion-heavy modules would land on a proven runtime and already carry the
+`ProcessingJob` idempotency contract. The LEGO Brickset asset fetch (ADR-0049)
+is the first thing that actually uses it.
 """
 
 from __future__ import annotations
 
 import datetime as dt
+import uuid
 from typing import Any
 
 from celery import Celery
@@ -58,3 +60,25 @@ def claim_job(idempotency_key: str, job_type: str, payload: dict[str, Any]) -> b
 @celery_app.task(name="finmanager.ping")
 def ping() -> str:
     return "pong"
+
+
+@celery_app.task(name="finmanager.lego.import_images", max_retries=2, default_retry_delay=30)
+def lego_import_images_task(job_id: str) -> None:
+    # Imported lazily: this module is imported by `lego_brickset_jobs` (to
+    # dispatch), so importing it back at module load time would be circular.
+    from app.services import lego_brickset_jobs
+
+    with session_scope() as db:
+        job = db.get(ProcessingJob, uuid.UUID(job_id))
+        if job is not None:
+            lego_brickset_jobs.run_job(db, job)
+
+
+@celery_app.task(name="finmanager.lego.import_manuals", max_retries=2, default_retry_delay=30)
+def lego_import_manuals_task(job_id: str) -> None:
+    from app.services import lego_brickset_jobs
+
+    with session_scope() as db:
+        job = db.get(ProcessingJob, uuid.UUID(job_id))
+        if job is not None:
+            lego_brickset_jobs.run_job(db, job)

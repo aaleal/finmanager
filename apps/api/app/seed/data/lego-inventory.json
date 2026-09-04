@@ -236,7 +236,7 @@
       "copies": [
         {
           "acquisition_cost_eur": "9.99",
-          "acquisition_source": "RETAIL",
+          "acquisition_source": "OTHER_STORE",
           "storage": [
             "Casa",
             null
@@ -1342,7 +1342,7 @@
       "copies": [
         {
           "acquisition_cost_eur": "14.99",
-          "acquisition_source": "RETAIL",
+          "acquisition_source": "OTHER_STORE",
           "storage": [
             "Escritório",
             "Estante HTM06"

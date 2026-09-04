@@ -78,7 +78,7 @@ export function DateInput({
   }, [iso]);
 
   return (
-    <div className={cn('relative', className)}>
+    <div className="relative">
       <Input
         value={draft}
         disabled={disabled}
@@ -86,7 +86,7 @@ export function DateInput({
         inputMode="numeric"
         maxLength={10}
         placeholder="dd/mm/aaaa"
-        className="pr-9"
+        className={cn('pr-9', className)}
         onChange={(event) => {
           const masked = maskPtDate(event.target.value);
           setDraft(masked);

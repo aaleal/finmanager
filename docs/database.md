@@ -34,6 +34,49 @@ docker compose exec -T db psql -U finmanager -d finmanager \
 | Evolving public enums as `VARCHAR` + `CHECK` | Adding a value is a one-line migration, not a type rewrite |
 | Naming convention on every constraint (`app/models/base.py`) | Alembic autogenerate produces stable, reviewable diffs |
 
+### Adding or changing a `VARCHAR`+`CHECK` enum value
+
+Why these are plain `VARCHAR` + `CHECK` instead of a Postgres `ENUM`, or a
+lookup table managed through its own screen, is explained in
+[ADR-0003](decisions/0003-varchar-check-over-postgres-enum.md) — short version:
+none of these values need attributes of their own (an ordering, a colour), so
+a lookup table would be solving a problem this app doesn't have. The
+allow-list is intentionally duplicated across layers, each rejecting a bad
+value on its own; keep every copy in sync by hand — there is no single place
+that generates the rest.
+
+Checklist, per enum column (`build_state`/`condition`/`acquisition_source`/…):
+
+1. **`app/models/<module>.py`** — the module-level tuple (e.g. `BUILD_STATES`)
+   and the named `CheckConstraint` on the table.
+2. **`app/schemas/<module>.py`** — the matching Pydantic `Literal` type.
+3. **`app/services/<module>_export.py`** (if the module has one) — the PT
+   label dict (`BUILD_STATE_PT`, …). Anything a bulk importer reverses for
+   spreadsheet labels reads from here, so this is often the only place a
+   label needs to change.
+4. **`apps/web/src/features/<module>/constants.ts`** — the label / badge
+   variant map the UI renders from.
+5. **`apps/web/src/api/schema.d.ts`** — the hand-edited literal union(s) for
+   that field (several sites per field is normal). A real `make types-gen`
+   regenerates this properly once the backend is rebuilt; hand-edit only as a
+   stopgap (see `docs/debugging.md` if `types-gen` can't reach a running API).
+6. **An Alembic migration** — `op.drop_constraint` + `op.create_check_constraint`
+   for the `CHECK`. If you're **removing** a value rather than just adding
+   one, the migration must also **data-migrate existing rows away from it in
+   the same `upgrade()`**, before narrowing the constraint — narrowing first
+   rejects the very rows you're trying to fix. Write the `downgrade()` too,
+   even when it's lossy (document what it can't recover, in a one-line
+   comment, rather than pretending it round-trips).
+7. Seed data / fixtures (`app/seed/__init__.py`, integration test fixtures)
+   using a removed value.
+
+Adding a brand-new value (nothing removed) only ever needs steps 1–5 plus a
+constraint-widening migration — no data migration, since no existing row can
+already hold a value that didn't exist yet. See
+`20260902_0900-d3a7f6c2e814_lego_acquisition_source_gains_fs.py` for that
+smaller case, and `20260903_0900-b2d4e8f61a37_lego_sealed_moves_to_condition.py`
+for a value moving from one enum to another (the harder, data-migrating case).
+
 ## Schema map
 
 ### Shared core (`app/models/core.py`) — brief §1a

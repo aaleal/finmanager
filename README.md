@@ -166,6 +166,11 @@ is waiting on the Banking module (M2) for a real ledger to search.
   content-addressed under `STORAGE_ROOT`, and served only through a signed,
   time-limited URL.
 - **Code and schema are English; the UI is pt-PT** and i18n-ready.
+- **Enums are `VARCHAR` + `CHECK`, not Postgres `ENUM`, and duplicated across
+  layers on purpose** (model tuple, Pydantic `Literal`, PT label dict,
+  frontend constants, `schema.d.ts`) — see
+  [`docs/database.md`](docs/database.md#adding-or-changing-a-varcharcheck-enum-value)
+  for the full checklist before adding, removing or renaming a value.
 
 ## Documentation
 

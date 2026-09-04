@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
+from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 
@@ -678,29 +679,74 @@ def import_from_brickset(
 
     Contacts Brickset only from here, on an explicit press. Whatever is already
     stored is left alone, so pressing twice costs nothing (ADR-0040).
+
+    Kept as one call for this synchronous, on-demand entry point — the automatic
+    call fired from set creation instead queues `import_model_images_from_brickset`
+    and `import_model_instructions_from_brickset` below as two independent
+    background jobs (ADR-0049), since together they're the slow part of adding a
+    set and a failure in one shouldn't block visibility into the other.
     """
-    provider = lego_provider.get_provider(db)
-    if not getattr(provider, "enabled", False):
-        raise ValidationError(lego_provider.DISABLED_MESSAGE)
-    if not model.set_number:
-        raise ValidationError("Um MOC não existe no Brickset.")
-
-    try:
-        remote_images = provider.additional_images(model.set_number)
-        remote_manuals = provider.instructions(model.set_number)
-    except (httpx.HTTPError, ValueError) as exc:
-        raise ValidationError(
-            f"Brickset indisponível ({exc.__class__.__name__}). Tente novamente mais tarde."
-        ) from exc
-
-    images_added = _import_images(db, model, remote_images, actor_user_id=actor_user_id)
-    manuals_added = _import_instructions(db, model, remote_manuals, actor_user_id=actor_user_id)
-    db.refresh(model)
+    images_added = import_model_images_from_brickset(db, model, actor_user_id=actor_user_id)
+    manuals_added = import_model_instructions_from_brickset(db, model, actor_user_id=actor_user_id)
 
     message = None
     if not images_added and not manuals_added:
         message = "Nada de novo no Brickset para este conjunto."
     return images_added, manuals_added, message
+
+
+def import_model_images_from_brickset(
+    db: DbSession,
+    model: LegoSetModel,
+    *,
+    actor_user_id: uuid.UUID,
+    should_continue: Callable[[], bool] | None = None,
+) -> int:
+    """Just the photographs half of `import_from_brickset` — its own function so
+    it can run as its own background job, independent of the manuals fetch."""
+    provider = lego_provider.get_provider(db)
+    if not getattr(provider, "enabled", False):
+        raise ValidationError(lego_provider.DISABLED_MESSAGE)
+    if not model.set_number:
+        raise ValidationError("Um MOC não existe no Brickset.")
+    try:
+        remote_images = provider.additional_images(model.set_number)
+    except (httpx.HTTPError, ValueError) as exc:
+        raise ValidationError(
+            f"Brickset indisponível ({exc.__class__.__name__}). Tente novamente mais tarde."
+        ) from exc
+    added = _import_images(
+        db, model, remote_images, actor_user_id=actor_user_id, should_continue=should_continue
+    )
+    db.refresh(model)
+    return added
+
+
+def import_model_instructions_from_brickset(
+    db: DbSession,
+    model: LegoSetModel,
+    *,
+    actor_user_id: uuid.UUID,
+    should_continue: Callable[[], bool] | None = None,
+) -> int:
+    """Just the manuals half of `import_from_brickset` — its own function so it
+    can run as its own background job, independent of the images fetch."""
+    provider = lego_provider.get_provider(db)
+    if not getattr(provider, "enabled", False):
+        raise ValidationError(lego_provider.DISABLED_MESSAGE)
+    if not model.set_number:
+        raise ValidationError("Um MOC não existe no Brickset.")
+    try:
+        remote_manuals = provider.instructions(model.set_number)
+    except (httpx.HTTPError, ValueError) as exc:
+        raise ValidationError(
+            f"Brickset indisponível ({exc.__class__.__name__}). Tente novamente mais tarde."
+        ) from exc
+    added = _import_instructions(
+        db, model, remote_manuals, actor_user_id=actor_user_id, should_continue=should_continue
+    )
+    db.refresh(model)
+    return added
 
 
 def _import_images(
@@ -709,9 +755,12 @@ def _import_images(
     remote: list[lego_provider.RemoteImage],
     *,
     actor_user_id: uuid.UUID,
+    should_continue: Callable[[], bool] | None = None,
 ) -> int:
     added = 0
     for image in remote:
+        if should_continue is not None and not should_continue():
+            break
         try:
             document = documents.store_from_url(db, image.url)
         except ValidationError:
@@ -754,6 +803,7 @@ def _import_instructions(
     remote: list[lego_provider.RemoteInstruction],
     *,
     actor_user_id: uuid.UUID,
+    should_continue: Callable[[], bool] | None = None,
 ) -> int:
     position = db.scalar(
         select(func.max(LegoSetInstruction.position)).where(
@@ -765,6 +815,8 @@ def _import_instructions(
 
     added = 0
     for manual in remote:
+        if should_continue is not None and not should_continue():
+            break
         # The description is the manual's real identity: Brickset re-serves the
         # same booklet with different bytes on every download, so a content hash
         # alone lets the same manual back in under a fresh document (ADR-0042).
@@ -1411,6 +1463,7 @@ def overview(
 
     total_cost = ZERO
     total_value = ZERO
+    total_rrp = ZERO
     valued_cost = ZERO
     total_pieces = 0
     total_minifigs = 0
@@ -1422,6 +1475,7 @@ def overview(
     for copy in copies:
         model = copy.model
         total_cost += copy.acquisition_cost_eur
+        total_rrp += model.rrp_eur or ZERO
         if model.current_value_eur is not None:
             total_value += model.current_value_eur
             valued_cost += copy.acquisition_cost_eur
@@ -1435,12 +1489,13 @@ def overview(
 
         theme = model.theme or "Sem tema"
         bucket = themes.setdefault(
-            theme, {"copies": 0, "models": set(), "cost": ZERO, "value": ZERO}
+            theme, {"copies": 0, "models": set(), "cost": ZERO, "value": ZERO, "rrp": ZERO}
         )
         bucket["copies"] += 1
         bucket["models"].add(model.id)
         bucket["cost"] += copy.acquisition_cost_eur
         bucket["value"] += model.current_value_eur or ZERO
+        bucket["rrp"] += model.rrp_eur or ZERO
 
     gain = total_value - valued_cost
     overall_roi = roi_pct(valued_cost, total_value) if valued_cost > ZERO else None
@@ -1489,6 +1544,7 @@ def overview(
     return OverviewOut(
         total_cost_eur=total_cost,
         total_value_eur=total_value,
+        total_rrp_eur=total_rrp,
         unrealized_gain_eur=gain,
         roi_pct=overall_roi,
         unique_sets=len(seen_models),
@@ -1510,6 +1566,7 @@ def overview(
                     unique_sets=len(data["models"]),
                     cost_eur=data["cost"],
                     value_eur=data["value"],
+                    rrp_eur=data["rrp"],
                 )
                 for name, data in themes.items()
             ),

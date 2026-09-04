@@ -116,6 +116,25 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
   );
 }
 
+/** PVP is the headline — it's what the set is "worth" on the shelf — with the
+ * actual amount paid underneath, smaller, since it's often a discount or a gift. */
+function CostCell({ rrpEur, paidEur }: { rrpEur: number | null; paidEur: number }) {
+  if (rrpEur === null) {
+    return <span className="numeric font-medium">{eur(paidEur)}</span>;
+  }
+  // Discount vs. PVP, e.g. "149,99 € (60%)" — negative when paid above list price.
+  const diffPct = rrpEur !== 0 ? Math.round(((rrpEur - paidEur) / rrpEur) * 100) : null;
+  return (
+    <span className="block">
+      <span className="numeric block font-medium">{eur(rrpEur)}</span>
+      <span className="numeric block text-xs text-muted-foreground">
+        {eur(paidEur)}
+        {diffPct !== null ? <span className="text-[10px]"> ({diffPct}%)</span> : null}
+      </span>
+    </span>
+  );
+}
+
 /** Release year and, when the set has left the shelves, the year it retired. */
 function YearsCell({ instance }: { instance: LegoSetInstance }) {
   const model = instance.set_model;
@@ -246,6 +265,7 @@ function GroupedRow({
   const first = group.items[0];
   const model = first.set_model;
   const totalCost = group.items.reduce((sum, item) => sum + Number(item.acquisition_cost_eur), 0);
+  const totalRrp = model?.rrp_eur ? Number(model.rrp_eur) * group.items.length : null;
   const totalValue = model?.current_value_eur
     ? Number(model.current_value_eur) * group.items.length
     : null;
@@ -264,9 +284,11 @@ function GroupedRow({
       <TableCell>
         <YearsCell instance={first} />
       </TableCell>
-      <TableCell className="numeric">{eur(totalCost)}</TableCell>
-      <TableCell className="numeric">{eur(totalValue)}</TableCell>
-      <TableCell>
+      <TableCell className="numeric">
+        <CostCell rrpEur={totalRrp} paidEur={totalCost} />
+      </TableCell>
+      <TableCell className="numeric ">{eur(totalValue)}</TableCell>
+      <TableCell >
         {totalValue !== null ? (
           <span
             className={cn(
@@ -619,16 +641,16 @@ export function CollectionGrid({
                   label="Custo"
                   filters={filters}
                   setFilters={setFilters}
-                  align="right"
+                  align="left"
                 />
                 <SortHead
                   field="value"
                   label="Valor"
                   filters={filters}
                   setFilters={setFilters}
-                  align="right"
+                  align="left"
                 />
-                <TableHead className="text-right">Ganho</TableHead>
+                <TableHead className="text-left">Ganho</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -716,7 +738,10 @@ export function CollectionGrid({
                     </div>
                   </TableCell>
                   <TableCell className="numeric text-right">
-                    {eur(instance.acquisition_cost_eur)}
+                    <CostCell
+                      rrpEur={instance.set_model?.rrp_eur ? Number(instance.set_model.rrp_eur) : null}
+                      paidEur={Number(instance.acquisition_cost_eur)}
+                    />
                   </TableCell>
                   <TableCell className="numeric text-right">
                     <span className={instance.set_model?.value_is_stale ? 'text-warning' : ''}>

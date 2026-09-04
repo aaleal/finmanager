@@ -49,9 +49,10 @@ def collection(db: Session, entity: Entity, owner: User) -> LegoSetModel:
         LegoSetInstanceCreate(
             lego_set_model_id=model.id,
             acquisition_cost_eur=Decimal("600.00"),
-            acquisition_source="RETAIL",
+            acquisition_source="CONTINENTE",
             storage_location_id=location.id,
-            build_state="SEALED",
+            build_state="DISASSEMBLED",
+            condition="SEALED",
             has_box=True,
         ),
         entity_id=entity.id,

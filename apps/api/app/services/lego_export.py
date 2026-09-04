@@ -1,8 +1,9 @@
 """Workbook export for Module 9 (M9.1 FR-9.14).
 
-One file, three sheets — copies, sets and storage locations — so the collection can
-leave the application without an API client. Read-only: it queries through the same
-service layer and writes nothing.
+One file, four sheets — copies, sets, storage locations and an auxiliary
+reference sheet — so the collection can leave the application without an API
+client. Read-only: it queries through the same service layer and writes
+nothing.
 """
 
 from __future__ import annotations
@@ -24,13 +25,20 @@ from app.models.household import Entity
 from app.models.lego import LegoSetInstance, LegoSetModel
 from app.services import lego_service, settings_service
 
-BUILD_STATE_PT = {"SEALED": "Selado", "BUILT": "Montado", "DISASSEMBLED": "Desmontado"}
-CONDITION_PT = {"NEW": "Novo", "GOOD": "Bom", "WORN": "Usado", "DAMAGED": "Danificado"}
+BUILD_STATE_PT = {"BUILT": "Montado", "DISASSEMBLED": "Desmontado"}
+CONDITION_PT = {
+    "SEALED": "Selado",
+    "NEW": "Novo",
+    "GOOD": "Bom",
+    "WORN": "Usado",
+    "DAMAGED": "Danificado",
+}
 SOURCE_PT = {
-    "RETAIL": "Loja",
+    "CONTINENTE": "Continente",
+    "AMAZON": "Amazon",
+    "OTHER_STORE": "Outra loja",
     "SECONDHAND": "Em segunda mão",
     "GIFT": "Prenda",
-    "FS": "Fs",
     "OTHER": "Outro",
 }
 OWNERSHIP_PT = {"IN_COLLECTION": "Na coleção", "SOLD": "Vendido", "GIFTED": "Oferecido"}
@@ -83,6 +91,7 @@ def build_workbook(
     _copies_sheet(db, workbook, scope_ids, entity_names)
     _sets_sheet(db, workbook, scope_ids, entity_names)
     _locations_sheet(db, workbook)
+    _helpers_sheet(workbook)
 
     buffer = io.BytesIO()
     workbook.save(buffer)
@@ -156,6 +165,7 @@ def _copies_sheet(
                 copy.sale_price_eur,
                 copy.sale_date,
                 copy.notes or "",
+                "Sim" if copy.is_fs else "Não",
             ]
         )
 
@@ -194,6 +204,7 @@ def _copies_sheet(
             "Valor de venda (€)",
             "Data de venda",
             "Notas",
+            "É Fs",
         ],
         rows,
         {
@@ -326,6 +337,19 @@ def _locations_sheet(db: DbSession, workbook: Workbook) -> None:
         rows,
         {5: MONEY_FORMAT},
     )
+
+
+def _helpers_sheet(workbook: Workbook) -> None:
+    """Reference lists for the enum columns the bulk importer accepts (ADR-0048)
+    — the exact labels it matches, for someone filling the sheet by hand."""
+    columns = [
+        ("Estado de construção", list(BUILD_STATE_PT.values())),
+        ("Condição", list(CONDITION_PT.values())),
+        ("Origem", list(SOURCE_PT.values())),
+    ]
+    height = max(len(values) for _, values in columns)
+    rows = [[values[i] if i < len(values) else "" for _, values in columns] for i in range(height)]
+    _write_sheet(workbook, "Auxiliares", [label for label, _ in columns], rows, {})
 
 
 def filename(active_entity_id: uuid.UUID | None) -> str:

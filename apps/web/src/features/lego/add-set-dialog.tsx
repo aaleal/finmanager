@@ -26,12 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionPicker } from '@/components/transaction-picker';
 import { useSession } from '@/features/auth/session';
-import {
-  useCreateInstance,
-  useLookup,
-  useSetInstructions,
-  useStorageLocations,
-} from './api';
+import { useCreateInstance, useLookup, useQueueBricksetAssets, useStorageLocations } from './api';
 import {
   BUILD_STATE_LABELS,
   CONDITION_LABELS,
@@ -69,6 +64,7 @@ interface FormValues {
   condition: string;
   has_box: boolean;
   has_instructions: boolean;
+  is_fs: boolean;
   missing_parts: string;
   notes: string;
 }
@@ -98,6 +94,7 @@ const EMPTY: FormValues = {
   condition: '',
   has_box: true,
   has_instructions: true,
+  is_fs: false,
   missing_parts: '',
   notes: '',
 };
@@ -226,7 +223,7 @@ export function AddSetDialog({
   const form = useForm<FormValues>({ defaultValues: EMPTY });
   const lookup = useLookup();
   const createInstance = useCreateInstance();
-  const instructions = useSetInstructions();
+  const instructions = useQueueBricksetAssets();
   const { activeEntityId } = useSession();
   const [entityId, setEntityId] = React.useState(existingModel?.entityId ?? activeEntityId ?? '');
   const [lookupResult, setLookupResult] = React.useState<LookupResult | null>(null);
@@ -293,6 +290,7 @@ export function AddSetDialog({
       condition: values.condition || null,
       has_box: values.has_box,
       has_instructions: values.has_instructions,
+      is_fs: values.is_fs,
       missing_parts: values.missing_parts || null,
       notes: values.notes || null,
     };
@@ -328,9 +326,11 @@ export function AddSetDialog({
     try {
       const instance = await createInstance.mutateAsync(payload);
       // A set that came from Brickset gets the rest of what Brickset has: the
-      // extra photographs and the manuals, downloaded in the background.
+      // extra photographs and the manuals, queued as background jobs (ADR-0049)
+      // instead of downloaded here — that part is genuinely slow (a download per
+      // image/manual) and shouldn't hold up saving the copy.
       if (!existingModel && !values.is_custom && lookupResult?.found) {
-        instructions.importFromBrickset.mutate(instance.lego_set_model_id);
+        instructions.mutate(instance.lego_set_model_id);
       }
       onOpenChange(false);
     } catch (error) {
@@ -346,10 +346,7 @@ export function AddSetDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent size="lg">
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex min-h-0 flex-col"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-col">
             <DialogHeader>
               <DialogTitle>
                 {existingModel ? 'Adicionar outra cópia' : 'Adicionar conjunto'}
@@ -460,7 +457,7 @@ export function AddSetDialog({
 
                   <Collapsible title="Detalhes do conjunto">
                     <div className="grid gap-4 sm:grid-cols-6">
-                        <Field label="PVP original (€)" className="sm:col-span-3">
+                      <Field label="PVP original (€)" className="sm:col-span-3">
                         <Input
                           inputMode="decimal"
                           placeholder="629,99"
@@ -477,7 +474,7 @@ export function AddSetDialog({
                           placeholder="689,00"
                           {...form.register('current_value_eur')}
                         />
-                      </Field>                      
+                      </Field>
                       <Field label="Data de lançamento" className="sm:col-span-3">
                         <DateInput
                           value={form.watch('release_date')}
@@ -500,11 +497,7 @@ export function AddSetDialog({
                       <Field label="Minifiguras" className="sm:col-span-1">
                         <Input type="number" {...form.register('minifig_count')} />
                       </Field>
-                      <Field
-                        label="Idade"
-                        hint="Valor na caixa."
-                        className="sm:col-span-1"
-                      >
+                      <Field label="Idade" hint="Valor na caixa." className="sm:col-span-1">
                         <Input placeholder="18+" {...form.register('age_range')} />
                       </Field>
                       <Field label="Peso caixa (kg)" className="sm:col-span-1">
@@ -519,10 +512,10 @@ export function AddSetDialog({
                         hint="Largura × profundidade × altura."
                         className="sm:col-span-2"
                       >
-                      <Input
-                        placeholder="26,2 × 7,1 × 38,2"
-                        {...form.register('box_dimensions')}
-                      />
+                        <Input
+                          placeholder="26,2 × 7,1 × 38,2"
+                          {...form.register('box_dimensions')}
+                        />
                       </Field>
                       <Field label="Descrição" className="sm:col-span-6">
                         <Textarea rows={2} {...form.register('short_description')} />
@@ -639,6 +632,19 @@ export function AddSetDialog({
                       }
                     />
                     Tem instruções
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.watch('is_fs')}
+                      onCheckedChange={(checked) => {
+                        const value = checked === true;
+                        form.setValue('is_fs', value);
+                        if (value && form.getValues('acquisition_source') === 'GIFT') {
+                          toast.warning('Estranho marcar «É Fs» numa prenda — confirme a origem.');
+                        }
+                      }}
+                    />
+                    É Fs
                   </label>
                 </div>
                 <Field

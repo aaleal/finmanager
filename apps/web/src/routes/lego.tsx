@@ -1,12 +1,14 @@
 import * as React from 'react';
 import { Plus, Sheet, Upload } from 'lucide-react';
 import type { LegoSetInstance } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
 import { PageHeader } from '@/components/ui/feedback';
 import { useSession } from '@/features/auth/session';
 import { useUrlFilters } from '@/lib/filters';
 import {
+  useBricksetJobs,
   useExportCollection,
   useInstances,
   useLegoOverview,
@@ -19,6 +21,7 @@ import { StoragePanel } from '@/features/lego/storage-panel';
 import { AddSetDialog } from '@/features/lego/add-set-dialog';
 import { BulkImportDialog } from '@/features/lego/bulk-import-dialog';
 import { StorageBulkImportDialog } from '@/features/lego/storage-bulk-import-dialog';
+import { BricksetJobsSection } from '@/features/lego/brickset-jobs-panel';
 import {
   BulkImportPickerDialog,
   type BulkImportScope,
@@ -66,6 +69,10 @@ export function LegoPage() {
   const overview = useLegoOverview();
   const storage = useStorageLocations();
   const exportCollection = useExportCollection();
+  const bricksetJobs = useBricksetJobs();
+  const activeBricksetJobs = (bricksetJobs.data ?? []).filter((job) =>
+    ['QUEUED', 'RUNNING'].includes(job.status),
+  ).length;
   const instances = useInstances({
     search: filters.search,
     theme: filters.theme,
@@ -131,7 +138,9 @@ export function LegoPage() {
       />
 
       <Tabs
-        value={['colecao', 'arrumacao'].includes(filters.tab) ? filters.tab : 'overview'}
+        value={
+          ['colecao', 'arrumacao', 'brickset'].includes(filters.tab) ? filters.tab : 'overview'
+        }
         onValueChange={(value) => setFilters({ tab: value })}
       >
         <TabsList>
@@ -149,6 +158,10 @@ export function LegoPage() {
                 ({overview.data.locations_total})
               </span>
             ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="brickset">
+            Processos Brickset
+            {activeBricksetJobs > 0 ? <Badge variant="warning">{activeBricksetJobs}</Badge> : null}
           </TabsTrigger>
         </TabsList>
 
@@ -181,6 +194,10 @@ export function LegoPage() {
               setFilters({ tab: 'colecao', storage_location_id: locationId })
             }
           />
+        </TabsContent>
+
+        <TabsContent value="brickset">
+          <BricksetJobsSection />
         </TabsContent>
       </Tabs>
 

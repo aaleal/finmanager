@@ -157,6 +157,7 @@ export function LegoOverviewPanel({
     valor: Number(theme.value_eur),
     custo: Number(theme.cost_eur),
     copies: theme.copies,
+    pvp: Number(theme.rrp_eur),
   }));
   const timelineData = overview.timeline.map((point) => ({
     month: monthLabel(point.month),
@@ -164,6 +165,11 @@ export function LegoOverviewPanel({
     custo: Number(point.cost_eur),
     valor: Number(point.value_eur),
   }));
+  const retiredPct =
+    overview.unique_sets > 0 ? (overview.retired_sets / overview.unique_sets) * 100 : 0;
+  const retiredPctLabel = retiredPct.toLocaleString('pt-PT', {
+    maximumFractionDigits: 1,
+  });
 
   return (
     <div className="space-y-5">
@@ -171,8 +177,8 @@ export function LegoOverviewPanel({
         <KpiCard
           icon={Coins}
           label="Custo total"
-          value={eur(overview.total_cost_eur)}
-          hint={`${overview.copies_owned} cópias na coleção`}
+          value={eur(overview.total_rrp_eur)}
+          hint={`${eur(overview.total_cost_eur)} pago · ${overview.copies_owned} cópias na coleção`}
         />
         <KpiCard
           icon={TrendingUp}
@@ -205,6 +211,7 @@ export function LegoOverviewPanel({
           icon={Blocks}
           label="Conjuntos únicos"
           value={num(overview.unique_sets)}
+          hint={overview.unique_sets > 0 ? `${retiredPctLabel} % retirados` : undefined}
           onClick={() => onFilter({ tab: 'colecao', agrupar: '1' })}
         />
         <KpiCard
@@ -391,6 +398,13 @@ export function LegoOverviewPanel({
                       formatter={(value: number, name: string) => [eur(value), name]}
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar
+                      dataKey="pvp"
+                      name="PVP"
+                      fill={THEME_COLORS[1]}
+                      radius={[4, 4, 0, 0]}
+                      opacity={0.35}
+                    />
                     <Bar
                       dataKey="custo"
                       name="Custo"

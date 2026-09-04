@@ -1,12 +1,12 @@
 import type { AcquisitionSource, BuildState, Condition, OwnershipStatus } from '@/lib/types';
 
 export const BUILD_STATE_LABELS: Record<BuildState, string> = {
-  SEALED: 'Selado',
   BUILT: 'Montado',
   DISASSEMBLED: 'Desmontado',
 };
 
 export const CONDITION_LABELS: Record<Condition, string> = {
+  SEALED: 'Selado',
   NEW: 'Novo',
   GOOD: 'Bom',
   WORN: 'Usado',
@@ -14,10 +14,11 @@ export const CONDITION_LABELS: Record<Condition, string> = {
 };
 
 export const SOURCE_LABELS: Record<AcquisitionSource, string> = {
-  RETAIL: 'Loja',
+  CONTINENTE: 'Continente',
+  AMAZON: 'Amazon',
+  OTHER_STORE: 'Outra loja',
   SECONDHAND: 'Em segunda mão',
   GIFT: 'Prenda',
-  FS: 'Fs',
   OTHER: 'Outro',
 };
 
@@ -31,6 +32,7 @@ export const CONDITION_VARIANTS: Record<
   Condition,
   'success' | 'secondary' | 'warning' | 'destructive'
 > = {
+  SEALED: 'success',
   NEW: 'success',
   GOOD: 'secondary',
   WORN: 'warning',

@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from typing import Annotated
 
 from fastapi import APIRouter, File, Query, Response, UploadFile
+from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentAuth, Db, Writer, household_entity_ids, resolve_write_entity
 from app.core.errors import ValidationError
 from app.schemas.common import Ok, Page
 from app.schemas.lego import (
     BricksetImportOut,
+    BricksetJobOut,
     BulkImportCommitIn,
-    BulkImportCommitOut,
     BulkImportPreviewOut,
+    BulkImportRowResult,
     CompletenessFilter,
     CopiesFilter,
     ImageSource,
@@ -34,7 +37,7 @@ from app.schemas.lego import (
     StorageLocationOut,
     StorageLocationUpdate,
 )
-from app.services import lego_bulk_import, lego_provider, lego_service
+from app.services import lego_brickset_jobs, lego_bulk_import, lego_provider, lego_service
 
 router = APIRouter(prefix="/lego", tags=["lego"])
 
@@ -255,6 +258,38 @@ def import_from_brickset(model_id: uuid.UUID, ctx: Writer, db: Db) -> BricksetIm
     )
 
 
+@router.post("/models/{model_id}/brickset/queue", response_model=list[BricksetJobOut])
+def queue_model_brickset_assets(model_id: uuid.UUID, ctx: Writer, db: Db) -> list[BricksetJobOut]:
+    """Queues the images + manuals fetch as two background jobs instead of
+    downloading them inline (ADR-0049) — this is what the automatic import
+    fired once from set creation calls now, both from the manual add-set form
+    and from bulk import."""
+    model = lego_service.get_model(db, model_id)
+    jobs = lego_brickset_jobs.queue_brickset_assets(db, model, actor_user_id=ctx.user.id)
+    return [lego_brickset_jobs.job_out(job) for job in jobs]
+
+
+@router.get("/brickset-jobs", response_model=list[BricksetJobOut])
+def list_brickset_jobs(ctx: CurrentAuth, db: Db) -> list[BricksetJobOut]:
+    """Visibility into every background images/manuals fetch for this household."""
+    jobs = lego_brickset_jobs.list_jobs(db, entity_ids=household_entity_ids(db, ctx))
+    return [lego_brickset_jobs.job_out(job) for job in jobs]
+
+
+@router.post("/brickset-jobs/{job_id}/cancel", response_model=BricksetJobOut)
+def cancel_brickset_job(job_id: uuid.UUID, ctx: Writer, db: Db) -> BricksetJobOut:
+    job = lego_brickset_jobs.get_job(db, job_id, entity_ids=household_entity_ids(db, ctx))
+    lego_brickset_jobs.cancel_job(db, job)
+    return lego_brickset_jobs.job_out(job)
+
+
+@router.post("/brickset-jobs/{job_id}/retry", response_model=BricksetJobOut)
+def retry_brickset_job(job_id: uuid.UUID, ctx: Writer, db: Db) -> BricksetJobOut:
+    job = lego_brickset_jobs.get_job(db, job_id, entity_ids=household_entity_ids(db, ctx))
+    lego_brickset_jobs.retry_job(db, job)
+    return lego_brickset_jobs.job_out(job)
+
+
 @router.delete("/models/{model_id}/instructions/{instruction_id}", response_model=LegoSetModelOut)
 def delete_model_instruction(
     model_id: uuid.UUID, instruction_id: uuid.UUID, ctx: Writer, db: Db
@@ -392,14 +427,33 @@ def bulk_preview_instances(
     return BulkImportPreviewOut(rows=rows)
 
 
-@router.post("/instances/bulk/commit", response_model=BulkImportCommitOut)
-def bulk_commit_instances(payload: BulkImportCommitIn, ctx: Writer, db: Db) -> BulkImportCommitOut:
+@router.post(
+    "/instances/bulk/commit",
+    # Real response is a StreamingResponse (NDJSON, one BulkImportRowResult per
+    # line), which FastAPI can't describe from a return type alone. Declaring it
+    # here only registers the schema for OpenAPI/types-gen - it has no effect on
+    # the actual streamed response (FastAPI skips response_model handling when a
+    # Response instance is returned directly).
+    responses={
+        200: {
+            "model": BulkImportRowResult,
+            "description": "NDJSON stream, one BulkImportRowResult per line.",
+        }
+    },
+)
+def bulk_commit_instances(payload: BulkImportCommitIn, ctx: Writer, db: Db) -> StreamingResponse:
     """One Brickset lookup + registration per row, exactly like the manual form.
-    A row that fails (unknown to Brickset, network error, ...) does not stop the rest."""
-    results = lego_bulk_import.commit_instances(
-        db, payload.rows, household_id=ctx.household_id, actor_user_id=ctx.user.id
-    )
-    return BulkImportCommitOut(results=results)
+    A row that fails (unknown to Brickset, network error, ...) does not stop the rest.
+    Streamed as NDJSON (one `BulkImportRowResult` per line) so the client can show
+    progress as each row lands instead of waiting for the whole batch."""
+
+    def generate() -> Iterator[str]:
+        for result in lego_bulk_import.iter_commit_instances(
+            db, payload.rows, household_id=ctx.household_id, actor_user_id=ctx.user.id
+        ):
+            yield result.model_dump_json() + "\n"
+
+    return StreamingResponse(generate(), media_type="application/x-ndjson")
 
 
 # --- Storage -----------------------------------------------------------------

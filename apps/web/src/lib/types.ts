@@ -32,6 +32,7 @@ export type LegoInstancePage = Schemas['LegoSetInstancePage'];
 export type LookupResult = Schemas['LookupResult'];
 export type LegoSetInstruction = Schemas['LegoSetInstructionOut'];
 export type BricksetImport = Schemas['BricksetImportOut'];
+export type LegoBricksetJob = Schemas['BricksetJobOut'];
 // The preview response and the commit payload are structurally the same shape;
 // openapi-typescript splits them into `-Output`/`-Input` only because
 // `acquisition_cost_eur` narrows from `number | string` to `string` on the way
@@ -40,7 +41,6 @@ export type BricksetImport = Schemas['BricksetImportOut'];
 export type LegoBulkImportRow = Schemas['BulkImportRow-Output'];
 export type LegoBulkImportPreview = Schemas['BulkImportPreviewOut'];
 export type LegoBulkImportRowResult = Schemas['BulkImportRowResult'];
-export type LegoBulkImportCommitOut = Schemas['BulkImportCommitOut'];
 export type StorageBulkImportResult = Schemas['StorageBulkImportOut'];
 
 export type AcquisitionSource = NonNullable<LegoSetInstance['acquisition_source']>;
