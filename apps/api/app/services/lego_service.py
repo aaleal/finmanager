@@ -38,6 +38,7 @@ from app.schemas.lego import (
     CollectionSummary,
     CompletenessFilter,
     CopiesFilter,
+    FsFilter,
     LegoSetImageOut,
     LegoSetImageUpdate,
     LegoSetInstanceCreate,
@@ -975,10 +976,18 @@ def list_instances(
     storage_area: str | None = None,
     build_state: str | None = None,
     condition: str | None = None,
+    acquisition_source: str | None = None,
     ownership_status: str | None = "IN_COLLECTION",
     completeness: CompletenessFilter = "all",
     retirement: RetirementFilter = "all",
     copies: CopiesFilter = "all",
+    fs: FsFilter = "all",
+    paid_min: Decimal | None = None,
+    paid_max: Decimal | None = None,
+    rrp_min: Decimal | None = None,
+    rrp_max: Decimal | None = None,
+    roi_min: Decimal | None = None,
+    roi_max: Decimal | None = None,
     model_id: uuid.UUID | None = None,
     sort: str = "created",
     direction: str = "desc",
@@ -1031,6 +1040,8 @@ def list_instances(
         stmt = stmt.where(LegoSetInstance.build_state == build_state)
     if condition:
         stmt = stmt.where(LegoSetInstance.condition == condition)
+    if acquisition_source:
+        stmt = stmt.where(LegoSetInstance.acquisition_source == acquisition_source)
 
     has_missing_parts = and_(
         LegoSetInstance.missing_parts.is_not(None),
@@ -1050,6 +1061,25 @@ def list_instances(
         stmt = stmt.where(_owned_copies_expr() > 1)
     elif copies == "single":
         stmt = stmt.where(_owned_copies_expr() <= 1)
+
+    if fs == "fs":
+        stmt = stmt.where(LegoSetInstance.is_fs.is_(True))
+    elif fs == "not_fs":
+        stmt = stmt.where(LegoSetInstance.is_fs.is_(False))
+
+    if paid_min is not None:
+        stmt = stmt.where(LegoSetInstance.acquisition_cost_eur >= paid_min)
+    if paid_max is not None:
+        stmt = stmt.where(LegoSetInstance.acquisition_cost_eur <= paid_max)
+    if rrp_min is not None:
+        stmt = stmt.where(LegoSetModel.rrp_eur >= rrp_min)
+    if rrp_max is not None:
+        stmt = stmt.where(LegoSetModel.rrp_eur <= rrp_max)
+    if roi_min is not None:
+        # `_roi_expr` is a fraction (0.25), filters are entered as whole percent.
+        stmt = stmt.where(_roi_expr() * 100 >= roi_min)
+    if roi_max is not None:
+        stmt = stmt.where(_roi_expr() * 100 <= roi_max)
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     summary = _collection_summary(db, stmt, total)

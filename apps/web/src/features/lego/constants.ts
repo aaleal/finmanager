@@ -89,6 +89,12 @@ export const COPIES_OPTIONS = [
   { value: 'single', label: 'Só com uma cópia' },
 ];
 
+export const FS_OPTIONS = [
+  { value: 'all', label: 'Fs e não Fs' },
+  { value: 'fs', label: 'Só Fs' },
+  { value: 'not_fs', label: 'Só não Fs' },
+];
+
 export const PAGE_SIZES = ['10', '25', '50', '100', '200'];
 
 /**

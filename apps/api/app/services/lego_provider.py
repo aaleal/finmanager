@@ -148,9 +148,10 @@ def _retirement_date(data: dict[str, Any]) -> dt.date | None:
 
 def _result_of(data: dict[str, Any]) -> LookupResult:
     lego_com = data.get("LEGOCom") or {}
-    # Only the German store quotes euros; the others would import a foreign
-    # currency as if it were one.
-    retail = lego_com.get("DE") or {}
+    # The German store quotes euros; many older/retired sets were never sold
+    # there, so fall back to the US dollar price at 1:1 rather than leave the
+    # RRP empty (ADR-0051) — still better than no figure at all.
+    retail = lego_com.get("DE") or lego_com.get("US") or {}
     age_range = data.get("ageRange") or {}
     dimensions = data.get("dimensions") or {}
 

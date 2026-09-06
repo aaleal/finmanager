@@ -25,10 +25,18 @@ export type InstanceFilters = {
   storage_area?: string;
   build_state?: string;
   condition?: string;
+  acquisition_source?: string;
   ownership_status?: string;
   completeness?: string;
   retirement?: string;
   copies?: string;
+  fs?: string;
+  paid_min?: string;
+  paid_max?: string;
+  rrp_min?: string;
+  rrp_max?: string;
+  roi_min?: string;
+  roi_max?: string;
   sort?: string;
   direction?: string;
   page?: string;
@@ -61,10 +69,18 @@ export function useInstances(filters: InstanceFilters) {
         storage_area: filters.storage_area,
         build_state: filters.build_state,
         condition: filters.condition,
+        acquisition_source: filters.acquisition_source,
         ownership_status: filters.ownership_status,
         completeness: filters.completeness ?? 'all',
         retirement: filters.retirement ?? 'all',
         copies: filters.copies ?? 'all',
+        fs: filters.fs ?? 'all',
+        paid_min: filters.paid_min,
+        paid_max: filters.paid_max,
+        rrp_min: filters.rrp_min,
+        rrp_max: filters.rrp_max,
+        roi_min: filters.roi_min,
+        roi_max: filters.roi_max,
         sort: filters.sort ?? 'created',
         direction: filters.direction ?? 'desc',
         page: filters.page ?? '1',

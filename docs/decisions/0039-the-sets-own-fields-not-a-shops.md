@@ -38,6 +38,11 @@ store's price.
    euro store in the block. A set with no German price now arrives with no RRP,
    which is true, instead of a foreign number that reads as euros.
 
+> **Superseded in part by [ADR-0051](0051-a-dollar-rrp-is-better-than-no-rrp.md):**
+> `rrp_eur` now falls back to `LEGOCom.US` (assumed 1:1 as euros) when Germany
+> has no price, rather than staying empty. Points 1 and 2 above are unchanged.
+
+
 ## Consequences
 
 - A set looked up before this fix keeps whatever it was given; nothing is

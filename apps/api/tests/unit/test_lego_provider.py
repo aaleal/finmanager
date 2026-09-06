@@ -93,14 +93,15 @@ def test_the_age_range_and_the_box_come_across() -> None:
     assert (result.additional_image_count, result.instruction_count) == (20, 13)
 
 
-def test_the_rrp_is_read_only_from_the_euro_store() -> None:
-    data = {
-        **FLOWER_BOUQUET,
-        "LEGOCom": {"US": {"retailPrice": 59.99}, "UK": {"retailPrice": 54.99}},
-    }
+def test_the_rrp_prefers_the_euro_store_but_falls_back_to_dollars() -> None:
+    # No German price at all: an old/retired set the DE store never carried.
+    dollars_only = {**FLOWER_BOUQUET, "LEGOCom": {"US": {"retailPrice": 59.99}}}
+    # Neither euro nor dollar price: genuinely nothing to show.
+    pounds_only = {**FLOWER_BOUQUET, "LEGOCom": {"UK": {"retailPrice": 54.99}}}
 
-    # A dollar figure written into a EUR column would be worse than no figure.
-    assert _provider(data).lookup("10280").rrp_eur is None
+    # US dollars are assumed 1:1 as euros (ADR-0051) rather than left empty.
+    assert _provider(dollars_only).lookup("10280").rrp_eur == Decimal("59.99")
+    assert _provider(pounds_only).lookup("10280").rrp_eur is None
     assert _provider(FLOWER_BOUQUET).lookup("10280").rrp_eur == Decimal("59.99")
 
 

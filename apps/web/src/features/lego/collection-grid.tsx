@@ -48,15 +48,77 @@ import {
   CONDITION_LABELS,
   CONDITION_VARIANTS,
   COPIES_OPTIONS,
+  FS_OPTIONS,
   OWNERSHIP_LABELS,
   PAGE_SIZES,
   RETIREMENT_OPTIONS,
   SORT_FIELDS,
+  SOURCE_LABELS,
 } from './constants';
 import { StorageFilter } from './storage-filter';
 import type { InstanceFilters } from './api';
 
 const ALL = '__all__';
+
+/** A debounced text draft for a single numeric filter key, mirroring the search box. */
+function useFilterDraft(
+  value: string | undefined,
+  onCommit: (value: string | undefined) => void,
+) {
+  const [draft, setDraft] = React.useState(value ?? '');
+  React.useEffect(() => setDraft(value ?? ''), [value]);
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if ((value ?? '') !== draft) onCommit(draft || undefined);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [draft, value, onCommit]);
+  return [draft, setDraft] as const;
+}
+
+/** One "mín/máx" numeric range, styled to sit next to the Select filters at the same height. */
+function RangeFilter({
+  label,
+  unit,
+  min,
+  max,
+  onMinChange,
+  onMaxChange,
+}: {
+  label: string;
+  unit: string;
+  min: string | undefined;
+  max: string | undefined;
+  onMinChange: (value: string | undefined) => void;
+  onMaxChange: (value: string | undefined) => void;
+}) {
+  const [minDraft, setMinDraft] = useFilterDraft(min, onMinChange);
+  const [maxDraft, setMaxDraft] = useFilterDraft(max, onMaxChange);
+  return (
+    <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 text-sm shadow-soft">
+      <span className="shrink-0 text-xs text-muted-foreground">
+        {label} ({unit})
+      </span>
+      <input
+        type="number"
+        inputMode="decimal"
+        placeholder="Mín"
+        value={minDraft}
+        onChange={(event) => setMinDraft(event.target.value)}
+        className="w-0 min-w-0 flex-1 bg-transparent text-right outline-none placeholder:text-placeholder"
+      />
+      <span className="text-muted-foreground">–</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        placeholder="Máx"
+        value={maxDraft}
+        onChange={(event) => setMaxDraft(event.target.value)}
+        className="w-0 min-w-0 flex-1 bg-transparent text-right outline-none placeholder:text-placeholder"
+      />
+    </div>
+  );
+}
 
 function Thumb({ instance }: { instance: LegoSetInstance }) {
   const image =
@@ -367,9 +429,17 @@ export function CollectionGrid({
     filters.storage_area,
     filters.build_state,
     filters.condition,
+    filters.acquisition_source,
     filters.completeness && filters.completeness !== 'all' ? filters.completeness : undefined,
     filters.retirement && filters.retirement !== 'all' ? filters.retirement : undefined,
     filters.copies && filters.copies !== 'all' ? filters.copies : undefined,
+    filters.fs && filters.fs !== 'all' ? filters.fs : undefined,
+    filters.paid_min,
+    filters.paid_max,
+    filters.rrp_min,
+    filters.rrp_max,
+    filters.roi_min,
+    filters.roi_max,
     filters.ownership_status && filters.ownership_status !== 'IN_COLLECTION'
       ? filters.ownership_status
       : undefined,
@@ -603,6 +673,77 @@ export function CollectionGrid({
             </Select>
           </div>
 
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.fs ?? 'all'}
+              onValueChange={(value) => setFilters({ fs: value, page: '1' })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.acquisition_source ?? ALL}
+              onValueChange={(value) =>
+                setFilters({ acquisition_source: value === ALL ? undefined : value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Origem" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Qualquer origem</SelectItem>
+                {Object.entries(SOURCE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <RangeFilter
+              label="Pago"
+              unit="€"
+              min={filters.paid_min}
+              max={filters.paid_max}
+              onMinChange={(value) => setFilters({ paid_min: value, page: '1' })}
+              onMaxChange={(value) => setFilters({ paid_max: value, page: '1' })}
+            />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <RangeFilter
+              label="PVP"
+              unit="€"
+              min={filters.rrp_min}
+              max={filters.rrp_max}
+              onMinChange={(value) => setFilters({ rrp_min: value, page: '1' })}
+              onMaxChange={(value) => setFilters({ rrp_max: value, page: '1' })}
+            />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <RangeFilter
+              label="ROI"
+              unit="%"
+              min={filters.roi_min}
+              max={filters.roi_max}
+              onMinChange={(value) => setFilters({ roi_min: value, page: '1' })}
+              onMaxChange={(value) => setFilters({ roi_max: value, page: '1' })}
+            />
+          </div>
 
           {activeFilterCount ? (
             <Button
@@ -616,9 +757,17 @@ export function CollectionGrid({
                   storage_area: undefined,
                   build_state: undefined,
                   condition: undefined,
+                  acquisition_source: undefined,
                   completeness: undefined,
                   retirement: undefined,
                   copies: undefined,
+                  fs: undefined,
+                  paid_min: undefined,
+                  paid_max: undefined,
+                  rrp_min: undefined,
+                  rrp_max: undefined,
+                  roi_min: undefined,
+                  roi_max: undefined,
                   ownership_status: undefined,
                   page: '1',
                 })

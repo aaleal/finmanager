@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, File, Query, Response, UploadFile
@@ -18,6 +19,7 @@ from app.schemas.lego import (
     BulkImportRowResult,
     CompletenessFilter,
     CopiesFilter,
+    FsFilter,
     ImageSource,
     InstanceDisplayImageUpdate,
     LegoSetImageUpdate,
@@ -313,10 +315,18 @@ def list_instances(
     storage_area: str | None = None,
     build_state: str | None = None,
     condition: str | None = None,
+    acquisition_source: str | None = None,
     ownership_status: str | None = "IN_COLLECTION",
     completeness: CompletenessFilter = "all",
     retirement: RetirementFilter = "all",
     copies: CopiesFilter = "all",
+    fs: FsFilter = "all",
+    paid_min: Decimal | None = None,
+    paid_max: Decimal | None = None,
+    rrp_min: Decimal | None = None,
+    rrp_max: Decimal | None = None,
+    roi_min: Decimal | None = None,
+    roi_max: Decimal | None = None,
     sort: str = "created",
     direction: Annotated[str, Query(pattern="^(asc|desc)$")] = "desc",
     page: Annotated[int, Query(ge=1)] = 1,
@@ -332,10 +342,18 @@ def list_instances(
         storage_area=storage_area,
         build_state=build_state,
         condition=condition,
+        acquisition_source=acquisition_source,
         ownership_status=ownership_status or None,
         completeness=completeness,
         retirement=retirement,
         copies=copies,
+        fs=fs,
+        paid_min=paid_min,
+        paid_max=paid_max,
+        rrp_min=rrp_min,
+        rrp_max=rrp_max,
+        roi_min=roi_min,
+        roi_max=roi_max,
         sort=sort,
         direction=direction,
         limit=page_size,

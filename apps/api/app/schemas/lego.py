@@ -18,6 +18,7 @@ CompletenessFilter = Literal["all", "complete", "incomplete"]
 RetirementFilter = Literal["all", "retired", "available"]
 # How many copies of the same set are owned — «todos» is always the default.
 CopiesFilter = Literal["all", "single", "multiple"]
+FsFilter = Literal["all", "fs", "not_fs"]
 
 
 # --- Storage -----------------------------------------------------------------
