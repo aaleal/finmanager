@@ -2037,6 +2037,8 @@ export interface components {
             missing_parts?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Current Value Eur */
+            current_value_eur?: number | string | null;
             /** Errors */
             errors?: {
                 [key: string]: string;
@@ -2090,6 +2092,8 @@ export interface components {
             missing_parts?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Current Value Eur */
+            current_value_eur?: string | null;
             /** Errors */
             errors?: {
                 [key: string]: string;
@@ -3302,6 +3306,22 @@ export interface components {
             departed_sale_total_eur: string;
             /** Themes */
             themes: components["schemas"]["ThemeBreakdown"][];
+            /** Subthemes */
+            subthemes: components["schemas"]["SubthemeBreakdown"][];
+            /** Areas */
+            areas: components["schemas"]["AreaBreakdown"][];
+            /** Channels */
+            channels: components["schemas"]["ChannelBreakdown"][];
+            /** Release Years */
+            release_years: components["schemas"]["ReleaseYearCount"][];
+            /** Build States */
+            build_states: components["schemas"]["BuildStateCount"][];
+            /** Piece Price Points */
+            piece_price_points: components["schemas"]["PiecePricePoint"][];
+            /** Fs Copies */
+            fs_copies: number;
+            /** Fs Rrp Eur */
+            fs_rrp_eur: string;
             /** Timeline */
             timeline: components["schemas"]["TimelinePoint"][];
             /** Copies Without Date */
@@ -4381,6 +4401,72 @@ export interface components {
             value_eur: string;
             /** Rrp Eur */
             rrp_eur: string;
+            /** Piece Count */
+            piece_count: number;
+        };
+        /** SubthemeBreakdown */
+        SubthemeBreakdown: {
+            /** Theme */
+            theme: string;
+            /** Subtheme */
+            subtheme: string;
+            /** Copies */
+            copies: number;
+            /** Unique Sets */
+            unique_sets: number;
+            /** Cost Eur */
+            cost_eur: string;
+            /** Piece Count */
+            piece_count: number;
+        };
+        /** AreaBreakdown */
+        AreaBreakdown: {
+            /** Area */
+            area: string;
+            /** Copies */
+            copies: number;
+            /** Unique Sets */
+            unique_sets: number;
+            /** Rrp Eur */
+            rrp_eur: string;
+            /** Sealed Copies */
+            sealed_copies: number;
+        };
+        /** ChannelBreakdown */
+        ChannelBreakdown: {
+            /** Source */
+            source: string;
+            /** Copies */
+            copies: number;
+            /** Cost Eur */
+            cost_eur: string;
+            /** Rrp Eur */
+            rrp_eur: string;
+        };
+        /** ReleaseYearCount */
+        ReleaseYearCount: {
+            /** Year */
+            year: number | null;
+            /** Unique Sets */
+            unique_sets: number;
+        };
+        /** BuildStateCount */
+        BuildStateCount: {
+            /** Build State */
+            build_state: string | null;
+            /** Copies */
+            copies: number;
+        };
+        /** PiecePricePoint */
+        PiecePricePoint: {
+            /** Name */
+            name: string;
+            /** Piece Count */
+            piece_count: number;
+            /** Cost Per Piece Eur */
+            cost_per_piece_eur: string;
+            /** Theme */
+            theme: string;
         };
         /**
          * TimelinePoint

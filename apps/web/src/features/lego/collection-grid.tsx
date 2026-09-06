@@ -278,6 +278,7 @@ function GroupedRow({
       <TableCell>
         <SetCell instance={first} />
       </TableCell>
+      <TableCell>{model?.theme ?? <span className="text-muted-foreground">—</span>}</TableCell>
       <TableCell>
         <Badge variant="outline">{group.items.length} cópias</Badge>
       </TableCell>
@@ -453,138 +454,155 @@ export function CollectionGrid({
       </div>
 
       {showFilters ? (
-        <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Select
-            value={filters.theme ?? ALL}
-            onValueChange={(value) => setFilters({ theme: value === ALL ? undefined : value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Tema" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos os temas</SelectItem>
-              {themes.map((theme) => (
-                <SelectItem key={theme} value={theme}>
-                  {theme}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-4 lg:grid-cols-8">
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.theme ?? ALL}
+              onValueChange={(value) => setFilters({ theme: value === ALL ? undefined : value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tema" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos os temas</SelectItem>
+                {themes.map((theme) => (
+                  <SelectItem key={theme} value={theme}>
+                    {theme}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <StorageFilter
-            locations={storageLocations}
-            value={{
-              storage_location_id: filters.storage_location_id,
-              storage_area: filters.storage_area,
-            }}
-            onChange={(selection) =>
-              setFilters({
-                storage_location_id: selection.storage_location_id,
-                storage_area: selection.storage_area,
-              })
-            }
-          />
+          <div className="sm:col-span-2 lg:col-span-2">
+            <StorageFilter
+              locations={storageLocations}
+              value={{
+                storage_location_id: filters.storage_location_id,
+                storage_area: filters.storage_area,
+              }}
+              onChange={(selection) =>
+                setFilters({
+                  storage_location_id: selection.storage_location_id,
+                  storage_area: selection.storage_area,
+                })
+              }
+            />
+          </div>
 
-          <Select
-            value={filters.build_state ?? ALL}
-            onValueChange={(value) =>
-              setFilters({ build_state: value === ALL ? undefined : value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Qualquer estado</SelectItem>
-              {Object.entries(BUILD_STATE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.build_state ?? ALL}
+              onValueChange={(value) =>
+                setFilters({ build_state: value === ALL ? undefined : value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Qualquer estado</SelectItem>
+                {Object.entries(BUILD_STATE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={filters.condition ?? ALL}
-            onValueChange={(value) => setFilters({ condition: value === ALL ? undefined : value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Condição" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Qualquer condição</SelectItem>
-              {Object.entries(CONDITION_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.condition ?? ALL}
+              onValueChange={(value) => setFilters({ condition: value === ALL ? undefined : value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Condição" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Qualquer condição</SelectItem>
+                {Object.entries(CONDITION_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={filters.ownership_status ?? 'IN_COLLECTION'}
-            onValueChange={(value) => setFilters({ ownership_status: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(OWNERSHIP_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-              <SelectItem value={ALL}>Todos os estados</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.completeness ?? 'all'}
+              onValueChange={(value) => setFilters({ completeness: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPLETENESS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={filters.completeness ?? 'all'}
-            onValueChange={(value) => setFilters({ completeness: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {COMPLETENESS_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="sm:col-span-2 lg:col-span-2">   
+            <Select
+              value={filters.retirement ?? 'all'}
+              onValueChange={(value) => setFilters({ retirement: value, page: '1' })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RETIREMENT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>  
 
-          <Select
-            value={filters.retirement ?? 'all'}
-            onValueChange={(value) => setFilters({ retirement: value, page: '1' })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {RETIREMENT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.copies ?? 'all'}
+              onValueChange={(value) => setFilters({ copies: value, page: '1' })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COPIES_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>  
+          
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
+              value={filters.ownership_status ?? 'IN_COLLECTION'}
+              onValueChange={(value) => setFilters({ ownership_status: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(OWNERSHIP_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+                <SelectItem value={ALL}>Todos os estados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={filters.copies ?? 'all'}
-            onValueChange={(value) => setFilters({ copies: value, page: '1' })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {COPIES_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           {activeFilterCount ? (
             <Button
@@ -634,6 +652,7 @@ export function CollectionGrid({
             <TableHeader>
               <TableRow>
                 <SortHead field="name" label="Conjunto" filters={filters} setFilters={setFilters} />
+                <SortHead field="theme" label="Tema" filters={filters} setFilters={setFilters} />
                 <SortHead field="copies" label="Cópias" filters={filters} setFilters={setFilters} />
                 <SortHead field="year" label="Ano" filters={filters} setFilters={setFilters} />
                 <SortHead

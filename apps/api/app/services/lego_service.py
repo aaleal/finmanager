@@ -32,6 +32,9 @@ from app.models.lego import (
     StorageLocation,
 )
 from app.schemas.lego import (
+    AreaBreakdown,
+    BuildStateCount,
+    ChannelBreakdown,
     CollectionSummary,
     CompletenessFilter,
     CopiesFilter,
@@ -45,10 +48,13 @@ from app.schemas.lego import (
     LegoSetModelOut,
     LegoSetModelUpdate,
     OverviewOut,
+    PiecePricePoint,
+    ReleaseYearCount,
     RetirementFilter,
     StorageLocationCreate,
     StorageLocationOut,
     StorageLocationUpdate,
+    SubthemeBreakdown,
     ThemeBreakdown,
     TimelinePoint,
 )
@@ -1468,9 +1474,17 @@ def overview(
     total_pieces = 0
     total_minifigs = 0
     themes: dict[str, dict[str, Any]] = {}
+    subthemes: dict[tuple[str, str], dict[str, Any]] = {}
+    areas: dict[str, dict[str, Any]] = {}
+    channels: dict[str, dict[str, Any]] = {}
+    year_models: dict[int | None, set[uuid.UUID]] = {}
+    build_states: dict[str | None, int] = {}
+    piece_price_points: list[PiecePricePoint] = []
     seen_models: set[uuid.UUID] = set()
     retired_models: set[uuid.UUID] = set()
     models_without_value: set[uuid.UUID] = set()
+    fs_copies = 0
+    fs_rrp = ZERO
 
     for copy in copies:
         model = copy.model
@@ -1486,16 +1500,63 @@ def overview(
         seen_models.add(model.id)
         if model.is_retired:
             retired_models.add(model.id)
+        if copy.is_fs:
+            fs_copies += 1
+            fs_rrp += model.rrp_eur or ZERO
 
         theme = model.theme or "Sem tema"
         bucket = themes.setdefault(
-            theme, {"copies": 0, "models": set(), "cost": ZERO, "value": ZERO, "rrp": ZERO}
+            theme,
+            {"copies": 0, "models": set(), "cost": ZERO, "value": ZERO, "rrp": ZERO, "pieces": 0},
         )
         bucket["copies"] += 1
         bucket["models"].add(model.id)
         bucket["cost"] += copy.acquisition_cost_eur
         bucket["value"] += model.current_value_eur or ZERO
         bucket["rrp"] += model.rrp_eur or ZERO
+        bucket["pieces"] += model.piece_count or 0
+
+        subtheme_key = (theme, model.subtheme or "Sem subtema")
+        sub_bucket = subthemes.setdefault(
+            subtheme_key, {"copies": 0, "models": set(), "cost": ZERO, "pieces": 0}
+        )
+        sub_bucket["copies"] += 1
+        sub_bucket["models"].add(model.id)
+        sub_bucket["cost"] += copy.acquisition_cost_eur
+        sub_bucket["pieces"] += model.piece_count or 0
+
+        area_name = copy.storage_location.area if copy.storage_location else "Sem local"
+        area_bucket = areas.setdefault(
+            area_name, {"copies": 0, "models": set(), "rrp": ZERO, "sealed": 0}
+        )
+        area_bucket["copies"] += 1
+        area_bucket["models"].add(model.id)
+        area_bucket["rrp"] += model.rrp_eur or ZERO
+        if copy.condition == "SEALED":
+            area_bucket["sealed"] += 1
+
+        source = copy.acquisition_source or "Sem origem"
+        channel_bucket = channels.setdefault(source, {"copies": 0, "cost": ZERO, "rrp": ZERO})
+        channel_bucket["copies"] += 1
+        channel_bucket["cost"] += copy.acquisition_cost_eur
+        channel_bucket["rrp"] += model.rrp_eur or ZERO
+
+        year = model.release_date.year if model.release_date else None
+        year_models.setdefault(year, set()).add(model.id)
+
+        build_states[copy.build_state] = build_states.get(copy.build_state, 0) + 1
+
+        if model.piece_count and copy.acquisition_cost_eur > ZERO:
+            piece_price_points.append(
+                PiecePricePoint(
+                    name=model.name,
+                    piece_count=model.piece_count,
+                    cost_per_piece_eur=(copy.acquisition_cost_eur / model.piece_count).quantize(
+                        Decimal("0.001")
+                    ),
+                    theme=theme,
+                )
+            )
 
     gain = total_value - valued_cost
     overall_roi = roi_pct(valued_cost, total_value) if valued_cost > ZERO else None
@@ -1567,12 +1628,66 @@ def overview(
                     cost_eur=data["cost"],
                     value_eur=data["value"],
                     rrp_eur=data["rrp"],
+                    piece_count=data["pieces"],
                 )
                 for name, data in themes.items()
             ),
             key=lambda t: t.value_eur,
             reverse=True,
         ),
+        subthemes=sorted(
+            (
+                SubthemeBreakdown(
+                    theme=theme_name,
+                    subtheme=subtheme_name,
+                    copies=data["copies"],
+                    unique_sets=len(data["models"]),
+                    cost_eur=data["cost"],
+                    piece_count=data["pieces"],
+                )
+                for (theme_name, subtheme_name), data in subthemes.items()
+            ),
+            key=lambda s: s.cost_eur,
+            reverse=True,
+        ),
+        areas=sorted(
+            (
+                AreaBreakdown(
+                    area=name,
+                    copies=data["copies"],
+                    unique_sets=len(data["models"]),
+                    rrp_eur=data["rrp"],
+                    sealed_copies=data["sealed"],
+                )
+                for name, data in areas.items()
+            ),
+            key=lambda a: a.rrp_eur,
+            reverse=True,
+        ),
+        channels=sorted(
+            (
+                ChannelBreakdown(
+                    source=name, copies=data["copies"], cost_eur=data["cost"], rrp_eur=data["rrp"]
+                )
+                for name, data in channels.items()
+            ),
+            key=lambda c: c.rrp_eur,
+            reverse=True,
+        ),
+        release_years=sorted(
+            (
+                ReleaseYearCount(year=year, unique_sets=len(models))
+                for year, models in year_models.items()
+            ),
+            key=lambda y: (y.year is None, y.year),
+        ),
+        build_states=[
+            BuildStateCount(build_state=state, copies=count)
+            for state, count in build_states.items()
+        ],
+        piece_price_points=piece_price_points,
+        fs_copies=fs_copies,
+        fs_rrp_eur=fs_rrp,
         timeline=timeline,
         copies_without_date=copies_without_date,
         top_gainers=top_gainers,

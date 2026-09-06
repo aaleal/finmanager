@@ -41,6 +41,7 @@ from app.schemas.lego import (
     BulkImportRowResult,
     LegoSetInstanceCreate,
     LegoSetModelCreate,
+    LegoSetModelUpdate,
     StorageBulkImportError,
     StorageBulkImportOut,
     StorageLocationCreate,
@@ -60,12 +61,13 @@ INSTANCE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "build_state": ("estado de construcao",),
     "condition": ("condicao",),
     "has_box": ("tem caixa",),
-    "has_instructions": ("tem instrucoes",),
+    "has_instructions": ("tem instrucoes", "tem manual"),
     "is_fs": ("e fs",),
     "missing_parts": ("pecas em falta",),
     "acquisition_date": ("data de aquisicao",),
     "acquisition_source": ("origem",),
     "acquisition_cost_eur": ("custo", "custo de aquisicao"),
+    "current_value_eur": ("preco atual", "valor atual"),
     "notes": ("notas",),
 }
 
@@ -278,6 +280,11 @@ def _resolve_instance_row(
     if raw_cost not in (None, "") and cost is None:
         errors["acquisition_cost_eur"] = "Custo inválido."
 
+    raw_current_value = raw.get("current_value_eur")
+    current_value = _decimal(raw_current_value)
+    if raw_current_value not in (None, "") and current_value is None:
+        errors["current_value_eur"] = "Preço atual inválido."
+
     date_value, date_error = _date(raw.get("acquisition_date"))
     if date_error:
         errors["acquisition_date"] = date_error
@@ -318,6 +325,7 @@ def _resolve_instance_row(
         is_fs=_boolean(raw.get("is_fs"), default=False),
         missing_parts=_text(raw.get("missing_parts")),
         notes=_text(raw.get("notes")),
+        current_value_eur=current_value,
         errors=errors,
     )
 
@@ -437,6 +445,7 @@ def _commit_instance_row(
             rrp_eur=lookup.rrp_eur,
             short_description=lookup.short_description,
             image_url=lookup.image_url,
+            current_value_eur=row.current_value_eur,
         )
         model = lego_service.create_model(
             db, draft, entity_id=entity.id, actor_user_id=actor_user_id
@@ -446,6 +455,18 @@ def _commit_instance_row(
         # jobs instead of blocking this row's result (ADR-0049).
         with contextlib.suppress(ValidationError):
             lego_brickset_jobs.queue_brickset_assets(db, model, actor_user_id=actor_user_id)
+    elif row.current_value_eur is not None and (
+        model.current_value_eur is None or row.current_value_eur > model.current_value_eur
+    ):
+        # Copies of the same set can carry different "preço atual" values across
+        # rows (e.g. a hand-edited sheet) — the highest one wins, and it only
+        # ever pushes the value up, never down, across the whole batch.
+        lego_service.update_model(
+            db,
+            model,
+            LegoSetModelUpdate(current_value_eur=row.current_value_eur),
+            actor_user_id=actor_user_id,
+        )
 
     instance_payload = LegoSetInstanceCreate(
         entity_id=entity.id,

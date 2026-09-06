@@ -366,6 +366,10 @@ class BulkImportRow(BaseModel):
     is_fs: bool = False
     missing_parts: str | None = None
     notes: str | None = None
+    #: The set's "preço atual" as typed in the sheet — not the physical copy's own
+    #: cost. When several rows share a set_number with different values, the
+    #: commit keeps the largest one (see lego_bulk_import.py).
+    current_value_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
     #: Keyed by field name, so the review table can highlight just that cell.
     errors: dict[str, str] = Field(default_factory=dict)
 
@@ -430,6 +434,58 @@ class ThemeBreakdown(BaseModel):
     cost_eur: Decimal
     value_eur: Decimal
     rrp_eur: Decimal
+    piece_count: int = 0
+
+
+class SubthemeBreakdown(BaseModel):
+    """One (theme, subtema) leaf, for a treemap weighted by cost or peças."""
+
+    theme: str
+    subtheme: str
+    copies: int
+    unique_sets: int
+    cost_eur: Decimal
+    piece_count: int
+
+
+class AreaBreakdown(BaseModel):
+    """Number of sets/copies and PVP sitting in each storage area — "onde está
+    o dinheiro", not just "onde estão as caixas"."""
+
+    area: str
+    copies: int
+    unique_sets: int
+    rrp_eur: Decimal
+    sealed_copies: int = 0
+
+
+class ChannelBreakdown(BaseModel):
+    """Real cost paid vs. original PVP, per acquisition source — highlights
+    channels where cards/promotions widen the PVP-vs-custo gap."""
+
+    source: str
+    copies: int
+    cost_eur: Decimal
+    rrp_eur: Decimal
+
+
+class ReleaseYearCount(BaseModel):
+    year: int | None
+    unique_sets: int
+
+
+class BuildStateCount(BaseModel):
+    build_state: str | None
+    copies: int
+
+
+class PiecePricePoint(BaseModel):
+    """One physical copy's cost-per-piece, for the PPP scatter plot."""
+
+    name: str
+    piece_count: int
+    cost_per_piece_eur: Decimal
+    theme: str
 
 
 class TimelinePoint(BaseModel):
@@ -481,6 +537,14 @@ class OverviewOut(BaseModel):
     departed_copies: int
     departed_sale_total_eur: Decimal
     themes: list[ThemeBreakdown]
+    subthemes: list[SubthemeBreakdown]
+    areas: list[AreaBreakdown]
+    channels: list[ChannelBreakdown]
+    release_years: list[ReleaseYearCount]
+    build_states: list[BuildStateCount]
+    piece_price_points: list[PiecePricePoint]
+    fs_copies: int
+    fs_rrp_eur: Decimal
     timeline: list[TimelinePoint]
     copies_without_date: int
     top_gainers: list[LegoSetInstanceOut]
