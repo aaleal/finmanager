@@ -26,6 +26,7 @@ export type InstanceFilters = {
   build_state?: string;
   condition?: string;
   acquisition_source?: string;
+  release_year?: string;
   ownership_status?: string;
   completeness?: string;
   retirement?: string;
@@ -70,6 +71,7 @@ export function useInstances(filters: InstanceFilters) {
         build_state: filters.build_state,
         condition: filters.condition,
         acquisition_source: filters.acquisition_source,
+        release_year: filters.release_year,
         ownership_status: filters.ownership_status,
         completeness: filters.completeness ?? 'all',
         retirement: filters.retirement ?? 'all',

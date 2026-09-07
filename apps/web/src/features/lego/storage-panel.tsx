@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Boxes, PencilLine, Plus, Trash2 } from 'lucide-react';
+import { Boxes, LocateIcon, PencilLine, Plus, Trash2 } from 'lucide-react';
 import type { StorageLocation } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -322,7 +322,7 @@ export function StoragePanel({
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
         <p className="max-w-2xl text-sm text-muted-foreground">
-          A percentagem de ocupação é sempre uma estimativa sua — nunca é calculada a partir do
+          A percentagem de ocupação é sempre uma estimativa, nunca é calculada a partir do
           número de peças.
         </p>
         {canWrite ? (
@@ -342,21 +342,40 @@ export function StoragePanel({
         <div className="space-y-6">
           {areas.map(([area, items]) => (
             <div key={area} className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {/* Area Title */}
+              <p className="text-s font-semibold uppercase tracking-wider text-muted-foreground">
                 {area}
               </p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {/* Storage cards */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                 {items.map((location) => (
                   <div key={location.id} className="space-y-3 rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate font-medium">{location.container ?? area}</p>
+                        {/* Area Storage Name */}
+                        {/* <p className="truncate font-medium">{location.container ?? area}</p> */}
+                        <div className="flex items-end gap-2">
+                          <span className="font-semibold text-sm truncate">
+                            {location.container ?? area}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onShowContents(location.id)}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                              {location.stored_count} sets
+                            </span>
+                          </button>
+                        </div>
+                        
                         {location.description ? (
                           <p className="truncate text-xs text-muted-foreground">
                             {location.description}
                           </p>
                         ) : null}
                       </div>
+                      {/* Capacity message */}
                       <div className="flex shrink-0 items-center gap-1.5">
                         {location.is_full ? (
                           <Badge variant="destructive">cheio</Badge>
@@ -392,16 +411,16 @@ export function StoragePanel({
                     </div>
 
                     <div className="flex items-center gap-4 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => onShowContents(location.id)}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {num(location.stored_count)} cópia(s)
-                      </button>
-                      <span className="numeric text-muted-foreground">
-                        {eur(location.stored_value_eur)}
-                      </span>
+                      <div className="flex items-baseline justify-left gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <span>Custo: </span>
+                          <span className="font-medium text-foreground">{eur(location.stored_value_eur)}</span>
+                        </div>
+                        <div>
+                          <span>PVP: </span>
+                          <span className="font-medium text-foreground">{eur(location.stored_value_eur)}</span>
+                        </div>
+                      </div>
                       {location.remaining_capacity_pct !== null ? (
                         <span
                           className={cn('ml-auto text-xs', location.is_full && 'text-destructive')}

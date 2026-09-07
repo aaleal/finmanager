@@ -64,10 +64,11 @@ export const SORT_FIELDS = [
   { value: 'state', label: 'Estado' },
   { value: 'condition', label: 'Condição' },
   { value: 'acquired', label: 'Data de aquisição' },
-  { value: 'cost', label: 'Custo' },
-  { value: 'rrp', label: 'PVP' },
+  { value: 'cost', label: 'Custo (Pago)' },
+  { value: 'rrp', label: 'Custo (PVP)' },
   { value: 'value', label: 'Valor' },
-  { value: 'roi', label: 'ROI' },
+  { value: 'roi', label: 'ROI (%)' },
+  { value: 'roi_value', label: 'ROI (valor)' },
   { value: 'ownership', label: 'Propriedade' },
 ];
 

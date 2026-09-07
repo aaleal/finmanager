@@ -39,6 +39,7 @@ def _copy(
     name: str,
     cost: str = "100.00",
     value: str | None = "150.00",
+    rrp: str | None = None,
     condition: str | None = None,
     storage_location_id: object = None,
 ) -> LegoSetInstance:
@@ -50,6 +51,7 @@ def _copy(
             set_number=set_number,
             name=name,
             current_value_eur=Decimal(value) if value else None,
+            rrp_eur=Decimal(rrp) if rrp else None,
         ),
     )
     return lego_service.create_instance(db, payload, entity_id=entity.id, actor_user_id=owner.id)
@@ -104,6 +106,35 @@ def test_roi_sort_puts_gifts_last_in_both_directions(
         assert ordered[-1].set_model is not None
         assert ordered[-1].set_model.name == "Prenda", direction
         assert ordered[-1].roi_pct is None
+
+
+def test_roi_sort_falls_back_to_rrp_reading_for_gifts(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    """A gift's cell shows the PVP-tagged RRP reading (ADR-0010), so the sort must
+    place it by that value too — only a gift with no RRP figure has nothing to
+    rank by and stays last."""
+    _copy(db, entity, owner, set_number="1000", name="Alfa", cost="100.00", value="150.00")
+    _copy(db, entity, owner, set_number="2000", name="Beta", cost="100.00", value="50.00")
+    # PVP-only reading: no cost basis, but a strongly positive RRP ROI.
+    _copy(
+        db,
+        entity,
+        owner,
+        set_number="3000",
+        name="PrendaBoa",
+        cost="0.00",
+        value="400.00",
+        rrp="100.00",
+    )
+    # Truly absent: no cost basis and no RRP to fall back to.
+    _copy(db, entity, owner, set_number="4000", name="PrendaSemPvp", cost="0.00", value="90.00")
+
+    desc = _list(db, entity, sort="roi", direction="desc")
+    assert [i.set_model.name for i in desc] == ["PrendaBoa", "Alfa", "Beta", "PrendaSemPvp"]
+
+    asc = _list(db, entity, sort="roi", direction="asc")
+    assert [i.set_model.name for i in asc] == ["Beta", "Alfa", "PrendaBoa", "PrendaSemPvp"]
 
 
 def test_copies_filter_separates_repeats_from_singles(

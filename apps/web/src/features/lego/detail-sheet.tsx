@@ -1251,9 +1251,7 @@ export function CopyDetailSheet({
                         <span className="numeric">
                           {eur(instance.acquisition_cost_eur)}
                           {costPct !== null ? (
-                            <span className="ml-1 text-xs text-muted-foreground">
-                              ({costPct}%)
-                            </span>
+                            <span className="ml-1 text-xs text-muted-foreground">({costPct}%)</span>
                           ) : null}
                         </span>
                       </DetailRow>

@@ -61,10 +61,7 @@ import type { InstanceFilters } from './api';
 const ALL = '__all__';
 
 /** A debounced text draft for a single numeric filter key, mirroring the search box. */
-function useFilterDraft(
-  value: string | undefined,
-  onCommit: (value: string | undefined) => void,
-) {
+function useFilterDraft(value: string | undefined, onCommit: (value: string | undefined) => void) {
   const [draft, setDraft] = React.useState(value ?? '');
   React.useEffect(() => setDraft(value ?? ''), [value]);
   React.useEffect(() => {
@@ -181,17 +178,17 @@ function RoiCell({ instance }: { instance: LegoSetInstance }) {
 /** PVP is the headline — it's what the set is "worth" on the shelf — with the
  * actual amount paid underneath, smaller, since it's often a discount or a gift. */
 function CostCell({ rrpEur, paidEur }: { rrpEur: number | null; paidEur: number }) {
-  if (rrpEur === null) {
-    return <span className="numeric font-medium">{eur(paidEur)}</span>;
-  }
   // Discount vs. PVP, e.g. "149,99 € (60%)" — negative when paid above list price.
-  const diffPct = rrpEur !== 0 ? Math.round(((rrpEur - paidEur) / rrpEur) * 100) : null;
+  var diffPct = 0
+  if (rrpEur !== 0 && rrpEur !== null) {
+    diffPct = Math.round(((rrpEur - paidEur) / rrpEur) * 100);
+  }
   return (
     <span className="block">
       <span className="numeric block font-medium">{eur(rrpEur)}</span>
       <span className="numeric block text-xs text-muted-foreground">
         {eur(paidEur)}
-        {diffPct !== null ? <span className="text-[10px]"> ({diffPct}%)</span> : null}
+        {diffPct !== null && diffPct !== 0 ? <span className="text-[10px]"> ({diffPct}%)</span> : null}
       </span>
     </span>
   );
@@ -351,7 +348,7 @@ function GroupedRow({
         <CostCell rrpEur={totalRrp} paidEur={totalCost} />
       </TableCell>
       <TableCell className="numeric ">{eur(totalValue)}</TableCell>
-      <TableCell >
+      <TableCell>
         {totalValue !== null ? (
           <span
             className={cn(
@@ -375,7 +372,9 @@ function SummaryStrip({ summary }: { summary: CollectionSummary }) {
     { label: 'conjuntos', value: num(summary.unique_sets) },
     { label: 'peças', value: num(summary.total_pieces) },
     { label: 'custo', value: eur(summary.total_cost_eur) },
+    { label: 'pvp', value: eur(summary.total_rrp_eur) },
     { label: 'valor atual', value: eur(summary.total_value_eur) },
+    { label: 'temas', value: num(summary.unique_themes) },
   ];
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm">
@@ -430,6 +429,7 @@ export function CollectionGrid({
     filters.build_state,
     filters.condition,
     filters.acquisition_source,
+    filters.release_year,
     filters.completeness && filters.completeness !== 'all' ? filters.completeness : undefined,
     filters.retirement && filters.retirement !== 'all' ? filters.retirement : undefined,
     filters.copies && filters.copies !== 'all' ? filters.copies : undefined,
@@ -461,6 +461,29 @@ export function CollectionGrid({
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
   const descending = (filters.direction ?? 'desc') === 'desc';
 
+  const clearFilters = () =>
+    setFilters({
+      theme: undefined,
+      storage_location_id: undefined,
+      storage_area: undefined,
+      build_state: undefined,
+      condition: undefined,
+      acquisition_source: undefined,
+      release_year: undefined,
+      completeness: undefined,
+      retirement: undefined,
+      copies: undefined,
+      fs: undefined,
+      paid_min: undefined,
+      paid_max: undefined,
+      rrp_min: undefined,
+      rrp_max: undefined,
+      roi_min: undefined,
+      roi_max: undefined,
+      ownership_status: undefined,
+      page: '1',
+    });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -486,6 +509,18 @@ export function CollectionGrid({
             </Badge>
           ) : null}
         </Button>
+
+        {!showFilters && activeFilterCount ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Limpar filtros"
+            title="Limpar filtros"
+            onClick={clearFilters}
+          >
+            <X />
+          </Button>
+        ) : null}
 
         <div className="flex items-center gap-1">
           <Select
@@ -521,6 +556,20 @@ export function CollectionGrid({
           />
           Agrupar por conjunto
         </label>
+
+        {filters.release_year ? (
+          <Badge variant="secondary" className="gap-1.5 py-1.5 pl-2.5 pr-1.5 text-sm">
+            Ano: {filters.release_year}
+            <button
+              type="button"
+              aria-label="Remover filtro de ano"
+              className="rounded-full p-0.5 hover:bg-muted"
+              onClick={() => setFilters({ release_year: undefined, page: '1' })}
+            >
+              <X className="size-3" />
+            </button>
+          </Badge>
+        ) : null}
       </div>
 
       {showFilters ? (
@@ -584,7 +633,9 @@ export function CollectionGrid({
           <div className="sm:col-span-2 lg:col-span-2">
             <Select
               value={filters.condition ?? ALL}
-              onValueChange={(value) => setFilters({ condition: value === ALL ? undefined : value })}
+              onValueChange={(value) =>
+                setFilters({ condition: value === ALL ? undefined : value })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Condição" />
@@ -618,7 +669,7 @@ export function CollectionGrid({
             </Select>
           </div>
 
-          <div className="sm:col-span-2 lg:col-span-2">   
+          <div className="sm:col-span-2 lg:col-span-2">
             <Select
               value={filters.retirement ?? 'all'}
               onValueChange={(value) => setFilters({ retirement: value, page: '1' })}
@@ -634,7 +685,7 @@ export function CollectionGrid({
                 ))}
               </SelectContent>
             </Select>
-          </div>  
+          </div>
 
           <div className="sm:col-span-2 lg:col-span-2">
             <Select
@@ -652,8 +703,8 @@ export function CollectionGrid({
                 ))}
               </SelectContent>
             </Select>
-          </div>  
-          
+          </div>
+
           <div className="sm:col-span-2 lg:col-span-2">
             <Select
               value={filters.ownership_status ?? 'IN_COLLECTION'}
@@ -746,33 +797,7 @@ export function CollectionGrid({
           </div>
 
           {activeFilterCount ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-start"
-              onClick={() =>
-                setFilters({
-                  theme: undefined,
-                  storage_location_id: undefined,
-                  storage_area: undefined,
-                  build_state: undefined,
-                  condition: undefined,
-                  acquisition_source: undefined,
-                  completeness: undefined,
-                  retirement: undefined,
-                  copies: undefined,
-                  fs: undefined,
-                  paid_min: undefined,
-                  paid_max: undefined,
-                  rrp_min: undefined,
-                  rrp_max: undefined,
-                  roi_min: undefined,
-                  roi_max: undefined,
-                  ownership_status: undefined,
-                  page: '1',
-                })
-              }
-            >
+            <Button variant="ghost" size="sm" className="justify-start" onClick={clearFilters}>
               <X />
               Limpar filtros
             </Button>
@@ -834,34 +859,11 @@ export function CollectionGrid({
                 <SortHead field="name" label="Conjunto" filters={filters} setFilters={setFilters} />
                 <SortHead field="theme" label="Tema" filters={filters} setFilters={setFilters} />
                 <SortHead field="year" label="Ano" filters={filters} setFilters={setFilters} />
-                <SortHead
-                  field="storage"
-                  label="Arrumação"
-                  filters={filters}
-                  setFilters={setFilters}
-                />
+                <SortHead field="storage" label="Arrumação" filters={filters} setFilters={setFilters} />
                 <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
-                <SortHead
-                  field="cost"
-                  label="Custo"
-                  filters={filters}
-                  setFilters={setFilters}
-                  align="right"
-                />
-                <SortHead
-                  field="value"
-                  label="Valor"
-                  filters={filters}
-                  setFilters={setFilters}
-                  align="right"
-                />
-                <SortHead
-                  field="roi"
-                  label="ROI"
-                  filters={filters}
-                  setFilters={setFilters}
-                  align="right"
-                />
+                <SortHead field="cost" label="Custo" filters={filters} setFilters={setFilters} align="right" />
+                <SortHead field="value" label="Valor" filters={filters} setFilters={setFilters} align="right" />
+                <SortHead field="roi" label="ROI" filters={filters} setFilters={setFilters} align="right" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -907,8 +909,11 @@ export function CollectionGrid({
                   </TableCell>
                   <TableCell className="numeric text-right">
                     <CostCell
-                      rrpEur={instance.set_model?.rrp_eur ? Number(instance.set_model.rrp_eur) : null}
-                      paidEur={Number(instance.acquisition_cost_eur)}
+                      rrpEur={
+                        instance.set_model?.rrp_eur ? Number(instance.set_model.rrp_eur) : null
+                      }
+                      paidEur={
+                        Number(instance.acquisition_cost_eur)}
                     />
                   </TableCell>
                   <TableCell className="numeric text-right">

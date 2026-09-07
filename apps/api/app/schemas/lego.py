@@ -277,7 +277,9 @@ class CollectionSummary(BaseModel):
 
     copies: int
     unique_sets: int
+    unique_themes: int
     total_cost_eur: Decimal
+    total_rrp_eur: Decimal
     total_value_eur: Decimal
     total_pieces: int
 
@@ -446,6 +448,7 @@ class SubthemeBreakdown(BaseModel):
     copies: int
     unique_sets: int
     cost_eur: Decimal
+    rrp_eur: Decimal
     piece_count: int
 
 
@@ -484,9 +487,30 @@ class PiecePricePoint(BaseModel):
     """One physical copy's cost-per-piece, for the PPP scatter plot."""
 
     name: str
+    set_number: str | None = None
     piece_count: int
     cost_per_piece_eur: Decimal
+    rrp_per_piece_eur: Decimal | None = None
     theme: str
+
+
+class ReleaseYearPiecePoint(BaseModel):
+    """One unique model's release year vs. piece count, for the size-over-time
+    scatter. Deduped by model — a set owned in triplicate only plots once."""
+
+    name: str
+    set_number: str | None = None
+    year: int
+    piece_count: int
+    theme: str
+
+
+class PieceBracketCount(BaseModel):
+    """Unique models bucketed by volumetric size (Micro/Pequeno/Médio/Grande/
+    Gigante), in fixed bracket order regardless of which brackets are empty."""
+
+    bracket: str
+    unique_sets: int
 
 
 class TimelinePoint(BaseModel):
@@ -544,6 +568,8 @@ class OverviewOut(BaseModel):
     release_years: list[ReleaseYearCount]
     build_states: list[BuildStateCount]
     piece_price_points: list[PiecePricePoint]
+    release_year_points: list[ReleaseYearPiecePoint]
+    piece_brackets: list[PieceBracketCount]
     fs_copies: int
     fs_rrp_eur: Decimal
     timeline: list[TimelinePoint]

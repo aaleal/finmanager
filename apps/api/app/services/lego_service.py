@@ -13,7 +13,7 @@ from decimal import Decimal
 from typing import Any
 
 import httpx
-from sqlalchemy import Select, and_, case, func, or_, select
+from sqlalchemy import Integer, Select, and_, case, cast, func, or_, select
 from sqlalchemy.orm import Session as DbSession
 from sqlalchemy.orm import aliased, selectinload
 
@@ -49,8 +49,10 @@ from app.schemas.lego import (
     LegoSetModelOut,
     LegoSetModelUpdate,
     OverviewOut,
+    PieceBracketCount,
     PiecePricePoint,
     ReleaseYearCount,
+    ReleaseYearPiecePoint,
     RetirementFilter,
     StorageLocationCreate,
     StorageLocationOut,
@@ -66,6 +68,21 @@ INSTANCE_TABLE = "lego_set_instances"
 STORAGE_TABLE = "lego_storage_locations"
 IMAGE_TABLE = "lego_set_images"
 INSTRUCTION_TABLE = "lego_set_instructions"
+
+PIECE_BRACKETS: list[tuple[str, int, int | None]] = [
+    ("Micro (<100)", 0, 100),
+    ("Pequeno (100–499)", 100, 500),
+    ("Médio (500–999)", 500, 1000),
+    ("Grande (1.000–2.499)", 1000, 2500),
+    ("Gigante (2.500+)", 2500, None),
+]
+
+
+def _piece_bracket(pieces: int) -> str:
+    for label, low, high in PIECE_BRACKETS:
+        if pieces >= low and (high is None or pieces < high):
+            return label
+    return PIECE_BRACKETS[0][0]
 
 
 # --- Serialization -----------------------------------------------------------
@@ -908,9 +925,52 @@ def _roi_expr() -> Any:
     )
 
 
+def _rrp_roi_expr() -> Any:
+    """The same rule as ``rrp_roi_pct``: no RRP and no value both mean NULL."""
+    return case(
+        (
+            and_(
+                LegoSetModel.rrp_eur.is_not(None),
+                LegoSetModel.rrp_eur > 0,
+                LegoSetModel.current_value_eur.is_not(None),
+            ),
+            (LegoSetModel.current_value_eur - LegoSetModel.rrp_eur) / LegoSetModel.rrp_eur,
+        ),
+        else_=None,
+    )
+
+
+def _roi_sort_expr() -> Any:
+    """The ROI cell degrades to the RRP reading for gifts (ADR-0010), so the sort
+    must follow: only a copy with neither reading has nothing to rank by."""
+    return func.coalesce(_roi_expr(), _rrp_roi_expr())
+
+
 def _ordinal_expr(column: Any, order: tuple[str, ...]) -> Any:
     """Rank a quality/lifecycle scale by meaning rather than alphabetically."""
     return case({value: rank for rank, value in enumerate(order)}, value=column, else_=None)
+
+
+def _set_number_int_expr() -> Any:
+    """The digits before any "-N" variant suffix, as an int.
+
+    Sorting the raw string put "10221" before "1111" (lexicographic). Non-numeric
+    set numbers (there are none today, but nothing enforces it) fall back to
+    ``NULL`` — sorted last — rather than raising on the cast.
+    """
+    digits = func.split_part(LegoSetModel.set_number, "-", 1)
+    return case((digits.op("~")(r"^\d+$"), cast(digits, Integer)), else_=None)
+
+
+def _appreciation_expr() -> Any:
+    """Same null rule as ``appreciation_eur``: absent only without a current value."""
+    return case(
+        (
+            LegoSetModel.current_value_eur.is_not(None),
+            LegoSetModel.current_value_eur - LegoSetInstance.acquisition_cost_eur,
+        ),
+        else_=None,
+    )
 
 
 # Every column the grid renders is sortable, plus the two things it does not show
@@ -918,7 +978,7 @@ def _ordinal_expr(column: Any, order: tuple[str, ...]) -> Any:
 # chosen separately, so the UI needs one entry per field and an asc/desc toggle.
 SORT_FIELDS: dict[str, Any] = {
     "created": LegoSetInstance.created_at,
-    "number": LegoSetModel.set_number,
+    "number": _set_number_int_expr(),
     "name": LegoSetModel.name,
     "theme": LegoSetModel.theme,
     "pieces": LegoSetModel.piece_count,
@@ -933,7 +993,8 @@ SORT_FIELDS: dict[str, Any] = {
     "cost": LegoSetInstance.acquisition_cost_eur,
     "rrp": LegoSetModel.rrp_eur,
     "value": LegoSetModel.current_value_eur,
-    "roi": _roi_expr(),
+    "roi": _roi_sort_expr(),
+    "roi_value": _appreciation_expr(),
     "ownership": LegoSetInstance.ownership_status,
 }
 
@@ -954,11 +1015,16 @@ def _order_by(sort: str, direction: str) -> list[Any]:
     """Resolve ``sort``/``direction`` into an ORDER BY clause.
 
     Legacy combined values (``value_desc``) are still understood so bookmarked
-    URLs keep working.
+    URLs keep working. Fields are matched whole first — ``roi_value`` is itself
+    a key in ``SORT_FIELDS`` and must not be chopped by the legacy-suffix split
+    below, which would silently resort it to plain ``roi``.
     """
-    field, _, suffix = sort.partition("_")
-    if suffix in ("asc", "desc"):
-        direction = suffix
+    if sort in SORT_FIELDS:
+        field = sort
+    else:
+        field, _, suffix = sort.partition("_")
+        if suffix in ("asc", "desc"):
+            direction = suffix
     column = SORT_FIELDS.get(field, LegoSetInstance.created_at)
     # NULLs are absent data, never "the smallest" — they belong at the bottom.
     primary = column.desc().nullslast() if direction == "desc" else column.asc().nullslast()
@@ -977,6 +1043,7 @@ def list_instances(
     build_state: str | None = None,
     condition: str | None = None,
     acquisition_source: str | None = None,
+    release_year: int | None = None,
     ownership_status: str | None = "IN_COLLECTION",
     completeness: CompletenessFilter = "all",
     retirement: RetirementFilter = "all",
@@ -1042,6 +1109,8 @@ def list_instances(
         stmt = stmt.where(LegoSetInstance.condition == condition)
     if acquisition_source:
         stmt = stmt.where(LegoSetInstance.acquisition_source == acquisition_source)
+    if release_year:
+        stmt = stmt.where(func.extract("year", LegoSetModel.release_date) == release_year)
 
     has_missing_parts = and_(
         LegoSetInstance.missing_parts.is_not(None),
@@ -1098,7 +1167,9 @@ def _collection_summary(db: DbSession, stmt: Select[Any], total: int) -> Collect
     row = db.execute(
         select(
             func.count(func.distinct(matched.c.lego_set_model_id)),
+            func.count(func.distinct(LegoSetModel.theme)),
             func.coalesce(func.sum(matched.c.acquisition_cost_eur), 0),
+            func.coalesce(func.sum(LegoSetModel.rrp_eur), 0),
             func.coalesce(func.sum(LegoSetModel.current_value_eur), 0),
             func.coalesce(func.sum(LegoSetModel.piece_count), 0),
         )
@@ -1108,9 +1179,11 @@ def _collection_summary(db: DbSession, stmt: Select[Any], total: int) -> Collect
     return CollectionSummary(
         copies=total,
         unique_sets=row[0],
-        total_cost_eur=Decimal(row[1]),
-        total_value_eur=Decimal(row[2]),
-        total_pieces=int(row[3]),
+        unique_themes=row[1],
+        total_cost_eur=Decimal(row[2]),
+        total_rrp_eur=Decimal(row[3]),
+        total_value_eur=Decimal(row[4]),
+        total_pieces=int(row[5]),
     )
 
 
@@ -1510,6 +1583,8 @@ def overview(
     year_models: dict[int | None, set[uuid.UUID]] = {}
     build_states: dict[str | None, int] = {}
     piece_price_points: list[PiecePricePoint] = []
+    release_year_points: list[ReleaseYearPiecePoint] = []
+    piece_bracket_counts: dict[str, int] = {label: 0 for label, _, _ in PIECE_BRACKETS}
     seen_models: set[uuid.UUID] = set()
     retired_models: set[uuid.UUID] = set()
     models_without_value: set[uuid.UUID] = set()
@@ -1527,7 +1602,20 @@ def overview(
             models_without_value.add(model.id)
         total_pieces += model.piece_count or 0
         total_minifigs += model.minifig_count or 0
+        is_new_model = model.id not in seen_models
         seen_models.add(model.id)
+        if is_new_model:
+            piece_bracket_counts[_piece_bracket(model.piece_count or 0)] += 1
+            if model.piece_count and model.release_date:
+                release_year_points.append(
+                    ReleaseYearPiecePoint(
+                        name=model.name,
+                        set_number=model.set_number,
+                        year=model.release_date.year,
+                        piece_count=model.piece_count,
+                        theme=model.theme or "Sem tema",
+                    )
+                )
         if model.is_retired:
             retired_models.add(model.id)
         if copy.is_fs:
@@ -1548,11 +1636,12 @@ def overview(
 
         subtheme_key = (theme, model.subtheme or "Sem subtema")
         sub_bucket = subthemes.setdefault(
-            subtheme_key, {"copies": 0, "models": set(), "cost": ZERO, "pieces": 0}
+            subtheme_key, {"copies": 0, "models": set(), "cost": ZERO, "rrp": ZERO, "pieces": 0}
         )
         sub_bucket["copies"] += 1
         sub_bucket["models"].add(model.id)
         sub_bucket["cost"] += copy.acquisition_cost_eur
+        sub_bucket["rrp"] += model.rrp_eur or ZERO
         sub_bucket["pieces"] += model.piece_count or 0
 
         area_name = copy.storage_location.area if copy.storage_location else "Sem local"
@@ -1580,10 +1669,14 @@ def overview(
             piece_price_points.append(
                 PiecePricePoint(
                     name=model.name,
+                    set_number=model.set_number,
                     piece_count=model.piece_count,
                     cost_per_piece_eur=(copy.acquisition_cost_eur / model.piece_count).quantize(
                         Decimal("0.001")
                     ),
+                    rrp_per_piece_eur=(model.rrp_eur / model.piece_count).quantize(Decimal("0.001"))
+                    if model.rrp_eur
+                    else None,
                     theme=theme,
                 )
             )
@@ -1673,11 +1766,12 @@ def overview(
                     copies=data["copies"],
                     unique_sets=len(data["models"]),
                     cost_eur=data["cost"],
+                    rrp_eur=data["rrp"],
                     piece_count=data["pieces"],
                 )
                 for (theme_name, subtheme_name), data in subthemes.items()
             ),
-            key=lambda s: s.cost_eur,
+            key=lambda s: s.rrp_eur,
             reverse=True,
         ),
         areas=sorted(
@@ -1716,6 +1810,11 @@ def overview(
             for state, count in build_states.items()
         ],
         piece_price_points=piece_price_points,
+        release_year_points=release_year_points,
+        piece_brackets=[
+            PieceBracketCount(bracket=label, unique_sets=piece_bracket_counts[label])
+            for label, _, _ in PIECE_BRACKETS
+        ],
         fs_copies=fs_copies,
         fs_rrp_eur=fs_rrp,
         timeline=timeline,
