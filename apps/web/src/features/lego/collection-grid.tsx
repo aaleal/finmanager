@@ -133,8 +133,40 @@ function Thumb({ instance }: { instance: LegoSetInstance }) {
   );
 }
 
-function RoiCell({ instance }: { instance: LegoSetInstance }) {
+/** `basis=rrp` is an alternate, explicit reading — today's value against the
+ * original PVP for every row — never a silent replacement of the cost ROI
+ * headline (ADR-0010). `basis=cost` keeps the M9.1 PVP fallback for gifts. */
+function RoiCell({
+  instance,
+  basis,
+}: {
+  instance: LegoSetInstance;
+  basis: 'cost' | 'rrp';
+}) {
   const model = instance.set_model;
+
+  if (basis === 'rrp') {
+    if (model?.rrp_roi_pct == null) {
+      return (
+        <span className="text-muted-foreground" title="Conjunto sem PVP definido">
+          —
+        </span>
+      );
+    }
+    const up = Number(model.rrp_roi_pct) >= 0;
+    return (
+      <span className="block">
+        <span
+          className={cn('numeric block font-medium', up ? 'text-success' : 'text-destructive')}
+        >
+          {percent(model.rrp_roi_pct)}
+        </span>
+        <span className="numeric block text-xs text-muted-foreground">
+          {signedEur(model.rrp_appreciation_eur)}
+        </span>
+      </span>
+    );
+  }
 
   // A gift has no cost basis, so cost-ROI is undefined by design. Rather than a
   // dead dash, fall back to the set's value against its original RRP — labelled,
@@ -308,6 +340,82 @@ function SortHead({
           <ChevronsUpDown className="size-3 opacity-0 transition-opacity group-hover:opacity-60" />
         )}
       </button>
+    </TableHead>
+  );
+}
+
+/** The ROI column ranks by what was paid or by the original PVP (ADR-0010's
+ * second reading); the toggle beneath the label switches both what is shown
+ * and what is sorted on, independently of which one is picked. */
+function RoiHead({
+  filters,
+  setFilters,
+}: {
+  filters: Record<string, string | undefined>;
+  setFilters: (patch: Record<string, string | undefined>) => void;
+}) {
+  const active = (filters.sort ?? 'created') === 'roi';
+  const descending = (filters.direction ?? 'desc') === 'desc';
+  const basis = filters.roi_basis === 'rrp' ? 'rrp' : 'cost';
+
+  return (
+    <TableHead className="text-right">
+      <div className="flex flex-col items-end gap-1">
+        <button
+          type="button"
+          aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
+          onClick={() =>
+            setFilters({
+              sort: 'roi',
+              direction: active ? (descending ? 'asc' : 'desc') : 'desc',
+              page: '1',
+            })
+          }
+          className={cn(
+            'group inline-flex flex-row-reverse items-center gap-1 uppercase transition-colors hover:text-foreground',
+            active ? 'text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          ROI
+          {active ? (
+            descending ? (
+              <ArrowDown className="size-3" />
+            ) : (
+              <ArrowUp className="size-3" />
+            )
+          ) : (
+            <ChevronsUpDown className="size-3 opacity-0 transition-opacity group-hover:opacity-60" />
+          )}
+        </button>
+        <div className="flex overflow-hidden rounded border border-input text-[10px] normal-case">
+          <button
+            type="button"
+            aria-pressed={basis === 'cost'}
+            onClick={() => setFilters({ roi_basis: undefined, page: '1' })}
+            className={cn(
+              'px-1.5 py-0.5 transition-colors',
+              basis === 'cost'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Custo
+          </button>
+          <button
+            type="button"
+            aria-pressed={basis === 'rrp'}
+            onClick={() => setFilters({ roi_basis: 'rrp', page: '1' })}
+            className={cn(
+              'px-1.5 py-0.5 transition-colors',
+              basis === 'rrp'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            PVP
+          </button>
+        </div>
+      </div>
     </TableHead>
   );
 }
@@ -863,7 +971,7 @@ export function CollectionGrid({
                 <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
                 <SortHead field="cost" label="Custo" filters={filters} setFilters={setFilters} align="right" />
                 <SortHead field="value" label="Valor" filters={filters} setFilters={setFilters} align="right" />
-                <SortHead field="roi" label="ROI" filters={filters} setFilters={setFilters} align="right" />
+                <RoiHead filters={filters} setFilters={setFilters} />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -922,7 +1030,7 @@ export function CollectionGrid({
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <RoiCell instance={instance} />
+                    <RoiCell instance={instance} basis={filters.roi_basis === 'rrp' ? 'rrp' : 'cost'} />
                   </TableCell>
                 </TableRow>
               ))}

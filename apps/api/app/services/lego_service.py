@@ -1011,13 +1011,17 @@ def _retired_clause() -> Any:
     )
 
 
-def _order_by(sort: str, direction: str) -> list[Any]:
+def _order_by(sort: str, direction: str, roi_basis: str = "cost") -> list[Any]:
     """Resolve ``sort``/``direction`` into an ORDER BY clause.
 
     Legacy combined values (``value_desc``) are still understood so bookmarked
     URLs keep working. Fields are matched whole first — ``roi_value`` is itself
     a key in ``SORT_FIELDS`` and must not be chopped by the legacy-suffix split
     below, which would silently resort it to plain ``roi``.
+
+    ``roi_basis`` picks which reading ``sort=roi`` ranks by — cost ROI (with the
+    PVP fallback for gifts, ADR-0010) or the pure RRP reading for every row. It
+    never affects any other field.
     """
     if sort in SORT_FIELDS:
         field = sort
@@ -1025,7 +1029,10 @@ def _order_by(sort: str, direction: str) -> list[Any]:
         field, _, suffix = sort.partition("_")
         if suffix in ("asc", "desc"):
             direction = suffix
-    column = SORT_FIELDS.get(field, LegoSetInstance.created_at)
+    if field == "roi" and roi_basis == "rrp":
+        column = _rrp_roi_expr()
+    else:
+        column = SORT_FIELDS.get(field, LegoSetInstance.created_at)
     # NULLs are absent data, never "the smallest" — they belong at the bottom.
     primary = column.desc().nullslast() if direction == "desc" else column.asc().nullslast()
     return [primary, _TIEBREAK]
@@ -1058,6 +1065,7 @@ def list_instances(
     model_id: uuid.UUID | None = None,
     sort: str = "created",
     direction: str = "desc",
+    roi_basis: str = "cost",
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[LegoSetInstanceOut], int, CollectionSummary]:
@@ -1154,7 +1162,9 @@ def list_instances(
     summary = _collection_summary(db, stmt, total)
 
     rows = list(
-        db.scalars(stmt.order_by(*_order_by(sort, direction)).limit(limit).offset(offset))
+        db.scalars(
+            stmt.order_by(*_order_by(sort, direction, roi_basis)).limit(limit).offset(offset)
+        )
         .unique()
         .all()
     )

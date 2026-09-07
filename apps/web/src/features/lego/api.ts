@@ -38,6 +38,7 @@ export type InstanceFilters = {
   rrp_max?: string;
   roi_min?: string;
   roi_max?: string;
+  roi_basis?: string;
   sort?: string;
   direction?: string;
   page?: string;
@@ -83,6 +84,7 @@ export function useInstances(filters: InstanceFilters) {
         rrp_max: filters.rrp_max,
         roi_min: filters.roi_min,
         roi_max: filters.roi_max,
+        roi_basis: filters.roi_basis ?? 'cost',
         sort: filters.sort ?? 'created',
         direction: filters.direction ?? 'desc',
         page: filters.page ?? '1',

@@ -330,6 +330,7 @@ def list_instances(
     roi_max: Decimal | None = None,
     sort: str = "created",
     direction: Annotated[str, Query(pattern="^(asc|desc)$")] = "desc",
+    roi_basis: Annotated[str, Query(pattern="^(cost|rrp)$")] = "cost",
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> LegoSetInstancePage:
@@ -358,6 +359,7 @@ def list_instances(
         roi_max=roi_max,
         sort=sort,
         direction=direction,
+        roi_basis=roi_basis,
         limit=page_size,
         offset=(page - 1) * page_size,
     )

@@ -137,6 +137,23 @@ def test_roi_sort_falls_back_to_rrp_reading_for_gifts(
     assert [i.set_model.name for i in asc] == ["Beta", "Alfa", "PrendaBoa", "PrendaSemPvp"]
 
 
+def test_roi_basis_rrp_ranks_every_row_by_the_pvp_reading(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    """`roi_basis=rrp` is the alternate view (ADR-0010): it ranks by RRP ROI even
+    for paid copies, reversing the cost-ROI order when the two readings disagree."""
+    # Great cost ROI (+50%), poor PVP ROI (-50%).
+    _copy(db, entity, owner, set_number="1000", name="Alfa", cost="100.00", value="150.00", rrp="300.00")
+    # Poor cost ROI (-50%), great PVP ROI (+50%).
+    _copy(db, entity, owner, set_number="2000", name="Beta", cost="300.00", value="150.00", rrp="100.00")
+
+    by_cost = _list(db, entity, sort="roi", direction="desc", roi_basis="cost")
+    assert [i.set_model.name for i in by_cost] == ["Alfa", "Beta"]
+
+    by_rrp = _list(db, entity, sort="roi", direction="desc", roi_basis="rrp")
+    assert [i.set_model.name for i in by_rrp] == ["Beta", "Alfa"]
+
+
 def test_copies_filter_separates_repeats_from_singles(
     db: Session, entity: Entity, owner: User
 ) -> None:
