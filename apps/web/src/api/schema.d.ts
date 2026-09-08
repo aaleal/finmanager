@@ -2045,6 +2045,8 @@ export interface components {
       notes?: string | null;
       /** Current Value Eur */
       current_value_eur?: number | string | null;
+      /** Rrp Eur */
+      rrp_eur?: number | string | null;
       /** Errors */
       errors?: {
         [key: string]: string;
@@ -2106,6 +2108,8 @@ export interface components {
       notes?: string | null;
       /** Current Value Eur */
       current_value_eur?: string | null;
+      /** Rrp Eur */
+      rrp_eur?: string | null;
       /** Errors */
       errors?: {
         [key: string]: string;

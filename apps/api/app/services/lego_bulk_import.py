@@ -4,8 +4,9 @@ Columns are matched **by header name**, not by position, against the same PT
 labels `lego_export.py` writes — so the "Exportar" workbook is itself a valid
 "Importar em lote" input, for either sheet. Unknown/extra export columns (name,
 theme, ROI, ...) are simply ignored: everything about the *set* still comes from
-Brickset, exactly as it would through the manual "Procurar" button. See
-docs/decisions/0048-bulk-import-mirrors-the-export.md.
+Brickset, exactly as it would through the manual "Procurar" button — except
+"PVP original (€)", which only ever backfills a gap Brickset itself left empty
+(ADR-0052). See docs/decisions/0048-bulk-import-mirrors-the-export.md.
 
 Two different consistency rules on purpose:
 - Instance rows have no natural key (a copy is a copy), so importing never
@@ -69,6 +70,7 @@ INSTANCE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "acquisition_source": ("origem",),
     "acquisition_cost_eur": ("custo", "custo de aquisicao"),
     "current_value_eur": ("preco atual", "valor atual"),
+    "rrp_eur": ("pvp original", "pvp"),
     "notes": ("notas",),
 }
 
@@ -286,6 +288,11 @@ def _resolve_instance_row(
     if raw_current_value not in (None, "") and current_value is None:
         errors["current_value_eur"] = "Preço atual inválido."
 
+    raw_rrp = raw.get("rrp_eur")
+    rrp = _decimal(raw_rrp)
+    if raw_rrp not in (None, "") and rrp is None:
+        errors["rrp_eur"] = "PVP original inválido."
+
     date_value, date_error = _date(raw.get("acquisition_date"))
     if date_error:
         errors["acquisition_date"] = date_error
@@ -328,6 +335,7 @@ def _resolve_instance_row(
         missing_parts=_text(raw.get("missing_parts")),
         notes=_text(raw.get("notes")),
         current_value_eur=current_value,
+        rrp_eur=rrp,
         errors=errors,
     )
 
@@ -444,7 +452,10 @@ def _commit_instance_row(
             box_width_cm=lookup.box_width_cm,
             box_depth_cm=lookup.box_depth_cm,
             box_weight_kg=lookup.box_weight_kg,
-            rrp_eur=lookup.rrp_eur,
+            # Brickset itself already tries a DE→US fallback (ADR-0051) before this
+            # ever runs — the sheet's own PVP only fills a gap Brickset left empty,
+            # never overrides a value Brickset supplied.
+            rrp_eur=lookup.rrp_eur if lookup.rrp_eur is not None else row.rrp_eur,
             short_description=lookup.short_description,
             image_url=lookup.image_url,
             current_value_eur=row.current_value_eur,
@@ -457,18 +468,23 @@ def _commit_instance_row(
         # jobs instead of blocking this row's result (ADR-0049).
         with contextlib.suppress(ValidationError):
             lego_brickset_jobs.queue_brickset_assets(db, model, actor_user_id=actor_user_id)
-    elif row.current_value_eur is not None and (
-        model.current_value_eur is None or row.current_value_eur > model.current_value_eur
-    ):
-        # Copies of the same set can carry different "preço atual" values across
-        # rows (e.g. a hand-edited sheet) — the highest one wins, and it only
-        # ever pushes the value up, never down, across the whole batch.
-        lego_service.update_model(
-            db,
-            model,
-            LegoSetModelUpdate(current_value_eur=row.current_value_eur),
-            actor_user_id=actor_user_id,
-        )
+    elif row.current_value_eur is not None or row.rrp_eur is not None:
+        updates: dict[str, Decimal] = {}
+        if row.current_value_eur is not None and (
+            model.current_value_eur is None or row.current_value_eur > model.current_value_eur
+        ):
+            # Copies of the same set can carry different "preço atual" values across
+            # rows (e.g. a hand-edited sheet) — the highest one wins, and it only
+            # ever pushes the value up, never down, across the whole batch.
+            updates["current_value_eur"] = row.current_value_eur
+        if row.rrp_eur is not None and model.rrp_eur is None:
+            # A fixed historical price, unlike current_value_eur — only ever fills
+            # a gap, never overrides whatever Brickset already returned.
+            updates["rrp_eur"] = row.rrp_eur
+        if updates:
+            lego_service.update_model(
+                db, model, LegoSetModelUpdate.model_validate(updates), actor_user_id=actor_user_id
+            )
 
     instance_payload = LegoSetInstanceCreate(
         entity_id=entity.id,

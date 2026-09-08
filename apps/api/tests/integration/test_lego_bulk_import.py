@@ -41,7 +41,7 @@ def _workbook(sheet_name: str, headers: list[str], rows: list[list[Any]]) -> byt
 
 
 class _StubProvider:
-    """Answers one known set number, refuses every other (M9's manual-form parity)."""
+    """Answers two known set numbers, refuses every other (M9's manual-form parity)."""
 
     name = "brickset"
     enabled = True
@@ -49,6 +49,14 @@ class _StubProvider:
     def lookup(self, set_number: str) -> LookupResult:
         if set_number == "10281":
             return LookupResult(found=True, set_number="10281", name="Bonsai", theme="Icons")
+        if set_number == "10282":
+            return LookupResult(
+                found=True,
+                set_number="10282",
+                name="Seaside",
+                theme="Icons",
+                rrp_eur=Decimal("99.99"),
+            )
         return LookupResult(found=False, message=f"{set_number} não encontrado.")
 
     def additional_images(self, set_number: str) -> list[Any]:
@@ -167,6 +175,57 @@ def test_commit_looks_up_a_new_set_and_one_bad_row_does_not_sink_the_batch(
 
     assert not_found.ok is False
     assert "99999" in not_found.message
+
+
+def test_commit_falls_back_to_the_sheets_pvp_when_brickset_has_none(
+    db: Session, entity: Entity, owner: User, brickset: None
+) -> None:
+    """ADR-0052: a new set's rrp_eur comes from the sheet only when Brickset's own
+    lookup (which already tries DE then US, ADR-0051) returned none at all."""
+    row = BulkImportRow(
+        row_number=2, set_number="10281", entity_id=entity.id, rrp_eur=Decimal("50.00")
+    )
+
+    results = lego_bulk_import.commit_instances(
+        db, [row], household_id=entity.household_id, actor_user_id=owner.id
+    )
+
+    assert results[0].ok is True
+    model = db.scalar(select(LegoSetModel).where(LegoSetModel.set_number == "10281"))
+    assert model is not None and model.rrp_eur == Decimal("50.00")
+
+
+def test_commit_keeps_bricksets_own_rrp_over_the_sheets(
+    db: Session, entity: Entity, owner: User, brickset: None
+) -> None:
+    row = BulkImportRow(
+        row_number=2, set_number="10282", entity_id=entity.id, rrp_eur=Decimal("1.00")
+    )
+
+    results = lego_bulk_import.commit_instances(
+        db, [row], household_id=entity.household_id, actor_user_id=owner.id
+    )
+
+    assert results[0].ok is True
+    model = db.scalar(select(LegoSetModel).where(LegoSetModel.set_number == "10282"))
+    assert model is not None and model.rrp_eur == Decimal("99.99")
+
+
+def test_commit_backfills_an_existing_models_missing_rrp_from_the_sheet(
+    db: Session, entity: Entity, owner: User, existing_model: LegoSetModel
+) -> None:
+    assert existing_model.rrp_eur is None
+    row = BulkImportRow(
+        row_number=2, set_number="10280", entity_id=entity.id, rrp_eur=Decimal("75.00")
+    )
+
+    results = lego_bulk_import.commit_instances(
+        db, [row], household_id=entity.household_id, actor_user_id=owner.id
+    )
+
+    assert results[0].ok is True
+    db.refresh(existing_model)
+    assert existing_model.rrp_eur == Decimal("75.00")
 
 
 def test_commit_rejects_a_row_still_carrying_errors(

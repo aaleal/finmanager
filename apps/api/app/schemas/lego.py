@@ -378,6 +378,10 @@ class BulkImportRow(BaseModel):
     #: cost. When several rows share a set_number with different values, the
     #: commit keeps the largest one (see lego_bulk_import.py).
     current_value_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    #: The sheet's "PVP original (€)" — only ever fills a gap Brickset itself left
+    #: empty (ADR-0051's own DE→US fallback still runs first); a Brickset RRP
+    #: always wins over this one. See docs/decisions/0052.
+    rrp_eur: Decimal | None = Field(default=None, ge=0, decimal_places=2)
     #: Keyed by field name, so the review table can highlight just that cell.
     errors: dict[str, str] = Field(default_factory=dict)
 

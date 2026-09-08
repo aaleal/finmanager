@@ -293,6 +293,18 @@ export function BulkImportDialog({
                       <TableHead>Origem</TableHead>
                       <TableHead>Custo (€)</TableHead>
                       <TableHead>Data</TableHead>
+                      <TableHead className="text-center" title="Tem caixa original">
+                        Caixa
+                      </TableHead>
+                      <TableHead className="text-center" title="Tem instruções">
+                        Manual
+                      </TableHead>
+                      <TableHead className="text-center" title="É Fs">
+                        Fs
+                      </TableHead>
+                      <TableHead className="text-center" title="Potencial presente">
+                        Presente
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -517,6 +529,46 @@ export function BulkImportDialog({
                                 patchRow(row.row_number, { acquisition_date: iso || null })
                               }
                               className={cn(row.errors?.acquisition_date && 'border-destructive')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={row.has_box}
+                              disabled={commit.isPending}
+                              aria-label="Tem caixa original"
+                              onCheckedChange={(value) =>
+                                patchRow(row.row_number, { has_box: value === true })
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={row.has_instructions}
+                              disabled={commit.isPending}
+                              aria-label="Tem instruções"
+                              onCheckedChange={(value) =>
+                                patchRow(row.row_number, { has_instructions: value === true })
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={row.is_fs}
+                              disabled={commit.isPending}
+                              aria-label="É Fs"
+                              onCheckedChange={(value) =>
+                                patchRow(row.row_number, { is_fs: value === true })
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={row.is_potential_gift}
+                              disabled={commit.isPending}
+                              aria-label="Potencial presente"
+                              onCheckedChange={(value) =>
+                                patchRow(row.row_number, { is_potential_gift: value === true })
+                              }
                             />
                           </TableCell>
                         </TableRow>
