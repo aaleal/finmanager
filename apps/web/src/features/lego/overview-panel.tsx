@@ -5,6 +5,7 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
+  Customized,
   LabelList,
   Legend,
   Line,
@@ -31,6 +32,8 @@ import {
   Tag,
   TrendingDown,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 import type { AcquisitionSource, LegoOverview, LegoSetInstance } from '@/lib/types';
@@ -454,34 +457,10 @@ export function LegoOverviewPanel({
   const roi_pct_paidLabel = roi_pct_paid.toLocaleString('pt-PT', {
     maximumFractionDigits: 1,
   });
-  const releaseYearData_old = overview.release_years
-    .filter((point) => point.year !== null)
-    .map((point) => ({ year: String(point.year), conjuntos: point.unique_sets }));
-  
-  /** Theme name plus sets/pieces underneath, so the bars stay all-money. */
-  function ThemeAxisTick({ x, y, payload }: { x: number; y: number; payload: { value: string } }) {
-    const entry = chartData.find((item) => item.theme === payload.value);
-    return (
-      <g transform={`translate(${x},${y})`}>
-        <text x={-6} y={-2} textAnchor="end" fontSize={11} fill="hsl(var(--foreground))">
-          {payload.value}
-        </text>
-        <text x={-6} y={11} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">
-          {entry ? `${entry.sets} sets · ${num(entry.pecas)} pçs` : ''}
-        </text>
-      </g>
-    );
-  }
 
-
-
-
-//TESTE
-
-// 1. Agrupa os temas de cada ano a partir de release_year_points
+  // 1. Agrupa os temas de cada ano a partir de release_year_points
   const releaseYearData = React.useMemo(() => {
     const yearMap = new Map<string, Record<string, any>>();
-
     overview.release_year_points.forEach((point) => {
       if (point.year === null || point.year === undefined) return;
       const yearKey = String(point.year);
@@ -494,7 +473,6 @@ export function LegoOverviewPanel({
       const row = yearMap.get(yearKey)!;
       row[theme] = (row[theme] || 0) + 1;
     });
-
     return Array.from(yearMap.values()).sort((a, b) => Number(a.year) - Number(b.year));
   }, [overview.release_year_points]);
 
@@ -509,24 +487,81 @@ export function LegoOverviewPanel({
     return Array.from(themeSet);
   }, [releaseYearData]);
 
-  const MOCK_LOCATION_DATA = [
-    { location: 'Vitrine Sala', sets: 6, custo: 1250, pvp: 1600 },
-    { location: 'Escritório (Estante)', sets: 18, custo: 940, pvp: 1200 },
-    { location: 'Arrumos (Selados)', sets: 32, custo: 2600, pvp: 3400 },
-    { location: 'Quarto Carolina', sets: 12, custo: 210, pvp: 280 },
-    { location: 'Caixa Peças', sets: 4, custo: 120, pvp: 150 },
-  ];
+  const releaseYearDataWithTotals = releaseYearData.map((d) => ({
+    ...d,
+    total: releaseYearThemes.reduce((sum, theme) => sum + (Number(d[theme]) || 0), 0),
+  }));  
 
-  // Pré-cálculo rápido de percentagem ou poupança para a barra 100%
-const stackedData = MOCK_LOCATION_DATA.map((d) => ({
-  location: d.location,
-  custo: d.custo,
-  desconto_poupanca: Math.max(0, d.pvp - d.custo),
-  sets: d.sets,
-  pvp: d.pvp,
-}));
+  const themesScrollRef = React.useRef<HTMLDivElement>(null);
 
-//TESTE
+  const scrollThemes = (direction: 'left' | 'right') => {
+    if (themesScrollRef.current) {
+      const scrollAmount = 140;
+      themesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const areaLegendScrollRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollAreaLegend = (direction: 'left' | 'right') => {
+    if (areaLegendScrollRef.current) {
+      const scrollAmount = 140;
+      areaLegendScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+
+  /** Theme name plus sets/pieces underneath, agora totalmente clicável */
+  function ThemeAxisTick({
+    x,
+    y,
+    payload,
+  }: {
+    x: number;
+    y: number;
+    payload: { value: string };
+  }) {
+    const entry = chartData.find((item) => item.theme === payload.value);
+
+    return (
+      <g
+        transform={`translate(${x},${y})`}
+        className="cursor-pointer group select-none"
+        onClick={() => onFilter({ tab: 'colecao', theme: payload.value })}
+      >
+        {/* Nome do tema com hover highlight */}
+        <text
+          x={-8}
+          y={-2}
+          textAnchor="end"
+          fontSize={12}
+          fontWeight={500}
+          fill="hsl(var(--foreground))"
+          className="transition-colors group-hover:fill-primary"
+        >
+          {payload.value}
+        </text>
+
+        {/* Subtítulo: nº de sets e peças */}
+        <text
+          x={-8}
+          y={12}
+          textAnchor="end"
+          fontSize={11}
+          fill="hsl(var(--muted-foreground))"
+          className="transition-colors group-hover:fill-primary/80"
+        >
+          {entry ? `${entry.sets} sets · ${num(entry.pecas)} pçs` : ''}
+        </text>
+      </g>
+    );
+  }
 
   /** Custom treemap cell: colored by theme index, labelled only when there's room,
    * clickable straight through to the filtered collection. */
@@ -763,25 +798,29 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
       </Card>
       {/* FIM GRAFICO: Evolução Coleção */}
 
-      {/* GRAFICO: Valor e Cópias por tema  + SIDE GRAPHS*/}
-      <div className="grid gap-4 lg:grid-cols-5">
+      {/* GRAFICO: Valor e Cópias por tema + SIDE GRAPHS */}
+      <div className="grid gap-4 lg:grid-cols-5 items-start">
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Valor e cópias por tema</CardTitle>
             <CardDescription>
-              Apenas cópias na coleção. Vendidos e oferecidos ficam fora, por desenho. Clique numa
-              barra para ver os conjuntos desse tema.
+              Apenas cópias na coleção. Vendidos e oferecidos ficam fora, por desenho. Clica numa
+              barra ou no nome do tema à esquerda para ver os conjuntos desse tema.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {chartData.length ? (
               <div className="max-h-[580px] overflow-y-auto pr-2">
-                <div style={{ height: `${Math.max(chartData.length * 34, 280)}px` }}>
+                {/* Aumenta a altura proporcional para dar espaço às 3 barras por categoria */}
+                <div style={{ height: `${Math.max(chartData.length * 64, 340)}px` }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                       data={chartData}
                       layout="vertical"
-                      margin={{ top: 16, right: 12, left: 8, bottom: 4 }}
+                      barGap={2}
+                      barCategoryGap={12}
+                      /* Margem direita aumentada (ex.: 54px) para os rótulos não cortarem */
+                      margin={{ top: 16, right: 54, left: 8, bottom: 4 }}
                     >
                       <CartesianGrid
                         strokeDasharray="3 3"
@@ -813,8 +852,8 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                         type="category"
                         dataKey="theme"
                         tick={ThemeAxisTick as never}
-                        stroke="hsl(var(--muted-foreground))"
-                        width={112}
+                        stroke="hsl(var(--border))"
+                        width={124}
                       />
 
                       <RechartsTooltip
@@ -836,49 +875,85 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                         }}
                       />
 
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
 
+                      {/* Barra 1: Preço pago */}
                       <Bar
                         xAxisId="euros"
                         dataKey="custo"
                         name="Preço pago"
                         fill="hsl(var(--warning))"
                         radius={[0, 4, 4, 0]}
-                        opacity={0.75}
-                        barSize={10}
+                        opacity={0.8}
+                        barSize={14}
                         cursor="pointer"
                         onClick={(entry) => onFilter({ tab: 'colecao', theme: entry.theme })}
-                      />
+                      >
+                        <LabelList
+                          dataKey="custo"
+                          position="right"
+                          formatter={(v: number) => (v > 0 ? eurCompact(v) : '')}
+                          fill="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          offset={6}
+                        />
+                      </Bar>
+
+                      {/* Barra 2: PVP */}
                       <Bar
                         xAxisId="euros"
                         dataKey="pvp"
                         name="PVP"
                         fill="hsl(var(--muted-foreground))"
                         radius={[0, 4, 4, 0]}
-                        opacity={0.3}
-                        barSize={10}
+                        opacity={0.35}
+                        barSize={14}
                         cursor="pointer"
                         onClick={(entry) => onFilter({ tab: 'colecao', theme: entry.theme })}
-                      />
+                      >
+                        <LabelList
+                          dataKey="pvp"
+                          position="right"
+                          formatter={(v: number) => (v > 0 ? eurCompact(v) : '')}
+                          fill="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          offset={6}
+                        />
+                      </Bar>
+
+                      {/* Barra 3: Valor atual */}
                       <Bar
                         xAxisId="euros"
                         dataKey="valor"
                         name="Valor atual"
                         fill="hsl(var(--success))"
                         radius={[0, 4, 4, 0]}
-                        barSize={10}
+                        opacity={0.8}
+                        barSize={14}
                         cursor="pointer"
                         onClick={(entry) => onFilter({ tab: 'colecao', theme: entry.theme })}
-                      />
+                      >
+                        <LabelList
+                          dataKey="valor"
+                          position="right"
+                          formatter={(v: number) => (v > 0 ? eurCompact(v) : '')}
+                          fill="hsl(var(--foreground))"
+                          fontSize={10}
+                          fontWeight={600}
+                          offset={6}
+                        />
+                      </Bar>
+
+                      {/* Linha: Sets */}
                       <Line
                         xAxisId="sets"
                         type="monotone"
                         dataKey="sets"
                         name="Conjuntos"
                         stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
+                        strokeWidth={2.5}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -912,6 +987,7 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
               )}
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Backlog de construção</CardTitle>
@@ -931,11 +1007,12 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                 {num(disassembledCopies)} desmontados vs. {num(builtCopies)} montados
               </p>
             </CardContent>
-          </Card>            
+          </Card>
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Fora da coleção</CardTitle>
-              <CardDescription>Reportado à partesturado no ROI.</CardDescription>
+              <CardDescription>Reportado à parte, não misturado no ROI.</CardDescription>
             </CardHeader>
             <CardContent className="flex items-end justify-between">
               <div>
@@ -949,30 +1026,29 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                 <p className="text-xs text-muted-foreground">Σ valor de venda</p>
               </div>
             </CardContent>
-          </Card>        
+          </Card>
         </div>
       </div>
-      {/* FIM:  Valor e Cópias por tema + SIDE GRAPHS*/}
-     
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">
-          Gráficos candidatos — a escolher o que fica
-        </h3>
-        <div className="grid gap-4 lg:grid-cols-2">
-          
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Distribuição por localização (Anel Duplo)</CardTitle>
-              <CardDescription>
-                Anel interior: PVP total · Anel exterior: % de Sets · clique numa fatia para ver os
-                conjuntos dessa área.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {areaData.length ? (
-                <div className="h-[320px] w-full">
+      {/* FIM: Valor e Cópias por tema + SIDE GRAPHS */}
+
+      {/* Series 2 Graficos*/}
+      <div className="grid gap-4 lg:grid-cols-2">
+        
+        {/* Anel distribuicao localização */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Distribuição por localização (Anel Duplo)</CardTitle>
+            <CardDescription>
+              Anel interior: PVP total · Anel exterior: Sets · clica numa área para filtrar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {areaData.length ? (
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 h-[230px] w-full">
+                {/* Gráfico Donut Duplo */}
+                <div className="h-full w-full sm:w-[62%] min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                       <RechartsTooltip
                         contentStyle={{
                           borderRadius: 10,
@@ -980,15 +1056,34 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                           background: 'hsl(var(--popover))',
                           fontSize: 12,
                         }}
-                        formatter={(value: number, name: string, item) => {
+                        formatter={(value: number, name: string, item: any) => {
                           const isPvp = item?.payload?.pvp === value;
-                          return [isPvp ? eur(value) : `${num(value)} conjuntos`, isPvp ? 'PVP' : 'Conjuntos'];
+                          return [
+                            isPvp ? eur(value) : `${num(value)} conjuntos`,
+                            isPvp ? 'PVP' : 'Conjuntos',
+                          ];
                         }}
                       />
-                      <Legend
-                        wrapperStyle={{ fontSize: 12 }}
-                        formatter={(value: string) => <span className="text-foreground">{value}</span>}
-                      />
+
+                      {/* Indicadores no centro do donut */}
+                      <text
+                        x="50%"
+                        y="46%"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-muted-foreground text-[10px] font-medium tracking-wider uppercase"
+                      >
+                        Int: PVP
+                      </text>
+                      <text
+                        x="50%"
+                        y="54%"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-foreground text-[11px] font-semibold tracking-wider uppercase"
+                      >
+                        Ext: Sets
+                      </text>
 
                       {/* Anel Interior: PVP */}
                       <Pie
@@ -998,11 +1093,32 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                         cx="50%"
                         cy="50%"
                         innerRadius={45}
-                        outerRadius={75}
+                        outerRadius={72}
                         paddingAngle={2}
-                        legendType="none"
                         cursor="pointer"
                         onClick={(entry) => handleAreaClick(entry.area)}
+                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }) => {
+                          if (percent < 0.1) return null;
+                          const RADIAN = Math.PI / 180;
+                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="#ffffff"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize={9}
+                              fontWeight={600}
+                            >
+                              {eur(value)}
+                            </text>
+                          );
+                        }}
+                        labelLine={false}
                       >
                         {areaData.map((_, idx) => (
                           <Cell
@@ -1013,19 +1129,43 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                         ))}
                       </Pie>
 
-                      {/* Anel Exterior: Número de Sets (gera os itens da legenda pelas áreas) */}
+                      {/* Anel Exterior: Sets */}
                       <Pie
                         data={areaData}
                         dataKey="sets"
                         nameKey="area"
                         cx="50%"
                         cy="50%"
-                        innerRadius={82}
-                        outerRadius={115}
+                        innerRadius={78}
+                        outerRadius={105}
                         paddingAngle={2}
-                        legendType="circle"
                         cursor="pointer"
                         onClick={(entry) => handleAreaClick(entry.area)}
+                        labelLine={false}
+                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }) => {
+                          // Esconde em fatias demasiado finas (< 5%) para não sobrepor texto
+                          if (percent < 0.05) return null;
+
+                          const RADIAN = Math.PI / 180;
+                          // Ponto médio exato da espessura do anel
+                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="#ffffff"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize={10}
+                              fontWeight={600}
+                            >
+                              {num(value)}
+                            </text>
+                          );
+                        }}
                       >
                         {areaData.map((_, idx) => (
                           <Cell
@@ -1037,145 +1177,181 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  Sem cópias arrumadas.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Top temas: nº de conjuntos vs. peças</CardTitle>
-              <CardDescription>
-                Quem lidera em número de caixas nem sempre lidera em volume de peças.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">
-                  Por nº de conjuntos
-                </p>
-                <ul className="space-y-1.5">
-                  {topByCount.map((theme) => (
-                    <li key={theme.theme} className="text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="truncate">{theme.theme}</span>
-                        <span className="numeric shrink-0 font-medium">{theme.unique_sets}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-[color:var(--bar)]"
-                          style={{
-                            width: `${(theme.unique_sets / maxCount) * 100}%`,
-                            ['--bar' as string]: THEME_COLORS[0],
-                          }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Por nº de peças</p>
-                <ul className="space-y-1.5">
-                  {topByPieces.map((theme) => (
-                    <li key={theme.theme} className="text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="truncate">{theme.theme}</span>
-                        <span className="numeric shrink-0 font-medium">
-                          {num(theme.piece_count)}
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-[color:var(--bar)]"
-                          style={{
-                            width: `${(theme.piece_count / maxPieces) * 100}%`,
-                            ['--bar' as string]: THEME_COLORS[1],
-                          }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Temas por PVP</CardTitle>
-              <CardDescription>
-                Ponderado pelo PVP total. Passe o rato para ver os subtemas; clique num tema para
-                ver os conjuntos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {treemapData.length ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <Treemap
-                      data={treemapData}
-                      dataKey="size"
-                      nameKey="name"
-                      stroke="hsl(var(--card))"
-                      content={renderTreemapNode as never}
-                    >
-                      <RechartsTooltip
-                        content={({ active, payload }) => {
-                          if (!active || !payload?.length) return null;
-                          const entry = payload[0].payload as {
-                            name: string;
-                            size: number;
-                            subthemes: { name: string; rrp: number }[];
-                          };
-                          return (
-                            <div className="rounded-lg border border-border bg-popover p-2.5 shadow-md text-xs">
-                              <div className="mb-1.5 flex items-center justify-between gap-4 border-b border-border pb-1.5 font-semibold">
-                                <span>{entry.name}</span>
-                                <span className="font-mono text-primary">{eur(entry.size)}</span>
-                              </div>
-                              <div className="space-y-1">
-                                {entry.subthemes.map((sub) => (
-                                  <div
-                                    key={sub.name}
-                                    className="flex items-center justify-between gap-3"
-                                  >
-                                    <span className="text-muted-foreground">{sub.name}</span>
-                                    <span className="font-mono font-medium">{eur(sub.rrp)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
+                {/* Legenda Lateral Compacta em 2 Linhas */}
+                <div className="w-full sm:w-[38%] flex flex-col justify-center max-h-full border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-3">
+                  <div className="overflow-y-auto space-y-2 pr-1 max-h-[280px]">
+                    {areaData.map((entry: any, index: number) => (
+                      <button
+                        key={entry.area}
+                        type="button"
+                        onClick={() => handleAreaClick(entry.area)}
+                        className="w-full flex flex-col items-start p-1.5 rounded-md hover:bg-muted/60 transition-colors text-left group"
+                      >
+                        {/* Linha 1: [bola cor] Nome da Área */}
+                        <div className="flex items-center gap-1.5 w-full min-w-0">
+                          <span
+                            className="h-2 w-2 rounded-full inline-block shrink-0"
+                            style={{ backgroundColor: THEME_COLORS[index % THEME_COLORS.length] }}
+                          />
+                          <span className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                            {entry.area}
+                          </span>
+                        </div>
+
+                        {/* Linha 2: 62 sets · 3000€ (indentado para alinhar com o texto) */}
+                        <div className="pl-3.5 flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+                          <span>{num(entry.sets)} sets</span>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span className="text-foreground/80 font-medium">{eur(entry.pvp)}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Sem cópias arrumadas.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Top temas: nº conjuntos vs peças*/}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top temas: nº de conjuntos vs. peças</CardTitle>
+            <CardDescription>
+              Quem lidera em número de caixas nem sempre lidera em volume de peças.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Por nº de conjuntos
+              </p>
+              <ul className="space-y-1.5">
+                {topByCount.map((theme) => (
+                  <li key={theme.theme} className="text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{theme.theme}</span>
+                      <span className="numeric shrink-0 font-medium">{theme.unique_sets}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-[color:var(--bar)]"
+                        style={{
+                          width: `${(theme.unique_sets / maxCount) * 100}%`,
+                          ['--bar' as string]: THEME_COLORS[0],
                         }}
                       />
-                    </Treemap>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">Sem dados.</p>
-              )}
-            </CardContent>
-          </Card>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Por nº de peças</p>
+              <ul className="space-y-1.5">
+                {topByPieces.map((theme) => (
+                  <li key={theme.theme} className="text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{theme.theme}</span>
+                      <span className="numeric shrink-0 font-medium">
+                        {num(theme.piece_count)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-[color:var(--bar)]"
+                        style={{
+                          width: `${(theme.piece_count / maxPieces) * 100}%`,
+                          ['--bar' as string]: THEME_COLORS[1],
+                        }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Anos de lançamento</CardTitle>
-              <CardDescription>
-                Nostálgico vs. moderno — volume total e distribuição por tema em cada ano.
-                Clique numa barra para ver os conjuntos desse ano.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {releaseYearData.length ? (
+        {/* Temas vs PVP*/}
+        <Card>
+          <CardHeader>
+            <CardTitle>Temas por PVP</CardTitle>
+            <CardDescription>
+              Ponderado pelo PVP total. Passe o rato para ver os subtemas; clique num tema para
+              ver os conjuntos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {treemapData.length ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <Treemap
+                    data={treemapData}
+                    dataKey="size"
+                    nameKey="name"
+                    stroke="hsl(var(--card))"
+                    content={renderTreemapNode as never}
+                  >
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const entry = payload[0].payload as {
+                          name: string;
+                          size: number;
+                          subthemes: { name: string; rrp: number }[];
+                        };
+                        return (
+                          <div className="rounded-lg border border-border bg-popover p-2.5 shadow-md text-xs">
+                            <div className="mb-1.5 flex items-center justify-between gap-4 border-b border-border pb-1.5 font-semibold">
+                              <span>{entry.name}</span>
+                              <span className="font-mono text-primary">{eur(entry.size)}</span>
+                            </div>
+                            <div className="space-y-1">
+                              {entry.subthemes.map((sub) => (
+                                <div
+                                  key={sub.name}
+                                  className="flex items-center justify-between gap-3"
+                                >
+                                  <span className="text-muted-foreground">{sub.name}</span>
+                                  <span className="font-mono font-medium">{eur(sub.rrp)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                  </Treemap>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">Sem dados.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Anos de lançamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Anos de lançamento</CardTitle>
+            <CardDescription>
+              Volume total e distribuição por tema em cada ano.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {releaseYearData.length ? (
+              <div className="flex flex-col gap-2">
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={releaseYearData}
-                      margin={{ top: 8, right: 8, left: 0, bottom: 4 }}
+                      data={releaseYearDataWithTotals}
+                      margin={{ top: 24, right: 8, left: 0, bottom: 4 }}
                     >
                       <CartesianGrid
                         strokeDasharray="3 3"
@@ -1204,6 +1380,7 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                             (acc, curr) => acc + (Number(curr.value) || 0),
                             0
                           );
+
                           return (
                             <div className="rounded-lg border border-border bg-popover p-2.5 shadow-md text-xs">
                               <div className="flex items-center justify-between gap-4 font-semibold border-b border-border pb-1.5 mb-1.5">
@@ -1220,7 +1397,7 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                                     >
                                       <div className="flex items-center gap-1.5">
                                         <span
-                                          className="h-2 w-2 rounded-full inline-block"
+                                          className="h-2 w-2 rounded-full inline-block shrink-0"
                                           style={{ backgroundColor: entry.color }}
                                         />
                                         <span className="text-muted-foreground">{entry.name}</span>
@@ -1235,10 +1412,8 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                           );
                         }}
                       />
-                      {releaseYearThemes.length > 1 ? (
-                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                      ) : null}
-                      {releaseYearThemes.map((theme, index) => (
+
+                      {releaseYearThemes.map((theme: string, index: number) => (
                         <Bar
                           key={theme}
                           dataKey={theme}
@@ -1256,362 +1431,390 @@ const stackedData = MOCK_LOCATION_DATA.map((d) => ({
                           }
                         />
                       ))}
+
+                      {/* Totais no topo de cada coluna */}
+                      <Customized
+                        component={({ formattedGraphicalItems }) => {
+                          if (!formattedGraphicalItems?.length) return null;
+
+                          const topsByIndex: Record<number, { x: number; width: number; minY: number }> = {};
+
+                          formattedGraphicalItems.forEach((item: any) => {
+                            item.props?.data?.forEach((bar: any, idx: number) => {
+                              if (bar && typeof bar.y === 'number' && typeof bar.x === 'number') {
+                                if (!topsByIndex[idx]) {
+                                  topsByIndex[idx] = {
+                                    x: bar.x,
+                                    width: bar.width,
+                                    minY: bar.y,
+                                  };
+                                } else {
+                                  topsByIndex[idx].minY = Math.min(topsByIndex[idx].minY, bar.y);
+                                }
+                              }
+                            });
+                          });
+
+                          return (
+                            <g className="recharts-custom-totals">
+                              {releaseYearDataWithTotals.map((item: any, idx: number) => {
+                                const pos = topsByIndex[idx];
+                                if (!pos || !item.total) return null;
+
+                                return (
+                                  <text
+                                    key={`total-${item.year ?? idx}`}
+                                    x={pos.x + pos.width / 2}
+                                    y={pos.minY - 6}
+                                    textAnchor="middle"
+                                    fontSize={10}
+                                    fontWeight={600}
+                                    fill="hsl(var(--muted-foreground))"
+                                  >
+                                    {num(item.total)}
+                                  </text>
+                                );
+                              })}
+                            </g>
+                          );
+                        }}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  Sem datas de lançamento.
-                </p>
-              )}
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Anos de lançamento</CardTitle>
-              <CardDescription>
-                Nostálgico vs. moderno — a curva bimodal da coleção. Clique numa barra para ver
-                os conjuntos desse ano.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {releaseYearData_old.length ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={releaseYearData_old}
-                      margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                {/* Legenda em linha única com scroll horizontal e setas */}
+                {releaseYearThemes.length > 1 && (
+                  <div className="flex items-center gap-1.5 px-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollThemes('left')}
+                      className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Scroll left"
                     >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="hsl(var(--border))"
-                      />
-                      <XAxis
-                        dataKey="year"
-                        tick={{ fontSize: 10 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        interval={0}
-                        angle={-45}
-                        textAnchor="end"
-                        height={50}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        allowDecimals={false}
-                        width={32}
-                      />
-                      <RechartsTooltip
-                        contentStyle={{
-                          borderRadius: 10,
-                          border: '1px solid hsl(var(--border))',
-                          background: 'hsl(var(--popover))',
-                          fontSize: 12,
-                        }}
-                        formatter={(value: number) => [num(value), 'Conjuntos']}
-                      />
-                      <Bar
-                        dataKey="conjuntos"
-                        name="Conjuntos"
-                        fill={THEME_COLORS[0]}
-                        radius={[4, 4, 0, 0]}
-                        cursor="pointer"
-                        onClick={(entry) =>
-                          onFilter({ tab: 'colecao', release_year: entry.year })
-                        }
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  Sem datas de lançamento.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Custo real vs. PVP por canal</CardTitle>
-              <CardDescription>Onde o cartão/campanhas alargam mais a diferença.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {channelData.length ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={channelData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="hsl(var(--border))"
-                      />
-                      <XAxis
-                        dataKey="source"
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        interval={0}
-                        angle={-18}
-                        textAnchor="end"
-                        height={54}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        tickFormatter={(value: number) => eurCompact(value)}
-                        width={62}
-                      />
-                      <RechartsTooltip
-                        contentStyle={{
-                          borderRadius: 10,
-                          border: '1px solid hsl(var(--border))',
-                          background: 'hsl(var(--popover))',
-                          fontSize: 12,
-                        }}
-                        formatter={(value: number, name: string) => [eur(value), name]}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar
-                        dataKey="custo"
-                        name="Custo real"
-                        fill="hsl(var(--muted-foreground))"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar dataKey="pvp" name="PVP" fill={THEME_COLORS[1]} radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">Sem dados.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Preço por peça</CardTitle>
-              <CardDescription>
-                Custo real vs. PVP por peça, cópia a cópia — quem valeu mesmo o desconto.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {pppCostData.length ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis
-                        type="number"
-                        dataKey="x"
-                        name="Peças"
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                      />
-                      <YAxis
-                        type="number"
-                        dataKey="y"
-                        name="€/peça"
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        width={48}
-                      />
-                      <ZAxis range={[40, 40]} />
-                      <RechartsTooltip
-                        cursor={{ strokeDasharray: '3 3' }}
-                        contentStyle={{
-                          borderRadius: 10,
-                          border: '1px solid hsl(var(--border))',
-                          background: 'hsl(var(--popover))',
-                          fontSize: 12,
-                        }}
-                        formatter={(value: number, name: string) => [
-                          name === 'Peças' ? num(value) : eur(value),
-                          name,
-                        ]}
-                        labelFormatter={(_, item) => {
-                          const point = item?.[0]?.payload;
-                          if (!point) return '';
-                          return `${point.name}${point.setNumber ? ` · ${point.setNumber}` : ''}`;
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Scatter
-                        data={pppRrpData}
-                        name="PVP"
-                        fill="hsl(var(--muted-foreground))"
-                        opacity={0.5}
-                      />
-                      <Scatter
-                        data={pppCostData}
-                        name="Custo real"
-                        fill="hsl(var(--warning))"
-                        opacity={0.8}
-                      />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">Sem dados.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Ano de lançamento vs. nº de peças</CardTitle>
-              <CardDescription>
-                Tendência logarítmica — sets grandes tornaram-se comuns, não a norma.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {yearPieceData.length ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis
-                        type="number"
-                        dataKey="year"
-                        name="Ano"
-                        domain={['dataMin', 'dataMax']}
-                        allowDecimals={false}
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                      />
-                      <YAxis
-                        type="number"
-                        dataKey="pieces"
-                        name="Peças"
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        width={48}
-                      />
-                      <ZAxis range={[40, 40]} />
-                      <RechartsTooltip
-                        cursor={{ strokeDasharray: '3 3' }}
-                        contentStyle={{
-                          borderRadius: 10,
-                          border: '1px solid hsl(var(--border))',
-                          background: 'hsl(var(--popover))',
-                          fontSize: 12,
-                        }}
-                        formatter={(value: number, name: string) => [
-                          name === 'Ano' ? String(value) : num(value),
-                          name,
-                        ]}
-                        labelFormatter={(_, item) => {
-                          const point = item?.[0]?.payload;
-                          if (!point?.name) return '';
-                          return `${point.name}${point.setNumber ? ` · ${point.setNumber}` : ''}`;
-                        }}
-                      />
-                      <Scatter
-                        data={yearPieceData}
-                        dataKey="pieces"
-                        name="Conjuntos"
-                        fill={THEME_COLORS[0]}
-                        opacity={0.7}
-                      />
-                      {yearPieceTrend.length ? (
-                        <Line
-                          data={yearPieceTrend}
-                          dataKey="pieces"
-                          name="Tendência (log)"
-                          stroke="hsl(var(--warning))"
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={false}
-                          legendType="none"
-                          isAnimationActive={false}
-                        />
-                      ) : null}
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  Sem datas de lançamento.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribuição por escalões de peças</CardTitle>
-              <CardDescription>
-                Porte volumétrico da coleção, do polybag ao titã de sala.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {totalBracketSets > 0 ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={pieceBracketData}
-                      layout="vertical"
-                      margin={{ top: 4, right: 56, left: 8, bottom: 4 }}
+                    <div
+                      ref={themesScrollRef}
+                      className="flex items-center gap-3 overflow-x-auto scroll-smooth whitespace-nowrap text-[11px] py-1"
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        horizontal={false}
-                        stroke="hsl(var(--border))"
+                      {releaseYearThemes.map((theme: string, index: number) => (
+                        <div
+                          key={theme}
+                          className="flex items-center gap-1.5 shrink-0 select-none text-muted-foreground"
+                        >
+                          <span
+                            className="h-2 w-2 rounded-full inline-block shrink-0"
+                            style={{ backgroundColor: THEME_COLORS[index % THEME_COLORS.length] }}
+                          />
+                          <span>{theme}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => scrollThemes('right')}
+                      className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Scroll right"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Sem datas de lançamento.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Custo Real vs PVP por canal*/}
+        <Card>
+          <CardHeader>
+            <CardTitle>Custo real vs. PVP por canal</CardTitle>
+            <CardDescription>Onde o cartão/campanhas alargam mais a diferença.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {channelData.length ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={channelData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      dataKey="source"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      interval={0}
+                      angle={-18}
+                      textAnchor="end"
+                      height={54}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      tickFormatter={(value: number) => eurCompact(value)}
+                      width={62}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: '1px solid hsl(var(--border))',
+                        background: 'hsl(var(--popover))',
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number, name: string) => [eur(value), name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar
+                      dataKey="custo"
+                      name="Custo real"
+                      fill="hsl(var(--muted-foreground))"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar dataKey="pvp" name="PVP" fill={THEME_COLORS[1]} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">Sem dados.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* preço por peça */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Preço por peça</CardTitle>
+            <CardDescription>
+              Custo real vs. PVP por peça, cópia a cópia — quem valeu mesmo o desconto.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pppCostData.length ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      type="number"
+                      dataKey="x"
+                      name="Peças"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="y"
+                      name="€/peça"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      width={48}
+                    />
+                    <ZAxis range={[40, 40]} />
+                    <RechartsTooltip
+                      cursor={{ strokeDasharray: '3 3' }}
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: '1px solid hsl(var(--border))',
+                        background: 'hsl(var(--popover))',
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === 'Peças' ? num(value) : eur(value),
+                        name,
+                      ]}
+                      labelFormatter={(_, item) => {
+                        const point = item?.[0]?.payload;
+                        if (!point) return '';
+                        return `${point.name}${point.setNumber ? ` · ${point.setNumber}` : ''}`;
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Scatter
+                      data={pppRrpData}
+                      name="PVP"
+                      fill="hsl(var(--muted-foreground))"
+                      opacity={0.5}
+                    />
+                    <Scatter
+                      data={pppCostData}
+                      name="Custo real"
+                      fill="hsl(var(--warning))"
+                      opacity={0.8}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">Sem dados.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Ano lançamento vs nº de peças */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ano de lançamento vs. nº de peças</CardTitle>
+            <CardDescription>
+              Tendência logarítmica — sets grandes tornaram-se comuns, não a norma.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {yearPieceData.length ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      type="number"
+                      dataKey="year"
+                      name="Ano"
+                      domain={['dataMin', 'dataMax']}
+                      allowDecimals={false}
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="pieces"
+                      name="Peças"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      width={48}
+                    />
+                    <ZAxis range={[40, 40]} />
+                    <RechartsTooltip
+                      cursor={{ strokeDasharray: '3 3' }}
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: '1px solid hsl(var(--border))',
+                        background: 'hsl(var(--popover))',
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === 'Ano' ? String(value) : num(value),
+                        name,
+                      ]}
+                      labelFormatter={(_, item) => {
+                        const point = item?.[0]?.payload;
+                        if (!point?.name) return '';
+                        return `${point.name}${point.setNumber ? ` · ${point.setNumber}` : ''}`;
+                      }}
+                    />
+                    <Scatter
+                      data={yearPieceData}
+                      dataKey="pieces"
+                      name="Conjuntos"
+                      fill={THEME_COLORS[0]}
+                      opacity={0.7}
+                    />
+                    {yearPieceTrend.length ? (
+                      <Line
+                        data={yearPieceTrend}
+                        dataKey="pieces"
+                        name="Tendência (log)"
+                        stroke="hsl(var(--warning))"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={false}
+                        legendType="none"
+                        isAnimationActive={false}
                       />
-                      <XAxis
-                        type="number"
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        allowDecimals={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="bracket"
-                        tick={{ fontSize: 11 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        width={136}
-                      />
-                      <RechartsTooltip
-                        contentStyle={{
-                          borderRadius: 10,
-                          border: '1px solid hsl(var(--border))',
-                          background: 'hsl(var(--popover))',
-                          fontSize: 12,
-                        }}
-                        formatter={(value: number) => [
-                          `${num(value)} conjuntos (${((value / totalBracketSets) * 100).toLocaleString('pt-PT', { maximumFractionDigits: 0 })} %)`,
-                          'Conjuntos',
-                        ]}
-                      />
-                      <Bar
+                    ) : null}
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Sem datas de lançamento.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Distribuição por escalões de peças */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribuição por escalões de peças</CardTitle>
+            <CardDescription>
+              Porte volumétrico da coleção, do polybag ao titã de sala.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {totalBracketSets > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={pieceBracketData}
+                    layout="vertical"
+                    margin={{ top: 4, right: 56, left: 8, bottom: 4 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={false}
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      allowDecimals={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="bracket"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      width={136}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: '1px solid hsl(var(--border))',
+                        background: 'hsl(var(--popover))',
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number) => [
+                        `${num(value)} conjuntos (${((value / totalBracketSets) * 100).toLocaleString('pt-PT', { maximumFractionDigits: 0 })} %)`,
+                        'Conjuntos',
+                      ]}
+                    />
+                    <Bar
+                      dataKey="sets"
+                      name="Conjuntos"
+                      fill={THEME_COLORS[0]}
+                      radius={[0, 4, 4, 0]}
+                    >
+                      <LabelList
                         dataKey="sets"
-                        name="Conjuntos"
-                        fill={THEME_COLORS[0]}
-                        radius={[0, 4, 4, 0]}
-                      >
-                        <LabelList
-                          dataKey="sets"
-                          position="right"
-                          formatter={(value: number) =>
-                            `${value} (${((value / totalBracketSets) * 100).toLocaleString('pt-PT', { maximumFractionDigits: 0 })}%)`
-                          }
-                          style={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  Sem dados de peças.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                        position="right"
+                        formatter={(value: number) =>
+                          `${value} (${((value / totalBracketSets) * 100).toLocaleString('pt-PT', { maximumFractionDigits: 0 })}%)`
+                        }
+                        style={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Sem dados de peças.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-        </div>     
-      </div>
+      </div>     
     </div>
   );
 }

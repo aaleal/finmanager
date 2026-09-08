@@ -14,7 +14,9 @@ import {
   X,
 } from 'lucide-react';
 import type {
+  BuildState,
   CollectionSummary,
+  Condition,
   LegoInstancePage,
   LegoSetInstance,
   StorageLocation,
@@ -133,6 +135,38 @@ function Thumb({ instance }: { instance: LegoSetInstance }) {
   );
 }
 
+/** Shared percentage + amount presentation for any ROI reading — used by the
+ * per-copy ROI column and the grouped-view rollup, so both render identically. */
+function RoiValue({
+  pct,
+  amountEur,
+  sublabel,
+  hint,
+}: {
+  pct: number;
+  amountEur?: number;
+  sublabel?: string;
+  hint?: string;
+}) {
+  const positive = pct >= 0;
+  return (
+    <span className="block" title={hint}>
+      <span
+        className={cn('numeric block font-medium', positive ? 'text-success' : 'text-destructive')}
+      >
+        {percent(pct)}
+      </span>
+      {sublabel ? (
+        <span className="block text-xs text-muted-foreground">{sublabel}</span>
+      ) : (
+        <span className="numeric block text-xs text-muted-foreground">
+          {signedEur(amountEur ?? 0)}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /** `basis=rrp` is an alternate, explicit reading — today's value against the
  * original PVP for every row — never a silent replacement of the cost ROI
  * headline (ADR-0010). `basis=cost` keeps the M9.1 PVP fallback for gifts. */
@@ -153,19 +187,7 @@ function RoiCell({
         </span>
       );
     }
-    const up = Number(model.rrp_roi_pct) >= 0;
-    return (
-      <span className="block">
-        <span
-          className={cn('numeric block font-medium', up ? 'text-success' : 'text-destructive')}
-        >
-          {percent(model.rrp_roi_pct)}
-        </span>
-        <span className="numeric block text-xs text-muted-foreground">
-          {signedEur(model.rrp_appreciation_eur)}
-        </span>
-      </span>
-    );
+    return <RoiValue pct={Number(model.rrp_roi_pct)} amountEur={Number(model.rrp_appreciation_eur)} />;
   }
 
   // A gift has no cost basis, so cost-ROI is undefined by design. Rather than a
@@ -173,16 +195,12 @@ function RoiCell({
   // so the two readings are never confused (M9.1).
   if (instance.roi_pct === null) {
     if (model?.rrp_roi_pct != null) {
-      const up = Number(model.rrp_roi_pct) >= 0;
       return (
-        <span className="block" title="Sem base de custo (prenda). Mostrado face ao PVP original.">
-          <span
-            className={cn('numeric block font-medium', up ? 'text-success' : 'text-destructive')}
-          >
-            {percent(model.rrp_roi_pct)}
-          </span>
-          <span className="block text-xs text-muted-foreground">PVP</span>
-        </span>
+        <RoiValue
+          pct={Number(model.rrp_roi_pct)}
+          sublabel="face ao PVP"
+          hint="Sem base de custo (prenda). Mostrado face ao PVP original."
+        />
       );
     }
     return (
@@ -192,26 +210,14 @@ function RoiCell({
     );
   }
 
-  const positive = Number(instance.roi_pct) >= 0;
-  return (
-    <span className="block">
-      <span
-        className={cn('numeric block font-medium', positive ? 'text-success' : 'text-destructive')}
-      >
-        {percent(instance.roi_pct)}
-      </span>
-      <span className="numeric block text-xs text-muted-foreground">
-        {signedEur(instance.appreciation_eur)}
-      </span>
-    </span>
-  );
+  return <RoiValue pct={Number(instance.roi_pct)} amountEur={Number(instance.appreciation_eur)} />;
 }
 
 /** PVP is the headline — it's what the set is "worth" on the shelf — with the
  * actual amount paid underneath, smaller, since it's often a discount or a gift. */
 function CostCell({ rrpEur, paidEur }: { rrpEur: number | null; paidEur: number }) {
   // Discount vs. PVP, e.g. "149,99 € (60%)" — negative when paid above list price.
-  var diffPct = 0
+  let diffPct = 0;
   if (rrpEur !== 0 && rrpEur !== null) {
     diffPct = Math.round(((rrpEur - paidEur) / rrpEur) * 100);
   }
@@ -220,7 +226,15 @@ function CostCell({ rrpEur, paidEur }: { rrpEur: number | null; paidEur: number 
       <span className="numeric block font-medium">{eur(rrpEur)}</span>
       <span className="numeric block text-xs text-muted-foreground">
         {eur(paidEur)}
-        {diffPct !== null && diffPct !== 0 ? <span className="text-[10px]"> ({diffPct}%)</span> : null}
+        {diffPct !== 0 ? (
+          <span
+            className="text-[10px]"
+            title={diffPct > 0 ? `${diffPct}% abaixo do PVP` : `${-diffPct}% acima do PVP`}
+          >
+            {' '}
+            ({diffPct}%)
+          </span>
+        ) : null}
       </span>
     </span>
   );
@@ -422,11 +436,108 @@ function RoiHead({
 
 const TEXT_FIELDS = new Set(['number', 'name', 'theme', 'storage', 'ownership']);
 
+/** Every distinct build state / condition present across the group's copies,
+ * each tagged with a count when more than one copy shares it \u2014 the grouped-view
+ * equivalent of the flat table's per-copy Estado column. */
+function StateSummaryCell({ items }: { items: LegoSetInstance[] }) {
+  const buildCounts = new Map<BuildState, number>();
+  const conditionCounts = new Map<Condition, number>();
+  for (const item of items) {
+    if (item.build_state) {
+      buildCounts.set(item.build_state, (buildCounts.get(item.build_state) ?? 0) + 1);
+    }
+    if (item.condition) {
+      conditionCounts.set(item.condition, (conditionCounts.get(item.condition) ?? 0) + 1);
+    }
+  }
+  if (buildCounts.size === 0 && conditionCounts.size === 0) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {[...buildCounts.entries()].map(([state, count]) => (
+        <Badge key={state} variant={BUILD_STATE_VARIANT}>
+          {BUILD_STATE_LABELS[state]}
+          {count > 1 ? ` \u00d7${count}` : ''}
+        </Badge>
+      ))}
+      {[...conditionCounts.entries()].map(([condition, count]) => (
+        <Badge key={condition} variant={CONDITION_VARIANTS[condition]}>
+          {CONDITION_LABELS[condition]}
+          {count > 1 ? ` \u00d7${count}` : ''}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+/** The grouped-view rollup of `RoiCell`: same basis toggle, same percentage +
+ * amount presentation (via `RoiValue`), just summed/scaled across every copy
+ * in the group instead of read off a single instance. */
+function GroupRoiCell({
+  items,
+  basis,
+}: {
+  items: LegoSetInstance[];
+  basis: 'cost' | 'rrp';
+}) {
+  const model = items[0].set_model;
+  const totalCost = items.reduce((sum, item) => sum + Number(item.acquisition_cost_eur), 0);
+  const totalValue = model?.current_value_eur
+    ? Number(model.current_value_eur) * items.length
+    : null;
+
+  if (basis === 'rrp') {
+    if (model?.rrp_roi_pct == null) {
+      return (
+        <span className="text-muted-foreground" title="Conjunto sem PVP definido">
+          —
+        </span>
+      );
+    }
+    return (
+      <RoiValue
+        pct={Number(model.rrp_roi_pct)}
+        amountEur={Number(model.rrp_appreciation_eur ?? 0) * items.length}
+      />
+    );
+  }
+
+  // Same M9.1 gift fallback as the per-copy cell: no cost basis (every copy in
+  // the group was a gift) falls back to the PVP reading, clearly labelled.
+  if (totalCost === 0) {
+    if (model?.rrp_roi_pct != null) {
+      return (
+        <RoiValue
+          pct={Number(model.rrp_roi_pct)}
+          sublabel="face ao PVP"
+          hint="Sem base de custo (prendas/ofertas). Mostrado face ao PVP original."
+        />
+      );
+    }
+    return (
+      <span className="text-muted-foreground" title="Prendas ou conjunto sem valor definido">
+        —
+      </span>
+    );
+  }
+
+  if (totalValue === null) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <RoiValue pct={((totalValue - totalCost) / totalCost) * 100} amountEur={totalValue - totalCost} />
+  );
+}
+
 function GroupedRow({
   group,
+  basis,
   onSelect,
 }: {
   group: { key: string; items: LegoSetInstance[] };
+  basis: 'cost' | 'rrp';
   onSelect: (instance: LegoSetInstance) => void;
 }) {
   const first = group.items[0];
@@ -445,30 +556,22 @@ function GroupedRow({
       <TableCell>
         <SetCell instance={first} />
       </TableCell>
-      <TableCell>{model?.theme ?? <span className="text-muted-foreground">—</span>}</TableCell>
+      <TableCell className="text-muted-foreground">{model?.theme ?? '—'}</TableCell>
       <TableCell>
         <Badge variant="outline">{group.items.length} cópias</Badge>
       </TableCell>
-      <TableCell>
+      <TableCell className="text-muted-foreground">
         <YearsCell instance={first} />
+      </TableCell>
+      <TableCell>
+        <StateSummaryCell items={group.items} />
       </TableCell>
       <TableCell className="numeric">
         <CostCell rrpEur={totalRrp} paidEur={totalCost} />
       </TableCell>
-      <TableCell className="numeric ">{eur(totalValue)}</TableCell>
-      <TableCell>
-        {totalValue !== null ? (
-          <span
-            className={cn(
-              'numeric font-medium',
-              totalValue - totalCost >= 0 ? 'text-success' : 'text-destructive',
-            )}
-          >
-            {signedEur(totalValue - totalCost)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
+      <TableCell className="numeric">{eur(totalValue)}</TableCell>
+      <TableCell className="text-right">
+        <GroupRoiCell items={group.items} basis={basis} />
       </TableCell>
     </TableRow>
   );
@@ -937,6 +1040,7 @@ export function CollectionGrid({
                 <SortHead field="theme" label="Tema" filters={filters} setFilters={setFilters} />
                 <SortHead field="copies" label="Cópias" filters={filters} setFilters={setFilters} />
                 <SortHead field="year" label="Ano" filters={filters} setFilters={setFilters} />
+                <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
                 <SortHead
                   field="cost"
                   label="Custo"
@@ -951,12 +1055,17 @@ export function CollectionGrid({
                   setFilters={setFilters}
                   align="left"
                 />
-                <TableHead className="text-left">Ganho</TableHead>
+                <RoiHead filters={filters} setFilters={setFilters} />
               </TableRow>
             </TableHeader>
             <TableBody>
               {groups.map((group) => (
-                <GroupedRow key={group.key} group={group} onSelect={onSelect} />
+                <GroupedRow
+                  key={group.key}
+                  group={group}
+                  basis={filters.roi_basis === 'rrp' ? 'rrp' : 'cost'}
+                  onSelect={onSelect}
+                />
               ))}
             </TableBody>
           </Table>

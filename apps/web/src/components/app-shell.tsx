@@ -16,6 +16,7 @@ import {
   Sun,
   Users,
   Zap,
+  ToyBrick,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/session';
@@ -46,7 +47,7 @@ interface NavItem {
 const PRIMARY_NAV: NavItem[] = [
   { to: '/', label: 'Painel', icon: Gauge },
   { to: '/supermercado', label: 'Supermercado', icon: ShoppingCart },
-  { to: '/lego', label: 'Coleção LEGO', icon: Blocks },
+  { to: '/lego', label: 'Coleção LEGO', icon: ToyBrick },
   { to: '/revisao', label: 'Fila de revisão', icon: Inbox },
 ];
 
