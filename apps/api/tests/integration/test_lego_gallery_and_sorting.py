@@ -143,9 +143,27 @@ def test_roi_basis_rrp_ranks_every_row_by_the_pvp_reading(
     """`roi_basis=rrp` is the alternate view (ADR-0010): it ranks by RRP ROI even
     for paid copies, reversing the cost-ROI order when the two readings disagree."""
     # Great cost ROI (+50%), poor PVP ROI (-50%).
-    _copy(db, entity, owner, set_number="1000", name="Alfa", cost="100.00", value="150.00", rrp="300.00")
+    _copy(
+        db,
+        entity,
+        owner,
+        set_number="1000",
+        name="Alfa",
+        cost="100.00",
+        value="150.00",
+        rrp="300.00",
+    )
     # Poor cost ROI (-50%), great PVP ROI (+50%).
-    _copy(db, entity, owner, set_number="2000", name="Beta", cost="300.00", value="150.00", rrp="100.00")
+    _copy(
+        db,
+        entity,
+        owner,
+        set_number="2000",
+        name="Beta",
+        cost="300.00",
+        value="150.00",
+        rrp="100.00",
+    )
 
     by_cost = _list(db, entity, sort="roi", direction="desc", roi_basis="cost")
     assert [i.set_model.name for i in by_cost] == ["Alfa", "Beta"]

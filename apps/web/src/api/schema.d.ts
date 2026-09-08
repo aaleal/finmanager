@@ -2034,6 +2034,11 @@ export interface components {
        * @default false
        */
       is_fs: boolean;
+      /**
+       * Is Potential Gift
+       * @default false
+       */
+      is_potential_gift: boolean;
       /** Missing Parts */
       missing_parts?: string | null;
       /** Notes */
@@ -2090,6 +2095,11 @@ export interface components {
        * @default false
        */
       is_fs: boolean;
+      /**
+       * Is Potential Gift
+       * @default false
+       */
+      is_potential_gift: boolean;
       /** Missing Parts */
       missing_parts?: string | null;
       /** Notes */
@@ -2517,6 +2527,11 @@ export interface components {
        * @default false
        */
       is_fs: boolean;
+      /**
+       * Is Potential Gift
+       * @default false
+       */
+      is_potential_gift: boolean;
       /** Missing Parts */
       missing_parts?: string | null;
       /** Notes */
@@ -2565,6 +2580,8 @@ export interface components {
       has_instructions: boolean;
       /** Is Fs */
       is_fs: boolean;
+      /** Is Potential Gift */
+      is_potential_gift: boolean;
       /** Missing Parts */
       missing_parts: string | null;
       /**
@@ -2646,6 +2663,8 @@ export interface components {
       has_instructions?: boolean | null;
       /** Is Fs */
       is_fs?: boolean | null;
+      /** Is Potential Gift */
+      is_potential_gift?: boolean | null;
       /** Missing Parts */
       missing_parts?: string | null;
       /** Notes */

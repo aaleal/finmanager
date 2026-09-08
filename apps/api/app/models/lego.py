@@ -279,6 +279,11 @@ class LegoSetInstance(Base, TimestampMixin, SoftDeleteMixin):
     is_fs: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    # Forward-looking ("earmarked to give away") — independent of
+    # `acquisition_source == 'GIFT'`, which is about how the copy was acquired.
+    is_potential_gift: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     missing_parts: Mapped[str | None] = mapped_column(Text, nullable=True)
     ownership_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="IN_COLLECTION", server_default="'IN_COLLECTION'"

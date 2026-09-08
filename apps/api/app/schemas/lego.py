@@ -19,6 +19,7 @@ RetirementFilter = Literal["all", "retired", "available"]
 # How many copies of the same set are owned — «todos» is always the default.
 CopiesFilter = Literal["all", "single", "multiple"]
 FsFilter = Literal["all", "fs", "not_fs"]
+GiftFilter = Literal["all", "gift", "not_gift"]
 
 
 # --- Storage -----------------------------------------------------------------
@@ -199,6 +200,7 @@ class LegoSetInstanceBase(BaseModel):
     has_box: bool = True
     has_instructions: bool = True
     is_fs: bool = False
+    is_potential_gift: bool = False
     missing_parts: str | None = None
     notes: str | None = None
 
@@ -227,6 +229,7 @@ class LegoSetInstanceUpdate(BaseModel):
     has_box: bool | None = None
     has_instructions: bool | None = None
     is_fs: bool | None = None
+    is_potential_gift: bool | None = None
     missing_parts: str | None = None
     notes: str | None = None
     ownership_status: OwnershipStatus | None = None
@@ -252,6 +255,7 @@ class LegoSetInstanceOut(ApiModel):
     has_box: bool
     has_instructions: bool
     is_fs: bool
+    is_potential_gift: bool
     missing_parts: str | None
     ownership_status: OwnershipStatus
     sale_price_eur: Decimal | None
@@ -367,6 +371,7 @@ class BulkImportRow(BaseModel):
     has_box: bool = True
     has_instructions: bool = True
     is_fs: bool = False
+    is_potential_gift: bool = False
     missing_parts: str | None = None
     notes: str | None = None
     #: The set's "preço atual" as typed in the sheet — not the physical copy's own

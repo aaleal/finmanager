@@ -32,6 +32,7 @@ export type InstanceFilters = {
   retirement?: string;
   copies?: string;
   fs?: string;
+  gift?: string;
   paid_min?: string;
   paid_max?: string;
   rrp_min?: string;
@@ -78,6 +79,7 @@ export function useInstances(filters: InstanceFilters) {
         retirement: filters.retirement ?? 'all',
         copies: filters.copies ?? 'all',
         fs: filters.fs ?? 'all',
+        gift: filters.gift ?? 'all',
         paid_min: filters.paid_min,
         paid_max: filters.paid_max,
         rrp_min: filters.rrp_min,

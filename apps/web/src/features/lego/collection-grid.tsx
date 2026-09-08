@@ -9,6 +9,7 @@ import {
   ChevronsRight,
   ChevronsUpDown,
   Filter,
+  Gift,
   Package,
   Search,
   X,
@@ -51,6 +52,7 @@ import {
   CONDITION_VARIANTS,
   COPIES_OPTIONS,
   FS_OPTIONS,
+  GIFT_OPTIONS,
   OWNERSHIP_LABELS,
   PAGE_SIZES,
   RETIREMENT_OPTIONS,
@@ -170,13 +172,7 @@ function RoiValue({
 /** `basis=rrp` is an alternate, explicit reading — today's value against the
  * original PVP for every row — never a silent replacement of the cost ROI
  * headline (ADR-0010). `basis=cost` keeps the M9.1 PVP fallback for gifts. */
-function RoiCell({
-  instance,
-  basis,
-}: {
-  instance: LegoSetInstance;
-  basis: 'cost' | 'rrp';
-}) {
+function RoiCell({ instance, basis }: { instance: LegoSetInstance; basis: 'cost' | 'rrp' }) {
   const model = instance.set_model;
 
   if (basis === 'rrp') {
@@ -187,7 +183,9 @@ function RoiCell({
         </span>
       );
     }
-    return <RoiValue pct={Number(model.rrp_roi_pct)} amountEur={Number(model.rrp_appreciation_eur)} />;
+    return (
+      <RoiValue pct={Number(model.rrp_roi_pct)} amountEur={Number(model.rrp_appreciation_eur)} />
+    );
   }
 
   // A gift has no cost basis, so cost-ROI is undefined by design. Rather than a
@@ -287,6 +285,11 @@ function SetCell({ instance }: { instance: LegoSetInstance }) {
               title={`Retirado em ${model.retired_year}`}
             >
               retirado
+            </Badge>
+          ) : null}
+          {instance.is_potential_gift ? (
+            <Badge variant="outline" className="shrink-0 gap-1" title="Potencial presente">
+              <Gift className="size-3" />
             </Badge>
           ) : null}
         </p>
@@ -474,13 +477,7 @@ function StateSummaryCell({ items }: { items: LegoSetInstance[] }) {
 /** The grouped-view rollup of `RoiCell`: same basis toggle, same percentage +
  * amount presentation (via `RoiValue`), just summed/scaled across every copy
  * in the group instead of read off a single instance. */
-function GroupRoiCell({
-  items,
-  basis,
-}: {
-  items: LegoSetInstance[];
-  basis: 'cost' | 'rrp';
-}) {
+function GroupRoiCell({ items, basis }: { items: LegoSetInstance[]; basis: 'cost' | 'rrp' }) {
   const model = items[0].set_model;
   const totalCost = items.reduce((sum, item) => sum + Number(item.acquisition_cost_eur), 0);
   const totalValue = model?.current_value_eur
@@ -527,7 +524,10 @@ function GroupRoiCell({
   }
 
   return (
-    <RoiValue pct={((totalValue - totalCost) / totalCost) * 100} amountEur={totalValue - totalCost} />
+    <RoiValue
+      pct={((totalValue - totalCost) / totalCost) * 100}
+      amountEur={totalValue - totalCost}
+    />
   );
 }
 
@@ -645,6 +645,7 @@ export function CollectionGrid({
     filters.retirement && filters.retirement !== 'all' ? filters.retirement : undefined,
     filters.copies && filters.copies !== 'all' ? filters.copies : undefined,
     filters.fs && filters.fs !== 'all' ? filters.fs : undefined,
+    filters.gift && filters.gift !== 'all' ? filters.gift : undefined,
     filters.paid_min,
     filters.paid_max,
     filters.rrp_min,
@@ -685,6 +686,7 @@ export function CollectionGrid({
       retirement: undefined,
       copies: undefined,
       fs: undefined,
+      gift: undefined,
       paid_min: undefined,
       paid_max: undefined,
       rrp_min: undefined,
@@ -955,6 +957,24 @@ export function CollectionGrid({
 
           <div className="sm:col-span-2 lg:col-span-2">
             <Select
+              value={filters.gift ?? 'all'}
+              onValueChange={(value) => setFilters({ gift: value, page: '1' })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GIFT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Select
               value={filters.acquisition_source ?? ALL}
               onValueChange={(value) =>
                 setFilters({ acquisition_source: value === ALL ? undefined : value })
@@ -1076,10 +1096,27 @@ export function CollectionGrid({
                 <SortHead field="name" label="Conjunto" filters={filters} setFilters={setFilters} />
                 <SortHead field="theme" label="Tema" filters={filters} setFilters={setFilters} />
                 <SortHead field="year" label="Ano" filters={filters} setFilters={setFilters} />
-                <SortHead field="storage" label="Arrumação" filters={filters} setFilters={setFilters} />
+                <SortHead
+                  field="storage"
+                  label="Arrumação"
+                  filters={filters}
+                  setFilters={setFilters}
+                />
                 <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
-                <SortHead field="cost" label="Custo" filters={filters} setFilters={setFilters} align="right" />
-                <SortHead field="value" label="Valor" filters={filters} setFilters={setFilters} align="right" />
+                <SortHead
+                  field="cost"
+                  label="Custo"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
+                <SortHead
+                  field="value"
+                  label="Valor"
+                  filters={filters}
+                  setFilters={setFilters}
+                  align="right"
+                />
                 <RoiHead filters={filters} setFilters={setFilters} />
               </TableRow>
             </TableHeader>
@@ -1129,8 +1166,7 @@ export function CollectionGrid({
                       rrpEur={
                         instance.set_model?.rrp_eur ? Number(instance.set_model.rrp_eur) : null
                       }
-                      paidEur={
-                        Number(instance.acquisition_cost_eur)}
+                      paidEur={Number(instance.acquisition_cost_eur)}
                     />
                   </TableCell>
                   <TableCell className="numeric text-right">
@@ -1139,7 +1175,10 @@ export function CollectionGrid({
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <RoiCell instance={instance} basis={filters.roi_basis === 'rrp' ? 'rrp' : 'cost'} />
+                    <RoiCell
+                      instance={instance}
+                      basis={filters.roi_basis === 'rrp' ? 'rrp' : 'cost'}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

@@ -166,6 +166,7 @@ def _copies_sheet(
                 copy.sale_date,
                 copy.notes or "",
                 "Sim" if copy.is_fs else "Não",
+                "Sim" if copy.is_potential_gift else "Não",
             ]
         )
 
@@ -205,6 +206,7 @@ def _copies_sheet(
             "Data de venda",
             "Notas",
             "É Fs",
+            "Potencial presente",
         ],
         rows,
         {

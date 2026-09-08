@@ -65,6 +65,7 @@ interface FormValues {
   has_box: boolean;
   has_instructions: boolean;
   is_fs: boolean;
+  is_potential_gift: boolean;
   missing_parts: string;
   notes: string;
 }
@@ -95,6 +96,7 @@ const EMPTY: FormValues = {
   has_box: true,
   has_instructions: true,
   is_fs: false,
+  is_potential_gift: false,
   missing_parts: '',
   notes: '',
 };
@@ -291,6 +293,7 @@ export function AddSetDialog({
       has_box: values.has_box,
       has_instructions: values.has_instructions,
       is_fs: values.is_fs,
+      is_potential_gift: values.is_potential_gift,
       missing_parts: values.missing_parts || null,
       notes: values.notes || null,
     };
@@ -645,6 +648,15 @@ export function AddSetDialog({
                       }}
                     />
                     É Fs
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.watch('is_potential_gift')}
+                      onCheckedChange={(checked) =>
+                        form.setValue('is_potential_gift', checked === true)
+                      }
+                    />
+                    Potencial presente
                   </label>
                 </div>
                 <Field

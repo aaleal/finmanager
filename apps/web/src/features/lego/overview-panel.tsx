@@ -33,7 +33,7 @@ import {
   TrendingDown,
   TrendingUp,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 
 import type { AcquisitionSource, LegoOverview, LegoSetInstance } from '@/lib/types';
@@ -287,6 +287,36 @@ export function LegoOverviewPanel({
   isLoading: boolean;
   onFilter: (patch: Record<string, string | undefined>) => void;
 }) {
+  // Hooks must run unconditionally before the loading/empty early return below.
+  const releaseYearData = React.useMemo(() => {
+    const yearMap = new Map<string, Record<string, string | number>>();
+    (overview?.release_year_points ?? []).forEach((point) => {
+      if (point.year === null || point.year === undefined) return;
+      const yearKey = String(point.year);
+      const theme = point.theme || 'Outros';
+
+      if (!yearMap.has(yearKey)) {
+        yearMap.set(yearKey, { year: yearKey });
+      }
+
+      const row = yearMap.get(yearKey)!;
+      row[theme] = (Number(row[theme]) || 0) + 1;
+    });
+    return Array.from(yearMap.values()).sort((a, b) => Number(a.year) - Number(b.year));
+  }, [overview?.release_year_points]);
+
+  const releaseYearThemes = React.useMemo(() => {
+    const themeSet = new Set<string>();
+    releaseYearData.forEach((row) => {
+      Object.keys(row).forEach((k) => {
+        if (k !== 'year') themeSet.add(k);
+      });
+    });
+    return Array.from(themeSet);
+  }, [releaseYearData]);
+
+  const themesScrollRef = React.useRef<HTMLDivElement>(null);
+
   if (isLoading || !overview) {
     return (
       <div className="space-y-4">
@@ -368,10 +398,6 @@ export function LegoOverviewPanel({
       subthemes: bucket.subthemes.sort((a, b) => b.rrp - a.rrp),
     }))
     .sort((a, b) => b.size - a.size);
-  const eolData = [
-    { name: 'Retirados', value: overview.retired_sets },
-    { name: 'Em catálogo', value: Math.max(overview.unique_sets - overview.retired_sets, 0) },
-  ];
 
   const channelData = overview.channels.map((channel) => ({
     source: sourceLabel(channel.source),
@@ -444,7 +470,7 @@ export function LegoOverviewPanel({
   const builtCopies = totalBuildStateCopies - disassembledCopies;
   const backlogPct =
     totalBuildStateCopies > 0 ? (disassembledCopies / totalBuildStateCopies) * 100 : 0;
-  
+
   const roi_pct_paid_value = Number(overview.total_value_eur) - Number(overview.total_rrp_eur);
   const roi_pct_paid =
     Number(overview.total_rrp_eur) > 0
@@ -453,46 +479,15 @@ export function LegoOverviewPanel({
   const pct_fs =
     Number(overview.fs_copies) > 0
       ? (Number(overview.fs_copies) / Number(overview.copies_owned)) * 100
-      : 0;      
+      : 0;
   const roi_pct_paidLabel = roi_pct_paid.toLocaleString('pt-PT', {
     maximumFractionDigits: 1,
   });
 
-  // 1. Agrupa os temas de cada ano a partir de release_year_points
-  const releaseYearData = React.useMemo(() => {
-    const yearMap = new Map<string, Record<string, any>>();
-    overview.release_year_points.forEach((point) => {
-      if (point.year === null || point.year === undefined) return;
-      const yearKey = String(point.year);
-      const theme = point.theme || 'Outros';
-
-      if (!yearMap.has(yearKey)) {
-        yearMap.set(yearKey, { year: yearKey });
-      }
-
-      const row = yearMap.get(yearKey)!;
-      row[theme] = (row[theme] || 0) + 1;
-    });
-    return Array.from(yearMap.values()).sort((a, b) => Number(a.year) - Number(b.year));
-  }, [overview.release_year_points]);
-
-  // 2. Extrai a lista de temas presentes nas barras
-  const releaseYearThemes = React.useMemo(() => {
-    const themeSet = new Set<string>();
-    releaseYearData.forEach((row) => {
-      Object.keys(row).forEach((k) => {
-        if (k !== 'year') themeSet.add(k);
-      });
-    });
-    return Array.from(themeSet);
-  }, [releaseYearData]);
-
   const releaseYearDataWithTotals = releaseYearData.map((d) => ({
     ...d,
     total: releaseYearThemes.reduce((sum, theme) => sum + (Number(d[theme]) || 0), 0),
-  }));  
-
-  const themesScrollRef = React.useRef<HTMLDivElement>(null);
+  }));
 
   const scrollThemes = (direction: 'left' | 'right') => {
     if (themesScrollRef.current) {
@@ -504,29 +499,8 @@ export function LegoOverviewPanel({
     }
   };
 
-  const areaLegendScrollRef = React.useRef<HTMLDivElement>(null);
-
-  const scrollAreaLegend = (direction: 'left' | 'right') => {
-    if (areaLegendScrollRef.current) {
-      const scrollAmount = 140;
-      areaLegendScrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-
   /** Theme name plus sets/pieces underneath, agora totalmente clicável */
-  function ThemeAxisTick({
-    x,
-    y,
-    payload,
-  }: {
-    x: number;
-    y: number;
-    payload: { value: string };
-  }) {
+  function ThemeAxisTick({ x, y, payload }: { x: number; y: number; payload: { value: string } }) {
     const entry = chartData.find((item) => item.theme === payload.value);
 
     return (
@@ -577,10 +551,7 @@ export function LegoOverviewPanel({
     const { x, y, width, height, index, name, size } = props;
     const canLabel = width > 56 && height > 28;
     return (
-      <g
-        onClick={() => onFilter({ tab: 'colecao', theme: name })}
-        style={{ cursor: 'pointer' }}
-      >
+      <g onClick={() => onFilter({ tab: 'colecao', theme: name })} style={{ cursor: 'pointer' }}>
         <rect
           x={x}
           y={y}
@@ -1033,7 +1004,6 @@ export function LegoOverviewPanel({
 
       {/* Series 2 Graficos*/}
       <div className="grid gap-4 lg:grid-cols-2">
-        
         {/* Anel distribuicao localização */}
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -1056,7 +1026,11 @@ export function LegoOverviewPanel({
                           background: 'hsl(var(--popover))',
                           fontSize: 12,
                         }}
-                        formatter={(value: number, name: string, item: any) => {
+                        formatter={(
+                          value: number,
+                          _name: string,
+                          item: { payload?: { pvp?: number } },
+                        ) => {
                           const isPvp = item?.payload?.pvp === value;
                           return [
                             isPvp ? eur(value) : `${num(value)} conjuntos`,
@@ -1181,7 +1155,7 @@ export function LegoOverviewPanel({
                 {/* Legenda Lateral Compacta em 2 Linhas */}
                 <div className="w-full sm:w-[38%] flex flex-col justify-center max-h-full border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-3">
                   <div className="overflow-y-auto space-y-2 pr-1 max-h-[280px]">
-                    {areaData.map((entry: any, index: number) => (
+                    {areaData.map((entry: (typeof areaData)[number], index: number) => (
                       <button
                         key={entry.area}
                         type="button"
@@ -1217,7 +1191,7 @@ export function LegoOverviewPanel({
             )}
           </CardContent>
         </Card>
-        
+
         {/* Top temas: nº conjuntos vs peças*/}
         <Card>
           <CardHeader>
@@ -1228,9 +1202,7 @@ export function LegoOverviewPanel({
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Por nº de conjuntos
-              </p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Por nº de conjuntos</p>
               <ul className="space-y-1.5">
                 {topByCount.map((theme) => (
                   <li key={theme.theme} className="text-xs">
@@ -1258,9 +1230,7 @@ export function LegoOverviewPanel({
                   <li key={theme.theme} className="text-xs">
                     <div className="flex items-center justify-between">
                       <span className="truncate">{theme.theme}</span>
-                      <span className="numeric shrink-0 font-medium">
-                        {num(theme.piece_count)}
-                      </span>
+                      <span className="numeric shrink-0 font-medium">{num(theme.piece_count)}</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted">
                       <div
@@ -1283,8 +1253,8 @@ export function LegoOverviewPanel({
           <CardHeader>
             <CardTitle>Temas por PVP</CardTitle>
             <CardDescription>
-              Ponderado pelo PVP total. Passe o rato para ver os subtemas; clique num tema para
-              ver os conjuntos.
+              Ponderado pelo PVP total. Passe o rato para ver os subtemas; clique num tema para ver
+              os conjuntos.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1340,9 +1310,7 @@ export function LegoOverviewPanel({
         <Card>
           <CardHeader>
             <CardTitle>Anos de lançamento</CardTitle>
-            <CardDescription>
-              Volume total e distribuição por tema em cada ano.
-            </CardDescription>
+            <CardDescription>Volume total e distribuição por tema em cada ano.</CardDescription>
           </CardHeader>
           <CardContent>
             {releaseYearData.length ? (
@@ -1378,7 +1346,7 @@ export function LegoOverviewPanel({
                           if (!active || !payload?.length) return null;
                           const total = payload.reduce(
                             (acc, curr) => acc + (Number(curr.value) || 0),
-                            0
+                            0,
                           );
 
                           return (
@@ -1421,9 +1389,7 @@ export function LegoOverviewPanel({
                           stackId="year"
                           fill={THEME_COLORS[index % THEME_COLORS.length]}
                           radius={
-                            index === releaseYearThemes.length - 1
-                              ? [3, 3, 0, 0]
-                              : [0, 0, 0, 0]
+                            index === releaseYearThemes.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]
                           }
                           cursor="pointer"
                           onClick={(entry) =>
@@ -1434,18 +1400,26 @@ export function LegoOverviewPanel({
 
                       {/* Totais no topo de cada coluna */}
                       <Customized
-                        component={({ formattedGraphicalItems }) => {
+                        component={(props: unknown) => {
+                          const { formattedGraphicalItems } = props as {
+                            formattedGraphicalItems?: {
+                              props?: { data?: { x?: number; y?: number; width?: number }[] };
+                            }[];
+                          };
                           if (!formattedGraphicalItems?.length) return null;
 
-                          const topsByIndex: Record<number, { x: number; width: number; minY: number }> = {};
+                          const topsByIndex: Record<
+                            number,
+                            { x: number; width: number; minY: number }
+                          > = {};
 
-                          formattedGraphicalItems.forEach((item: any) => {
-                            item.props?.data?.forEach((bar: any, idx: number) => {
+                          formattedGraphicalItems.forEach((item) => {
+                            item.props?.data?.forEach((bar, idx: number) => {
                               if (bar && typeof bar.y === 'number' && typeof bar.x === 'number') {
                                 if (!topsByIndex[idx]) {
                                   topsByIndex[idx] = {
                                     x: bar.x,
-                                    width: bar.width,
+                                    width: bar.width ?? 0,
                                     minY: bar.y,
                                   };
                                 } else {
@@ -1457,13 +1431,13 @@ export function LegoOverviewPanel({
 
                           return (
                             <g className="recharts-custom-totals">
-                              {releaseYearDataWithTotals.map((item: any, idx: number) => {
+                              {releaseYearDataWithTotals.map((item: (typeof releaseYearDataWithTotals)[number], idx: number) => {
                                 const pos = topsByIndex[idx];
                                 if (!pos || !item.total) return null;
 
                                 return (
                                   <text
-                                    key={`total-${item.year ?? idx}`}
+                                    key={`total-${idx}`}
                                     x={pos.x + pos.width / 2}
                                     y={pos.minY - 6}
                                     textAnchor="middle"
@@ -1532,7 +1506,7 @@ export function LegoOverviewPanel({
             )}
           </CardContent>
         </Card>
-        
+
         {/* Custo Real vs PVP por canal*/}
         <Card>
           <CardHeader>
@@ -1807,14 +1781,11 @@ export function LegoOverviewPanel({
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                Sem dados de peças.
-              </p>
+              <p className="py-12 text-center text-sm text-muted-foreground">Sem dados de peças.</p>
             )}
           </CardContent>
         </Card>
-
-      </div>     
+      </div>
     </div>
   );
 }

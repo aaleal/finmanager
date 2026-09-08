@@ -63,6 +63,7 @@ INSTANCE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "has_box": ("tem caixa",),
     "has_instructions": ("tem instrucoes", "tem manual"),
     "is_fs": ("e fs",),
+    "is_potential_gift": ("potencial presente", "presente potencial", "e presente"),
     "missing_parts": ("pecas em falta",),
     "acquisition_date": ("data de aquisicao",),
     "acquisition_source": ("origem",),
@@ -323,6 +324,7 @@ def _resolve_instance_row(
         has_box=_boolean(raw.get("has_box"), default=True),
         has_instructions=_boolean(raw.get("has_instructions"), default=True),
         is_fs=_boolean(raw.get("is_fs"), default=False),
+        is_potential_gift=_boolean(raw.get("is_potential_gift"), default=False),
         missing_parts=_text(raw.get("missing_parts")),
         notes=_text(raw.get("notes")),
         current_value_eur=current_value,
@@ -480,6 +482,7 @@ def _commit_instance_row(
         has_box=row.has_box,
         has_instructions=row.has_instructions,
         is_fs=row.is_fs,
+        is_potential_gift=row.is_potential_gift,
         missing_parts=row.missing_parts,
         notes=row.notes,
     )

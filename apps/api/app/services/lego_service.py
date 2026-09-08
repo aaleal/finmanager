@@ -39,6 +39,7 @@ from app.schemas.lego import (
     CompletenessFilter,
     CopiesFilter,
     FsFilter,
+    GiftFilter,
     LegoSetImageOut,
     LegoSetImageUpdate,
     LegoSetInstanceCreate,
@@ -1056,6 +1057,7 @@ def list_instances(
     retirement: RetirementFilter = "all",
     copies: CopiesFilter = "all",
     fs: FsFilter = "all",
+    gift: GiftFilter = "all",
     paid_min: Decimal | None = None,
     paid_max: Decimal | None = None,
     rrp_min: Decimal | None = None,
@@ -1143,6 +1145,11 @@ def list_instances(
         stmt = stmt.where(LegoSetInstance.is_fs.is_(True))
     elif fs == "not_fs":
         stmt = stmt.where(LegoSetInstance.is_fs.is_(False))
+
+    if gift == "gift":
+        stmt = stmt.where(LegoSetInstance.is_potential_gift.is_(True))
+    elif gift == "not_gift":
+        stmt = stmt.where(LegoSetInstance.is_potential_gift.is_(False))
 
     if paid_min is not None:
         stmt = stmt.where(LegoSetInstance.acquisition_cost_eur >= paid_min)

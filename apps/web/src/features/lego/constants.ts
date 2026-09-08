@@ -96,6 +96,12 @@ export const FS_OPTIONS = [
   { value: 'not_fs', label: 'Só não Fs' },
 ];
 
+export const GIFT_OPTIONS = [
+  { value: 'all', label: 'Presentes e não presentes' },
+  { value: 'gift', label: 'Só potenciais presentes' },
+  { value: 'not_gift', label: 'Só não marcados' },
+];
+
 export const PAGE_SIZES = ['10', '25', '50', '100', '200'];
 
 /**
@@ -103,15 +109,16 @@ export const PAGE_SIZES = ['10', '25', '50', '100', '200'];
  * stored, fetched or refreshed (M9 FR-9.10).
  */
 export function externalLinks(setNumber: string) {
-  const bare = setNumber.replace(/-\d+$/, '');
+  // A resolved «-0» closed-pack variant is never second-guessed into «-1» (ADR-0050).
+  const withVariant = /-\d+$/.test(setNumber) ? setNumber : `${setNumber}-1`;
   return [
-    { label: 'Brickset', href: `https://brickset.com/sets/${bare}-1` },
+    { label: 'Brickset', href: `https://brickset.com/sets/${withVariant}` },
     {
       label: 'BrickLink',
-      href: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${bare}-1`,
+      href: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${withVariant}`,
     },
-    { label: 'BrickEconomy', href: `https://www.brickeconomy.com/set/${bare}-1` },
-    { label: 'Rebrickable', href: `https://rebrickable.com/sets/${bare}-1/` },
+    { label: 'BrickEconomy', href: `https://www.brickeconomy.com/set/${withVariant}` },
+    { label: 'Rebrickable', href: `https://rebrickable.com/sets/${withVariant}/` },
   ];
 }
 

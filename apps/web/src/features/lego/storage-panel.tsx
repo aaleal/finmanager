@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Boxes, LocateIcon, PencilLine, Plus, Trash2 } from 'lucide-react';
+import { Boxes, PencilLine, Plus, Trash2 } from 'lucide-react';
 import type { StorageLocation } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/feedback';
-import { eur, num } from '@/lib/format';
+import { eur } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
 import { useStorageMutations } from './api';
@@ -322,8 +322,8 @@ export function StoragePanel({
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
         <p className="max-w-2xl text-sm text-muted-foreground">
-          A percentagem de ocupação é sempre uma estimativa, nunca é calculada a partir do
-          número de peças.
+          A percentagem de ocupação é sempre uma estimativa, nunca é calculada a partir do número de
+          peças.
         </p>
         {canWrite ? (
           <div className="flex shrink-0 items-center gap-2">
@@ -368,7 +368,7 @@ export function StoragePanel({
                             </span>
                           </button>
                         </div>
-                        
+
                         {location.description ? (
                           <p className="truncate text-xs text-muted-foreground">
                             {location.description}
@@ -414,11 +414,15 @@ export function StoragePanel({
                       <div className="flex items-baseline justify-left gap-2 text-xs text-muted-foreground">
                         <div>
                           <span>Custo: </span>
-                          <span className="font-medium text-foreground">{eur(location.stored_value_eur)}</span>
+                          <span className="font-medium text-foreground">
+                            {eur(location.stored_value_eur)}
+                          </span>
                         </div>
                         <div>
                           <span>PVP: </span>
-                          <span className="font-medium text-foreground">{eur(location.stored_value_eur)}</span>
+                          <span className="font-medium text-foreground">
+                            {eur(location.stored_value_eur)}
+                          </span>
                         </div>
                       </div>
                       {location.remaining_capacity_pct !== null ? (

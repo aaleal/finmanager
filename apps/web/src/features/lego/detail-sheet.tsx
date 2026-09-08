@@ -804,6 +804,7 @@ function EditCopyForm({
     has_box: instance.has_box,
     has_instructions: instance.has_instructions,
     is_fs: instance.is_fs,
+    is_potential_gift: instance.is_potential_gift,
     missing_parts: instance.missing_parts ?? '',
     notes: instance.notes ?? '',
   });
@@ -929,6 +930,13 @@ function EditCopyForm({
             />
             É Fs
           </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox
+              checked={form.is_potential_gift}
+              onCheckedChange={(checked) => set('is_potential_gift', checked === true)}
+            />
+            Potencial presente
+          </label>
         </div>
 
         <Field label="Peças em falta" hint="Texto livre; não altera o valor de mercado.">
@@ -988,6 +996,7 @@ function EditCopyForm({
               has_box: form.has_box,
               has_instructions: form.has_instructions,
               is_fs: form.is_fs,
+              is_potential_gift: form.is_potential_gift,
               missing_parts: form.missing_parts || null,
               notes: form.notes || null,
             })
@@ -1276,6 +1285,9 @@ export function CopyDetailSheet({
                             ? SOURCE_LABELS[instance.acquisition_source]
                             : '—'}
                           {instance.is_fs ? <Badge variant="outline">Fs</Badge> : null}
+                          {instance.is_potential_gift ? (
+                            <Badge variant="outline">Potencial presente</Badge>
+                          ) : null}
                         </span>
                       </DetailRow>
                       <DetailRow label="Arrumação">{instance.storage_label ?? '—'}</DetailRow>
