@@ -12,8 +12,8 @@ from decimal import Decimal
 
 import pytest
 from app.core.errors import ValidationError
-from app.services.receipts import products_service
-from app.services.receipts.normalize import extract_pack_weight_kg
+from app.services.supermarket import products_service
+from app.services.supermarket.normalize import extract_pack_weight_kg
 from sqlalchemy.orm import Session
 
 pytestmark = pytest.mark.integration

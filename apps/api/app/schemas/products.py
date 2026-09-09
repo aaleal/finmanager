@@ -246,4 +246,42 @@ class LegacyImportResult(BaseModel):
     exceptions: list[dict[str, Any]]
 
 
+# --- Bulk import (curated product log) -----------------------------------------
+
+
+class BulkProductImportRow(BaseModel):
+    """One resolved spreadsheet row. ``category_id``/``existing_product_id`` are
+    resolved by the preview step, never by the client, so the review table only
+    ever shows what the server already checked. ``errors`` is keyed by field
+    name, so the review table can highlight just that cell."""
+
+    row_number: int
+    canonical_name: str | None = None
+    brand: str | None = None
+    category_path: str | None = None
+    category_id: uuid.UUID | None = None
+    sold_by_weight: bool = False
+    pack_weights_kg: list[Decimal] = Field(default_factory=list)
+    #: Set when a product with this exact name+brand already exists — the
+    #: commit skips it rather than raising a duplicate-name error.
+    existing_product_id: uuid.UUID | None = None
+    errors: dict[str, str] = Field(default_factory=dict)
+
+
+class BulkProductImportPreviewOut(BaseModel):
+    rows: list[BulkProductImportRow]
+
+
+class BulkProductImportCommitIn(BaseModel):
+    rows: list[BulkProductImportRow]
+
+
+class BulkProductImportRowResult(BaseModel):
+    row_number: int
+    ok: bool
+    skipped: bool = False
+    message: str
+    master_product_id: uuid.UUID | None = None
+
+
 FsFilter = Literal["all", "only", "exclude"]

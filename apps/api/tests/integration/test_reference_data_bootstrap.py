@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from app.models.core import Category, Merchant
-from app.models.receipts import MerchantParserProfile
+from app.models.supermarket import MerchantParserProfile
 from app.services import reference_data
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

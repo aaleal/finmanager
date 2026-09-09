@@ -40,9 +40,9 @@ changes, so cookies behave identically in both modes.
 
 `worker` is provisioned in Phase 0 even though **M9 queued no jobs by design**.
 M1 is the first module to use it in spirit: every parse writes a `ProcessingJob`
-row (`job_type="receipts.parse"`), which backs the parsing queue view and lets a
+row (`job_type="supermarket.parse"`), which backs the parsing queue view and lets a
 `FAILED` receipt retry without a re-upload. The parse itself, however, still runs
-**inline in the request** (`receipts.service.parse_receipt`) — the job row exists
+**inline in the request** (`supermarket.service.parse_receipt`) — the job row exists
 for observability and retry today, not for asynchronous execution. Moving it
 onto Celery is a follow-up, not something already in place.
 
@@ -184,7 +184,7 @@ token first, Lidl prints it last, Piquete prints quantity first. A parser built
 on split flat text breaks the moment the extractor's spacing changes; one built
 on positions reads the column that is actually there.
 
-The confidence engine (`app/services/receipts/confidence.py`) is deliberately
+The confidence engine (`app/services/supermarket/confidence.py`) is deliberately
 **pure** — no clock, no randomness, no I/O — so identical input yields
 byte-identical output across runs. It returns `(status, confidence,
 decision_reasons)`: a signal of `None` means a stage did not run and has its
@@ -227,7 +227,7 @@ Every observation carries two measures, identical on every non-Fs row:
 [ADR-0023](decisions/0023-fs-observations-carry-the-notional-value-in-both-price-columns.md).
 `is_fs` also lives on the row, so the `fs` filter (`all`/`only`/`exclude`) used
 across the price, spend and loyalty endpoints never has to join back to
-`receipt_items` to know which rows to include.
+`supermarket_receipt_items` to know which rows to include.
 
 `category_spend()` outer-joins `MasterProduct` rather than inner-joining it, so
 a line that has not resolved to a product yet still counts towards spend,

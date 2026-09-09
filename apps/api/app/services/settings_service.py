@@ -14,7 +14,7 @@ from app.models.core import Setting
 # --- Known keys --------------------------------------------------------------
 CONFIDENCE_AUTO_ACCEPT = "confidence.auto_accept"
 CONFIDENCE_REVIEW = "confidence.review"
-RECEIPTS_ARITHMETIC_TOLERANCE = "receipts.arithmetic_tolerance_eur"
+SUPERMARKET_ARITHMETIC_TOLERANCE = "supermarket.arithmetic_tolerance_eur"
 BRICKSET_ENABLED = "lego.brickset.enabled"
 BRICKSET_API_KEY = "lego.brickset.api_key"
 LEGO_STALE_VALUE_DAYS = "lego.stale_value_days"
@@ -23,7 +23,7 @@ DEFAULTS: dict[str, Any] = {
     CONFIDENCE_AUTO_ACCEPT: 0.90,
     CONFIDENCE_REVIEW: 0.60,
     # Brief §3: €0.02. A rounding-prone merchant can be widened without a deploy.
-    RECEIPTS_ARITHMETIC_TOLERANCE: "0.02",
+    SUPERMARKET_ARITHMETIC_TOLERANCE: "0.02",
     BRICKSET_ENABLED: False,  # every external provider is off by default
     BRICKSET_API_KEY: "",
     LEGO_STALE_VALUE_DAYS: 180,

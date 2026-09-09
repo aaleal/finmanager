@@ -59,3 +59,4 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0052](0052-the-sheets-pvp-only-fills-what-brickset-left-empty.md) | The sheet's own PVP only fills what Brickset left empty |
 | [0053](0053-a-collection-purge-skips-the-per-row-guards.md) | A collection purge skips the per-row guards |
 | [0054](0054-a-storage-purge-clears-the-reference-not-the-copy.md) | A storage purge clears the reference, not the copy |
+| [0055](0055-the-supermarket-module-stops-calling-itself-receipts.md) | The supermarket module stops calling itself "receipts" |

@@ -24,7 +24,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session as DbSession
 
 from app.models.core import Category, Merchant
-from app.models.receipts import MerchantParserProfile
+from app.models.supermarket import MerchantParserProfile
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 TAXONOMY_FILE = DATA_DIR / "supermarket-categories.pt-PT.json"

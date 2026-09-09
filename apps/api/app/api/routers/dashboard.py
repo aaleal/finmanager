@@ -17,7 +17,7 @@ from sqlalchemy import desc, select
 from app.api.deps import CurrentAuth, Db, household_entity_ids
 from app.models.core import AuditLog
 from app.services import lego_service
-from app.services.receipts import service as receipts_service
+from app.services.supermarket import service as receipts_service
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 

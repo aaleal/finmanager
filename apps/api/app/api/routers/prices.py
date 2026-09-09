@@ -21,7 +21,7 @@ from sqlalchemy import select
 from app.api.deps import CurrentAuth, Db, Writer, household_entity_ids
 from app.core.errors import NotFound
 from app.models.core import Merchant
-from app.models.receipts import Receipt
+from app.models.supermarket import SupermarketReceipt
 from app.schemas.common import Ok
 from app.schemas.prices import (
     CategorySpendOut,
@@ -35,12 +35,12 @@ from app.schemas.prices import (
     TagsUpdate,
 )
 from app.schemas.products import FsFilter
-from app.services.receipts import ledger, prices_service, products_service
-from app.services.receipts import service as receipts
+from app.services.supermarket import ledger, prices_service, products_service
+from app.services.supermarket import service as supermarket
 
-router = APIRouter(prefix="/receipts/analytics", tags=["receipts"])
-price_router = APIRouter(prefix="/master-products", tags=["receipts"])
-link_router = APIRouter(prefix="/receipts", tags=["receipts"])
+router = APIRouter(prefix="/supermarket/analytics", tags=["supermarket"])
+price_router = APIRouter(prefix="/master-products", tags=["supermarket"])
+link_router = APIRouter(prefix="/supermarket", tags=["supermarket"])
 
 LEDGER_ABSENT_MESSAGE = (
     "O livro-razão bancário chega com o módulo de Banca. "
@@ -197,21 +197,21 @@ def loyalty_receipts(
 ) -> list[LoyaltyAllocationOut]:
     """The per-receipt allocation behind a scheme's totals."""
     stmt = (
-        select(Receipt, Merchant.name)
-        .outerjoin(Merchant, Merchant.id == Receipt.merchant_id)
+        select(SupermarketReceipt, Merchant.name)
+        .outerjoin(Merchant, Merchant.id == SupermarketReceipt.merchant_id)
         .where(
-            Receipt.entity_id.in_(_scope(db, ctx)),
-            Receipt.is_deleted.is_(False),
-            Receipt.status != "VOID",
-            Receipt.loyalty_scheme.is_not(None),
+            SupermarketReceipt.entity_id.in_(_scope(db, ctx)),
+            SupermarketReceipt.is_deleted.is_(False),
+            SupermarketReceipt.status != "VOID",
+            SupermarketReceipt.loyalty_scheme.is_not(None),
         )
-        .order_by(Receipt.purchase_date.desc().nullslast())
+        .order_by(SupermarketReceipt.purchase_date.desc().nullslast())
         .limit(limit)
     )
     if scheme:
-        stmt = stmt.where(Receipt.loyalty_scheme == scheme)
+        stmt = stmt.where(SupermarketReceipt.loyalty_scheme == scheme)
     if card_masked:
-        stmt = stmt.where(Receipt.loyalty_card_masked == card_masked)
+        stmt = stmt.where(SupermarketReceipt.loyalty_card_masked == card_masked)
 
     rows = []
     for receipt, merchant_name in db.execute(stmt).all():
@@ -238,7 +238,7 @@ def loyalty_receipts(
 
 @link_router.get("/{receipt_id}/link", response_model=ReceiptLinkOut)
 def get_link(receipt_id: uuid.UUID, ctx: CurrentAuth, db: Db) -> ReceiptLinkOut:
-    receipts.get_receipt(db, receipt_id)
+    supermarket.get_receipt(db, receipt_id)
     link = ledger.existing_link(db, receipt_id)
     return ReceiptLinkOut(
         ledger_available=ledger.is_available(),
@@ -254,7 +254,7 @@ def get_link(receipt_id: uuid.UUID, ctx: CurrentAuth, db: Db) -> ReceiptLinkOut:
 @link_router.post("/{receipt_id}/link", response_model=ReceiptLinkOut)
 def create_link(receipt_id: uuid.UUID, payload: LinkRequest, ctx: Writer, db: Db) -> ReceiptLinkOut:
     """Manual linking, reusing the shared transaction picker on the client."""
-    receipt = receipts.get_receipt(db, receipt_id)
+    receipt = supermarket.get_receipt(db, receipt_id)
     link = ledger.link_manually(
         db, receipt, transaction_id=payload.transaction_id, actor_user_id=ctx.user.id
     )
@@ -270,7 +270,7 @@ def create_link(receipt_id: uuid.UUID, payload: LinkRequest, ctx: Writer, db: Db
 
 @link_router.delete("/{receipt_id}/link", response_model=Ok)
 def delete_link(receipt_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
-    receipts.get_receipt(db, receipt_id)
+    supermarket.get_receipt(db, receipt_id)
     ledger.unlink(db, receipt_id)
     return Ok(message="Ligação removida.")
 
@@ -281,8 +281,8 @@ def delete_link(receipt_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
 @link_router.put("/{receipt_id}/tags", response_model=Ok)
 def set_receipt_tags(receipt_id: uuid.UUID, payload: TagsUpdate, ctx: Writer, db: Db) -> Ok:
     """Open labels. They change no total — that is what separates them from ``is_fs``."""
-    receipt = receipts.get_receipt(db, receipt_id)
-    receipts.update_receipt(db, receipt, {"tags": payload.tags}, actor_user_id=ctx.user.id)
+    receipt = supermarket.get_receipt(db, receipt_id)
+    supermarket.update_receipt(db, receipt, {"tags": payload.tags}, actor_user_id=ctx.user.id)
     return Ok(message="Etiquetas atualizadas.")
 
 
@@ -290,10 +290,10 @@ def set_receipt_tags(receipt_id: uuid.UUID, payload: TagsUpdate, ctx: Writer, db
 def set_item_tags(
     receipt_id: uuid.UUID, item_id: uuid.UUID, payload: TagsUpdate, ctx: Writer, db: Db
 ) -> Ok:
-    item = receipts.get_item(db, item_id)
+    item = supermarket.get_item(db, item_id)
     if item.receipt_id != receipt_id:
         raise NotFound("Linha não pertence a esta fatura.")
-    receipts.update_item(db, item, {"tags": payload.tags}, actor_user_id=ctx.user.id)
+    supermarket.update_item(db, item, {"tags": payload.tags}, actor_user_id=ctx.user.id)
     return Ok(message="Etiquetas atualizadas.")
 
 

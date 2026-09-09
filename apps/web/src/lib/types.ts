@@ -84,6 +84,11 @@ export type CategoryImpact = Schemas['CategoryImpactOut'];
 export type CategoryOperationResult = Schemas['CategoryOperationResult'];
 export type LegacyImportResult = Schemas['LegacyImportResult'];
 export type CategoryStatus = MasterProduct['category_status'];
+// Same `-Output`/`-Input` split as the LEGO bulk import, for the same reason
+// (`pack_weights_kg` narrows on the way out); `-Output` is what the client uses.
+export type BulkProductImportRow = Schemas['BulkProductImportRow-Output'];
+export type BulkProductImportPreview = Schemas['BulkProductImportPreviewOut'];
+export type BulkProductImportRowResult = Schemas['BulkProductImportRowResult'];
 
 // --- Money over time (M1c) ----------------------------------------------------
 export type PricePoint = Schemas['PricePointOut'];

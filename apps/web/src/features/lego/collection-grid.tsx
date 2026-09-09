@@ -152,7 +152,13 @@ function RangeFilter({
   );
 }
 
-function Thumb({ instance, density = 'compact' }: { instance: LegoSetInstance; density?: Density }) {
+function Thumb({
+  instance,
+  density = 'compact',
+}: {
+  instance: LegoSetInstance;
+  density?: Density;
+}) {
   const image =
     instance.photo_url ?? instance.display_image_url ?? instance.set_model?.image_url ?? null;
   const box = (
@@ -344,7 +350,13 @@ function StatusIcon({
  * truncates with the full name on hover, which keeps the ten columns inside the
  * viewport instead of pushing them behind a horizontal scrollbar.
  */
-function SetCell({ instance, density = 'compact' }: { instance: LegoSetInstance; density?: Density }) {
+function SetCell({
+  instance,
+  density = 'compact',
+}: {
+  instance: LegoSetInstance;
+  density?: Density;
+}) {
   const model = instance.set_model;
   // Only the exceptions are worth a chip (mirrors `is_complete`'s existing
   // convention) — a set with a box, a manual, in the collection is unremarkable.
@@ -372,7 +384,11 @@ function SetCell({ instance, density = 'compact' }: { instance: LegoSetInstance;
               />
             ) : null}
             {model?.is_retired ? (
-              <StatusIcon icon={Ban} label={`Retirado em ${model.retired_year}`} variant="warning" />
+              <StatusIcon
+                icon={Ban}
+                label={`Retirado em ${model.retired_year}`}
+                variant="warning"
+              />
             ) : null}
             {instance.is_potential_gift ? (
               <StatusIcon icon={Gift} label="Potencial presente" />
@@ -383,9 +399,7 @@ function SetCell({ instance, density = 'compact' }: { instance: LegoSetInstance;
               </Badge>
             ) : null}
             {!instance.has_box ? <StatusIcon icon={PackageX} label="Sem caixa" /> : null}
-            {!instance.has_instructions ? (
-              <StatusIcon icon={BookX} label="Sem instruções" />
-            ) : null}
+            {!instance.has_instructions ? <StatusIcon icon={BookX} label="Sem instruções" /> : null}
           </p>
         ) : null}
         <p className="numeric truncate text-xs text-muted-foreground">
@@ -704,7 +718,7 @@ function SummaryStrip({ summary, basis }: { summary: CollectionSummary; basis: R
     { label: 'conjuntos', value: num(summary.unique_sets) },
     { label: 'peças', value: num(summary.total_pieces) },
     { label: 'temas', value: num(summary.unique_themes) },
-    { label: '', value: " | " },
+    { label: '', value: ' | ' },
     { label: 'custo', value: eur(summary.total_cost_eur) },
     { label: 'pvp', value: eur(summary.total_rrp_eur) },
     { label: 'valor atual', value: eur(summary.total_value_eur) },
@@ -793,10 +807,7 @@ export function CollectionGrid({
     return [...map.entries()].map(([key, items]) => ({ key, items }));
   }, [grouped, data]);
 
-  const footerTotals = React.useMemo(
-    () => computeFooterTotals(data?.items ?? []),
-    [data],
-  );
+  const footerTotals = React.useMemo(() => computeFooterTotals(data?.items ?? []), [data]);
 
   const page = Number(filters.page ?? '1');
   const pageSize = Number(filters.page_size ?? '25');
@@ -834,7 +845,7 @@ export function CollectionGrid({
         <div className="relative min-w-[14rem] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className={cn("pl-9", searchDraft && "pr-9")}
+            className={cn('pl-9', searchDraft && 'pr-9')}
             placeholder="Procurar por número, nome, tema ou notas…"
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
@@ -920,7 +931,9 @@ export function CollectionGrid({
           <span className="text-xs text-muted-foreground">Densidade</span>
           <Select
             value={density}
-            onValueChange={(value) => setFilters({ density: value === 'compact' ? undefined : value })}
+            onValueChange={(value) =>
+              setFilters({ density: value === 'compact' ? undefined : value })
+            }
           >
             <SelectTrigger className="w-[8.5rem]">
               <SelectValue />
@@ -1256,9 +1269,7 @@ export function CollectionGrid({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell className="font-semibold">
-                  {num(groups.length)} conjuntos
-                </TableCell>
+                <TableCell className="font-semibold">{num(groups.length)} conjuntos</TableCell>
                 <TableCell className="text-muted-foreground">
                   {num(footerTotals.themeCount)} temas
                 </TableCell>
@@ -1373,9 +1384,7 @@ export function CollectionGrid({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell className="font-semibold">
-                  {num(data.items.length)} cópias
-                </TableCell>
+                <TableCell className="font-semibold">{num(data.items.length)} cópias</TableCell>
                 <TableCell className="text-muted-foreground">
                   {num(footerTotals.themeCount)} temas
                 </TableCell>

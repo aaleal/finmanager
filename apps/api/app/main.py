@@ -19,10 +19,10 @@ from app.api.routers import (
     lego,
     prices,
     products,
-    receipts,
     reference,
     review,
     setup,
+    supermarket,
     transactions,
 )
 from app.api.routers import (
@@ -118,7 +118,7 @@ for router in (
     household.router,
     reference.router,
     lego.router,
-    *receipts.routers,
+    *supermarket.routers,
     *products.routers,
     *prices.routers,
     documents.router,

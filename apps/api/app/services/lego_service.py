@@ -443,9 +443,11 @@ def purge_collection(
         reason=f"purged {len(model_ids)} set(s) ahead of a fresh import",
     )
     db.query(LegoSetInstance).filter(LegoSetInstance.lego_set_model_id.in_(model_ids)).delete(
-        synchronize_session=False
+        synchronize_session="fetch"
     )
-    db.query(LegoSetModel).filter(LegoSetModel.id.in_(model_ids)).delete(synchronize_session=False)
+    db.query(LegoSetModel).filter(LegoSetModel.id.in_(model_ids)).delete(
+        synchronize_session="fetch"
+    )
     db.flush()
     return len(model_ids)
 
@@ -1573,10 +1575,10 @@ def purge_storage_locations(db: DbSession, *, actor_user_id: uuid.UUID) -> int:
         reason=f"purged {len(location_ids)} location(s) ahead of a fresh import",
     )
     db.query(LegoSetInstance).filter(LegoSetInstance.storage_location_id.in_(location_ids)).update(
-        {LegoSetInstance.storage_location_id: None}, synchronize_session=False
+        {LegoSetInstance.storage_location_id: None}, synchronize_session="fetch"
     )
     db.query(StorageLocation).filter(StorageLocation.id.in_(location_ids)).delete(
-        synchronize_session=False
+        synchronize_session="fetch"
     )
     db.flush()
     return len(location_ids)

@@ -70,7 +70,9 @@ class ProductPriceHistory(Base):
     #: the literal zero would drag every paid-price trend towards zero.
     paid_price_eur: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     source_receipt_item_id: Mapped[uuid.UUID] = mapped_column(
-        PgUUID(as_uuid=True), ForeignKey("receipt_items.id", ondelete="CASCADE"), nullable=False
+        PgUUID(as_uuid=True),
+        ForeignKey("supermarket_receipt_items.id", ondelete="CASCADE"),
+        nullable=False,
     )
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

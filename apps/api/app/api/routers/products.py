@@ -19,9 +19,13 @@ from app.api.deps import CurrentAuth, Db, Writer, resolve_write_entity
 from app.core.errors import ValidationError
 from app.models.core import Category, Merchant
 from app.models.products import MasterProduct, ProductAlias
-from app.models.receipts import Receipt, ReceiptItem
+from app.models.supermarket import SupermarketReceipt, SupermarketReceiptItem
 from app.schemas.common import Ok, Page
 from app.schemas.products import (
+    BulkProductImportCommitIn,
+    BulkProductImportPreviewOut,
+    BulkProductImportRow,
+    BulkProductImportRowResult,
     CategoryCreate,
     CategoryImpactOut,
     CategoryMerge,
@@ -45,13 +49,13 @@ from app.schemas.products import (
     ProductSearchResult,
 )
 from app.services import documents
-from app.services.receipts import catalogue, legacy_import, prices_service, products_service
-from app.services.receipts import service as receipts
-from app.services.receipts.normalize import normalize_description
+from app.services.supermarket import catalogue, legacy_import, prices_service, products_service
+from app.services.supermarket import service as supermarket
+from app.services.supermarket.normalize import normalize_description
 
-products_router = APIRouter(prefix="/master-products", tags=["receipts"])
-aliases_router = APIRouter(prefix="/product-aliases", tags=["receipts"])
-categories_router = APIRouter(prefix="/categories", tags=["receipts"])
+products_router = APIRouter(prefix="/master-products", tags=["supermarket"])
+aliases_router = APIRouter(prefix="/product-aliases", tags=["supermarket"])
+categories_router = APIRouter(prefix="/categories", tags=["supermarket"])
 
 
 # --- Serialization ------------------------------------------------------------
@@ -84,8 +88,11 @@ def product_out(db: DbSession, product: MasterProduct) -> MasterProductOut:
     payload.occurrence_count = int(
         db.scalar(
             select(func.count())
-            .select_from(ReceiptItem)
-            .where(ReceiptItem.master_product_id == product.id, ReceiptItem.is_deleted.is_(False))
+            .select_from(SupermarketReceiptItem)
+            .where(
+                SupermarketReceiptItem.master_product_id == product.id,
+                SupermarketReceiptItem.is_deleted.is_(False),
+            )
         )
         or 0
     )
@@ -188,6 +195,39 @@ def list_merge_candidates(ctx: CurrentAuth, db: Db) -> list[MergeCandidate]:
     ]
 
 
+# --- Bulk import (curated product log) -----------------------------------------
+
+
+@products_router.post("/bulk/preview", response_model=BulkProductImportPreviewOut)
+def preview_bulk_import(
+    ctx: Writer, db: Db, file: Annotated[UploadFile, File()]
+) -> BulkProductImportPreviewOut:
+    """Resolves category paths and existing-product matches only — never writes.
+
+    Safe to call for a re-preview after fixing a row, and safe to call for the
+    same file twice: nothing here creates or changes a product.
+    """
+    data = file.file.read()
+    if not data:
+        raise ValidationError("Ficheiro vazio.")
+    rows = products_service.preview_product_import(db, data)
+    return BulkProductImportPreviewOut(rows=[BulkProductImportRow(**row) for row in rows])
+
+
+@products_router.post("/bulk/commit", response_model=list[BulkProductImportRowResult])
+def commit_bulk_import(
+    payload: BulkProductImportCommitIn, ctx: Writer, db: Db
+) -> list[BulkProductImportRowResult]:
+    """One row at a time — a row already known to exist is skipped, not
+    duplicated, and one bad row never blocks the rest of the sheet."""
+    results = products_service.commit_product_import(
+        db,
+        [row.model_dump() for row in payload.rows],
+        actor_user_id=ctx.user.id,
+    )
+    return [BulkProductImportRowResult(**result) for result in results]
+
+
 @products_router.post("", response_model=MasterProductOut, status_code=201)
 def create_product(payload: MasterProductCreate, ctx: Writer, db: Db) -> MasterProductOut:
     data = payload.model_dump()
@@ -275,21 +315,21 @@ def product_occurrences(
 ) -> list[ProductOccurrence]:
     """Every receipt line this product has appeared on, with a link to each invoice."""
     rows = db.execute(
-        select(ReceiptItem, Receipt, Merchant.name)
-        .join(Receipt, Receipt.id == ReceiptItem.receipt_id)
-        .outerjoin(Merchant, Merchant.id == Receipt.merchant_id)
+        select(SupermarketReceiptItem, SupermarketReceipt, Merchant.name)
+        .join(SupermarketReceipt, SupermarketReceipt.id == SupermarketReceiptItem.receipt_id)
+        .outerjoin(Merchant, Merchant.id == SupermarketReceipt.merchant_id)
         .where(
-            ReceiptItem.master_product_id == product_id,
-            ReceiptItem.is_deleted.is_(False),
-            Receipt.is_deleted.is_(False),
+            SupermarketReceiptItem.master_product_id == product_id,
+            SupermarketReceiptItem.is_deleted.is_(False),
+            SupermarketReceipt.is_deleted.is_(False),
         )
-        .order_by(Receipt.purchase_date.desc().nullslast())
+        .order_by(SupermarketReceipt.purchase_date.desc().nullslast())
         .limit(limit)
     ).all()
 
     occurrences: list[ProductOccurrence] = []
     for item, receipt, merchant_name in rows:
-        derived = receipts.item_derived(item)
+        derived = supermarket.item_derived(item)
         occurrences.append(
             ProductOccurrence(
                 receipt_item_id=item.id,
@@ -324,8 +364,11 @@ def delete_product(product_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
     in_use = int(
         db.scalar(
             select(func.count())
-            .select_from(ReceiptItem)
-            .where(ReceiptItem.master_product_id == product.id, ReceiptItem.is_deleted.is_(False))
+            .select_from(SupermarketReceiptItem)
+            .where(
+                SupermarketReceiptItem.master_product_id == product.id,
+                SupermarketReceiptItem.is_deleted.is_(False),
+            )
         )
         or 0
     )
@@ -513,7 +556,7 @@ def retire_category(category_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
 # --- Legacy import (FR-1.19) ---------------------------------------------------
 
 
-import_router = APIRouter(prefix="/receipts/import", tags=["receipts"])
+import_router = APIRouter(prefix="/supermarket/import", tags=["supermarket"])
 
 
 @import_router.post("/legacy", response_model=LegacyImportResult)

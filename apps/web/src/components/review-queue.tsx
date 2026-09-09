@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
-import { WhyPopover } from '@/features/receipts/why-popover';
+import { WhyPopover } from '@/features/supermarket/why-popover';
 import { dateTime } from '@/lib/format';
 
 /**
@@ -51,7 +51,7 @@ function useResolveTask() {
       api.post<ReviewTask>(`/review/tasks/${taskId}/resolve`, { action }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['review'] });
-      void queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      void queryClient.invalidateQueries({ queryKey: ['supermarket'] });
     },
     onError: (error: unknown) =>
       toast.error(

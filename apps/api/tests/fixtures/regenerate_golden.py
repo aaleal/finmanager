@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from app.seed import INVOICES_DIR
-from app.services.receipts import extraction
+from app.services.supermarket import extraction
 
 FIXTURES = INVOICES_DIR
 GOLDEN = Path(__file__).parent / "golden"

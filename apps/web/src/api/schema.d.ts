@@ -859,7 +859,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts': {
+  '/api/supermarket': {
     parameters: {
       query?: never;
       header?: never;
@@ -867,7 +867,7 @@ export interface paths {
       cookie?: never;
     };
     /** List Receipts */
-    get: operations['list_receipts_api_receipts_get'];
+    get: operations['list_receipts_api_supermarket_get'];
     put?: never;
     /**
      * Upload
@@ -880,14 +880,14 @@ export interface paths {
      *     either way the profile that actually ran is recorded on the receipt and shown
      *     in the queue (UX-1.1).
      */
-    post: operations['upload_api_receipts_post'];
+    post: operations['upload_api_supermarket_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/queue': {
+  '/api/supermarket/queue': {
     parameters: {
       query?: never;
       header?: never;
@@ -895,7 +895,7 @@ export interface paths {
       cookie?: never;
     };
     /** Queue */
-    get: operations['queue_api_receipts_queue_get'];
+    get: operations['queue_api_supermarket_queue_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -904,7 +904,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/status': {
+  '/api/supermarket/status': {
     parameters: {
       query?: never;
       header?: never;
@@ -912,7 +912,7 @@ export interface paths {
       cookie?: never;
     };
     /** Status Board */
-    get: operations['status_board_api_receipts_status_get'];
+    get: operations['status_board_api_supermarket_status_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -921,7 +921,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}': {
+  '/api/supermarket/{receipt_id}': {
     parameters: {
       query?: never;
       header?: never;
@@ -929,17 +929,17 @@ export interface paths {
       cookie?: never;
     };
     /** Get Receipt */
-    get: operations['get_receipt_api_receipts__receipt_id__get'];
+    get: operations['get_receipt_api_supermarket__receipt_id__get'];
     put?: never;
     post?: never;
     delete?: never;
     options?: never;
     head?: never;
     /** Update Receipt */
-    patch: operations['update_receipt_api_receipts__receipt_id__patch'];
+    patch: operations['update_receipt_api_supermarket__receipt_id__patch'];
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/items/{item_id}': {
+  '/api/supermarket/{receipt_id}/items/{item_id}': {
     parameters: {
       query?: never;
       header?: never;
@@ -950,14 +950,14 @@ export interface paths {
     put?: never;
     post?: never;
     /** Delete Item */
-    delete: operations['delete_item_api_receipts__receipt_id__items__item_id__delete'];
+    delete: operations['delete_item_api_supermarket__receipt_id__items__item_id__delete'];
     options?: never;
     head?: never;
     /** Update Item */
-    patch: operations['update_item_api_receipts__receipt_id__items__item_id__patch'];
+    patch: operations['update_item_api_supermarket__receipt_id__items__item_id__patch'];
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/items': {
+  '/api/supermarket/{receipt_id}/items': {
     parameters: {
       query?: never;
       header?: never;
@@ -970,14 +970,14 @@ export interface paths {
      * Add Item
      * @description Append an article by hand. An Fs row leaves every printed figure unchanged.
      */
-    post: operations['add_item_api_receipts__receipt_id__items_post'];
+    post: operations['add_item_api_supermarket__receipt_id__items_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/reparse': {
+  '/api/supermarket/{receipt_id}/reparse': {
     parameters: {
       query?: never;
       header?: never;
@@ -987,14 +987,14 @@ export interface paths {
     get?: never;
     put?: never;
     /** Reparse */
-    post: operations['reparse_api_receipts__receipt_id__reparse_post'];
+    post: operations['reparse_api_supermarket__receipt_id__reparse_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/confirm': {
+  '/api/supermarket/{receipt_id}/confirm': {
     parameters: {
       query?: never;
       header?: never;
@@ -1004,14 +1004,14 @@ export interface paths {
     get?: never;
     put?: never;
     /** Confirm */
-    post: operations['confirm_api_receipts__receipt_id__confirm_post'];
+    post: operations['confirm_api_supermarket__receipt_id__confirm_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/reopen': {
+  '/api/supermarket/{receipt_id}/reopen': {
     parameters: {
       query?: never;
       header?: never;
@@ -1024,14 +1024,14 @@ export interface paths {
      * Reopen
      * @description Back to review. The observations already frozen are left untouched.
      */
-    post: operations['reopen_api_receipts__receipt_id__reopen_post'];
+    post: operations['reopen_api_supermarket__receipt_id__reopen_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/confirm-categories': {
+  '/api/supermarket/{receipt_id}/confirm-categories': {
     parameters: {
       query?: never;
       header?: never;
@@ -1044,14 +1044,14 @@ export interface paths {
      * Confirm Categories
      * @description Promote every ``AUTO`` classification on this receipt to ``VALIDATED``.
      */
-    post: operations['confirm_categories_api_receipts__receipt_id__confirm_categories_post'];
+    post: operations['confirm_categories_api_supermarket__receipt_id__confirm_categories_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/void': {
+  '/api/supermarket/{receipt_id}/void': {
     parameters: {
       query?: never;
       header?: never;
@@ -1061,7 +1061,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Void */
-    post: operations['void_api_receipts__receipt_id__void_post'];
+    post: operations['void_api_supermarket__receipt_id__void_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1141,7 +1141,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipt-items': {
+  '/api/supermarket-items': {
     parameters: {
       query?: never;
       header?: never;
@@ -1149,7 +1149,7 @@ export interface paths {
       cookie?: never;
     };
     /** List Items */
-    get: operations['list_items_api_receipt_items_get'];
+    get: operations['list_items_api_supermarket_items_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1158,7 +1158,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipt-items/{item_id}/product': {
+  '/api/supermarket-items/{item_id}/product': {
     parameters: {
       query?: never;
       header?: never;
@@ -1175,10 +1175,10 @@ export interface paths {
      * Reassign Item Product
      * @description Correcting a line here is also how the merchant's vocabulary is learned.
      */
-    patch: operations['reassign_item_product_api_receipt_items__item_id__product_patch'];
+    patch: operations['reassign_item_product_api_supermarket_items__item_id__product_patch'];
     trace?: never;
   };
-  '/api/receipt-items/summary': {
+  '/api/supermarket-items/summary': {
     parameters: {
       query?: never;
       header?: never;
@@ -1189,7 +1189,7 @@ export interface paths {
      * Summarise Items
      * @description One row per product: how much of it, how often, and at what €/kg.
      */
-    get: operations['summarise_items_api_receipt_items_summary_get'];
+    get: operations['summarise_items_api_supermarket_items_summary_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1250,6 +1250,50 @@ export interface paths {
     get: operations['list_merge_candidates_api_master_products_merge_candidates_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/bulk/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Bulk Import
+     * @description Resolves category paths and existing-product matches only — never writes.
+     *
+     *     Safe to call for a re-preview after fixing a row, and safe to call for the
+     *     same file twice: nothing here creates or changes a product.
+     */
+    post: operations['preview_bulk_import_api_master_products_bulk_preview_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/master-products/bulk/commit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Commit Bulk Import
+     * @description One row at a time — a row already known to exist is skipped, not
+     *     duplicated, and one bad row never blocks the rest of the sheet.
+     */
+    post: operations['commit_bulk_import_api_master_products_bulk_commit_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1501,7 +1545,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/import/legacy': {
+  '/api/supermarket/import/legacy': {
     parameters: {
       query?: never;
       header?: never;
@@ -1517,14 +1561,14 @@ export interface paths {
      *     Re-runnable without duplication: a group already imported for this entity is
      *     updated in place rather than doubled.
      */
-    post: operations['import_legacy_api_receipts_import_legacy_post'];
+    post: operations['import_legacy_api_supermarket_import_legacy_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/analytics/shrinkflation': {
+  '/api/supermarket/analytics/shrinkflation': {
     parameters: {
       query?: never;
       header?: never;
@@ -1535,7 +1579,7 @@ export interface paths {
      * Shrinkflation
      * @description Products whose pack shrank faster than their price fell.
      */
-    get: operations['shrinkflation_api_receipts_analytics_shrinkflation_get'];
+    get: operations['shrinkflation_api_supermarket_analytics_shrinkflation_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1544,7 +1588,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/analytics/category-spend': {
+  '/api/supermarket/analytics/category-spend': {
     parameters: {
       query?: never;
       header?: never;
@@ -1552,7 +1596,7 @@ export interface paths {
       cookie?: never;
     };
     /** Category Spend */
-    get: operations['category_spend_api_receipts_analytics_category_spend_get'];
+    get: operations['category_spend_api_supermarket_analytics_category_spend_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1561,7 +1605,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/analytics/loyalty': {
+  '/api/supermarket/analytics/loyalty': {
     parameters: {
       query?: never;
       header?: never;
@@ -1569,7 +1613,7 @@ export interface paths {
       cookie?: never;
     };
     /** Loyalty */
-    get: operations['loyalty_api_receipts_analytics_loyalty_get'];
+    get: operations['loyalty_api_supermarket_analytics_loyalty_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1578,7 +1622,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/analytics/loyalty/receipts': {
+  '/api/supermarket/analytics/loyalty/receipts': {
     parameters: {
       query?: never;
       header?: never;
@@ -1589,7 +1633,7 @@ export interface paths {
      * Loyalty Receipts
      * @description The per-receipt allocation behind a scheme's totals.
      */
-    get: operations['loyalty_receipts_api_receipts_analytics_loyalty_receipts_get'];
+    get: operations['loyalty_receipts_api_supermarket_analytics_loyalty_receipts_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1632,7 +1676,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/link': {
+  '/api/supermarket/{receipt_id}/link': {
     parameters: {
       query?: never;
       header?: never;
@@ -1640,21 +1684,21 @@ export interface paths {
       cookie?: never;
     };
     /** Get Link */
-    get: operations['get_link_api_receipts__receipt_id__link_get'];
+    get: operations['get_link_api_supermarket__receipt_id__link_get'];
     put?: never;
     /**
      * Create Link
      * @description Manual linking, reusing the shared transaction picker on the client.
      */
-    post: operations['create_link_api_receipts__receipt_id__link_post'];
+    post: operations['create_link_api_supermarket__receipt_id__link_post'];
     /** Delete Link */
-    delete: operations['delete_link_api_receipts__receipt_id__link_delete'];
+    delete: operations['delete_link_api_supermarket__receipt_id__link_delete'];
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/tags': {
+  '/api/supermarket/{receipt_id}/tags': {
     parameters: {
       query?: never;
       header?: never;
@@ -1666,7 +1710,7 @@ export interface paths {
      * Set Receipt Tags
      * @description Open labels. They change no total — that is what separates them from ``is_fs``.
      */
-    put: operations['set_receipt_tags_api_receipts__receipt_id__tags_put'];
+    put: operations['set_receipt_tags_api_supermarket__receipt_id__tags_put'];
     post?: never;
     delete?: never;
     options?: never;
@@ -1674,7 +1718,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/receipts/{receipt_id}/items/{item_id}/tags': {
+  '/api/supermarket/{receipt_id}/items/{item_id}/tags': {
     parameters: {
       query?: never;
       header?: never;
@@ -1683,7 +1727,7 @@ export interface paths {
     };
     get?: never;
     /** Set Item Tags */
-    put: operations['set_item_tags_api_receipts__receipt_id__items__item_id__tags_put'];
+    put: operations['set_item_tags_api_supermarket__receipt_id__items__item_id__tags_put'];
     post?: never;
     delete?: never;
     options?: never;
@@ -1973,8 +2017,16 @@ export interface components {
        */
       file: string;
     };
-    /** Body_import_legacy_api_receipts_import_legacy_post */
-    Body_import_legacy_api_receipts_import_legacy_post: {
+    /** Body_import_legacy_api_supermarket_import_legacy_post */
+    Body_import_legacy_api_supermarket_import_legacy_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
+    };
+    /** Body_preview_bulk_import_api_master_products_bulk_preview_post */
+    Body_preview_bulk_import_api_master_products_bulk_preview_post: {
       /**
        * File
        * Format: binary
@@ -1991,8 +2043,8 @@ export interface components {
       /** File */
       file?: string | null;
     };
-    /** Body_upload_api_receipts_post */
-    Body_upload_api_receipts_post: {
+    /** Body_upload_api_supermarket_post */
+    Body_upload_api_supermarket_post: {
       /** Files */
       files: string[];
     };
@@ -2207,6 +2259,96 @@ export interface components {
       message: string;
       /** Lego Set Instance Id */
       lego_set_instance_id?: string | null;
+    };
+    /** BulkProductImportCommitIn */
+    BulkProductImportCommitIn: {
+      /** Rows */
+      rows: components['schemas']['BulkProductImportRow-Input'][];
+    };
+    /** BulkProductImportPreviewOut */
+    BulkProductImportPreviewOut: {
+      /** Rows */
+      rows: components['schemas']['BulkProductImportRow-Output'][];
+    };
+    /**
+     * BulkProductImportRow
+     * @description One resolved spreadsheet row. ``category_id``/``existing_product_id`` are
+     *     resolved by the preview step, never by the client, so the review table only
+     *     ever shows what the server already checked. ``errors`` is keyed by field
+     *     name, so the review table can highlight just that cell.
+     */
+    'BulkProductImportRow-Input': {
+      /** Row Number */
+      row_number: number;
+      /** Canonical Name */
+      canonical_name?: string | null;
+      /** Brand */
+      brand?: string | null;
+      /** Category Path */
+      category_path?: string | null;
+      /** Category Id */
+      category_id?: string | null;
+      /**
+       * Sold By Weight
+       * @default false
+       */
+      sold_by_weight: boolean;
+      /** Pack Weights Kg */
+      pack_weights_kg?: (number | string)[];
+      /** Existing Product Id */
+      existing_product_id?: string | null;
+      /** Errors */
+      errors?: {
+        [key: string]: string;
+      };
+    };
+    /**
+     * BulkProductImportRow
+     * @description One resolved spreadsheet row. ``category_id``/``existing_product_id`` are
+     *     resolved by the preview step, never by the client, so the review table only
+     *     ever shows what the server already checked. ``errors`` is keyed by field
+     *     name, so the review table can highlight just that cell.
+     */
+    'BulkProductImportRow-Output': {
+      /** Row Number */
+      row_number: number;
+      /** Canonical Name */
+      canonical_name?: string | null;
+      /** Brand */
+      brand?: string | null;
+      /** Category Path */
+      category_path?: string | null;
+      /** Category Id */
+      category_id?: string | null;
+      /**
+       * Sold By Weight
+       * @default false
+       */
+      sold_by_weight: boolean;
+      /** Pack Weights Kg */
+      pack_weights_kg?: string[];
+      /** Existing Product Id */
+      existing_product_id?: string | null;
+      /** Errors */
+      errors?: {
+        [key: string]: string;
+      };
+    };
+    /** BulkProductImportRowResult */
+    BulkProductImportRowResult: {
+      /** Row Number */
+      row_number: number;
+      /** Ok */
+      ok: boolean;
+      /**
+       * Skipped
+       * @default false
+       */
+      skipped: boolean;
+      /** Message */
+      message: string;
+      /** Master Product Id */
+      master_product_id?: string | null;
     };
     /**
      * BulkSheetsCheckOut
@@ -6715,7 +6857,7 @@ export interface operations {
       };
     };
   };
-  list_receipts_api_receipts_get: {
+  list_receipts_api_supermarket_get: {
     parameters: {
       query?: {
         search?: string | null;
@@ -6753,7 +6895,7 @@ export interface operations {
       };
     };
   };
-  upload_api_receipts_post: {
+  upload_api_supermarket_post: {
     parameters: {
       query?: {
         entity_id?: string | null;
@@ -6767,7 +6909,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'multipart/form-data': components['schemas']['Body_upload_api_receipts_post'];
+        'multipart/form-data': components['schemas']['Body_upload_api_supermarket_post'];
       };
     };
     responses: {
@@ -6791,7 +6933,7 @@ export interface operations {
       };
     };
   };
-  queue_api_receipts_queue_get: {
+  queue_api_supermarket_queue_get: {
     parameters: {
       query?: {
         status?: string | null;
@@ -6822,7 +6964,7 @@ export interface operations {
       };
     };
   };
-  status_board_api_receipts_status_get: {
+  status_board_api_supermarket_status_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -6842,7 +6984,7 @@ export interface operations {
       };
     };
   };
-  get_receipt_api_receipts__receipt_id__get: {
+  get_receipt_api_supermarket__receipt_id__get: {
     parameters: {
       query?: {
         fs?: 'all' | 'only' | 'exclude';
@@ -6875,7 +7017,7 @@ export interface operations {
       };
     };
   };
-  update_receipt_api_receipts__receipt_id__patch: {
+  update_receipt_api_supermarket__receipt_id__patch: {
     parameters: {
       query?: never;
       header?: never;
@@ -6910,7 +7052,7 @@ export interface operations {
       };
     };
   };
-  delete_item_api_receipts__receipt_id__items__item_id__delete: {
+  delete_item_api_supermarket__receipt_id__items__item_id__delete: {
     parameters: {
       query?: never;
       header?: never;
@@ -6942,7 +7084,7 @@ export interface operations {
       };
     };
   };
-  update_item_api_receipts__receipt_id__items__item_id__patch: {
+  update_item_api_supermarket__receipt_id__items__item_id__patch: {
     parameters: {
       query?: never;
       header?: never;
@@ -6978,7 +7120,7 @@ export interface operations {
       };
     };
   };
-  add_item_api_receipts__receipt_id__items_post: {
+  add_item_api_supermarket__receipt_id__items_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -7013,7 +7155,7 @@ export interface operations {
       };
     };
   };
-  reparse_api_receipts__receipt_id__reparse_post: {
+  reparse_api_supermarket__receipt_id__reparse_post: {
     parameters: {
       query?: {
         parser_profile_id?: string | null;
@@ -7046,7 +7188,7 @@ export interface operations {
       };
     };
   };
-  confirm_api_receipts__receipt_id__confirm_post: {
+  confirm_api_supermarket__receipt_id__confirm_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -7077,7 +7219,7 @@ export interface operations {
       };
     };
   };
-  reopen_api_receipts__receipt_id__reopen_post: {
+  reopen_api_supermarket__receipt_id__reopen_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -7108,7 +7250,7 @@ export interface operations {
       };
     };
   };
-  confirm_categories_api_receipts__receipt_id__confirm_categories_post: {
+  confirm_categories_api_supermarket__receipt_id__confirm_categories_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -7139,7 +7281,7 @@ export interface operations {
       };
     };
   };
-  void_api_receipts__receipt_id__void_post: {
+  void_api_supermarket__receipt_id__void_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -7346,7 +7488,7 @@ export interface operations {
       };
     };
   };
-  list_items_api_receipt_items_get: {
+  list_items_api_supermarket_items_get: {
     parameters: {
       query?: {
         search?: string | null;
@@ -7385,7 +7527,7 @@ export interface operations {
       };
     };
   };
-  reassign_item_product_api_receipt_items__item_id__product_patch: {
+  reassign_item_product_api_supermarket_items__item_id__product_patch: {
     parameters: {
       query?: never;
       header?: never;
@@ -7420,7 +7562,7 @@ export interface operations {
       };
     };
   };
-  summarise_items_api_receipt_items_summary_get: {
+  summarise_items_api_supermarket_items_summary_get: {
     parameters: {
       query?: {
         search?: string | null;
@@ -7575,6 +7717,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['MergeCandidate'][];
+        };
+      };
+    };
+  };
+  preview_bulk_import_api_master_products_bulk_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_preview_bulk_import_api_master_products_bulk_preview_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BulkProductImportPreviewOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  commit_bulk_import_api_master_products_bulk_commit_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkProductImportCommitIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BulkProductImportRowResult'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };
@@ -8105,7 +8313,7 @@ export interface operations {
       };
     };
   };
-  import_legacy_api_receipts_import_legacy_post: {
+  import_legacy_api_supermarket_import_legacy_post: {
     parameters: {
       query?: {
         entity_id?: string | null;
@@ -8117,7 +8325,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'multipart/form-data': components['schemas']['Body_import_legacy_api_receipts_import_legacy_post'];
+        'multipart/form-data': components['schemas']['Body_import_legacy_api_supermarket_import_legacy_post'];
       };
     };
     responses: {
@@ -8141,7 +8349,7 @@ export interface operations {
       };
     };
   };
-  shrinkflation_api_receipts_analytics_shrinkflation_get: {
+  shrinkflation_api_supermarket_analytics_shrinkflation_get: {
     parameters: {
       query?: {
         fs?: 'all' | 'only' | 'exclude';
@@ -8172,7 +8380,7 @@ export interface operations {
       };
     };
   };
-  category_spend_api_receipts_analytics_category_spend_get: {
+  category_spend_api_supermarket_analytics_category_spend_get: {
     parameters: {
       query?: {
         level?: number;
@@ -8206,7 +8414,7 @@ export interface operations {
       };
     };
   };
-  loyalty_api_receipts_analytics_loyalty_get: {
+  loyalty_api_supermarket_analytics_loyalty_get: {
     parameters: {
       query?: {
         date_from?: string | null;
@@ -8238,7 +8446,7 @@ export interface operations {
       };
     };
   };
-  loyalty_receipts_api_receipts_analytics_loyalty_receipts_get: {
+  loyalty_receipts_api_supermarket_analytics_loyalty_receipts_get: {
     parameters: {
       query?: {
         scheme?: string | null;
@@ -8339,7 +8547,7 @@ export interface operations {
       };
     };
   };
-  get_link_api_receipts__receipt_id__link_get: {
+  get_link_api_supermarket__receipt_id__link_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -8370,7 +8578,7 @@ export interface operations {
       };
     };
   };
-  create_link_api_receipts__receipt_id__link_post: {
+  create_link_api_supermarket__receipt_id__link_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -8405,7 +8613,7 @@ export interface operations {
       };
     };
   };
-  delete_link_api_receipts__receipt_id__link_delete: {
+  delete_link_api_supermarket__receipt_id__link_delete: {
     parameters: {
       query?: never;
       header?: never;
@@ -8436,7 +8644,7 @@ export interface operations {
       };
     };
   };
-  set_receipt_tags_api_receipts__receipt_id__tags_put: {
+  set_receipt_tags_api_supermarket__receipt_id__tags_put: {
     parameters: {
       query?: never;
       header?: never;
@@ -8471,7 +8679,7 @@ export interface operations {
       };
     };
   };
-  set_item_tags_api_receipts__receipt_id__items__item_id__tags_put: {
+  set_item_tags_api_supermarket__receipt_id__items__item_id__tags_put: {
     parameters: {
       query?: never;
       header?: never;

@@ -13,22 +13,22 @@ import {
 } from '@/components/ui/select';
 import { useSession } from '@/features/auth/session';
 import { useDebounced, useUrlFilters } from '@/lib/filters';
-import { RECEIPT_STATUS_OPTIONS } from '@/features/receipts/constants';
-import { useReceiptItems, useProductSummary, useReceipts } from '@/features/receipts/api';
-import { ReceiptStatusPanel } from '@/features/receipts/status-panel';
-import { ReceiptUploadDialog } from '@/features/receipts/upload-panel';
-import { ReceiptQueueTable } from '@/features/receipts/queue-table';
-import { ReceiptsTable } from '@/features/receipts/receipts-table';
-import { ReceiptItemsTable } from '@/features/receipts/items-table';
-import { ProductSummaryTable } from '@/features/receipts/product-summary-table';
-import { ParserProfilesPanel } from '@/features/receipts/parser-profiles-panel';
-import { ReceiptReviewPane } from '@/features/receipts/review-pane';
-import { PriceEvolutionPanel } from '@/features/receipts/price-evolution-panel';
-import { SpendPanel } from '@/features/receipts/spend-panel';
-import { LoyaltyPanel } from '@/features/receipts/loyalty-panel';
-import { ProductsPanel } from '@/features/receipts/products-panel';
-import { CategoriesPanel } from '@/features/receipts/categories-panel';
-import { LegacyImportPanel } from '@/features/receipts/legacy-import-panel';
+import { RECEIPT_STATUS_OPTIONS } from '@/features/supermarket/constants';
+import { useReceiptItems, useProductSummary, useReceipts } from '@/features/supermarket/api';
+import { ReceiptStatusPanel } from '@/features/supermarket/status-panel';
+import { ReceiptUploadDialog } from '@/features/supermarket/upload-panel';
+import { ReceiptQueueTable } from '@/features/supermarket/queue-table';
+import { ReceiptsTable } from '@/features/supermarket/receipts-table';
+import { ReceiptItemsTable } from '@/features/supermarket/items-table';
+import { ProductSummaryTable } from '@/features/supermarket/product-summary-table';
+import { ParserProfilesPanel } from '@/features/supermarket/parser-profiles-panel';
+import { ReceiptReviewPane } from '@/features/supermarket/review-pane';
+import { PriceEvolutionPanel } from '@/features/supermarket/price-evolution-panel';
+import { SpendPanel } from '@/features/supermarket/spend-panel';
+import { LoyaltyPanel } from '@/features/supermarket/loyalty-panel';
+import { ProductsPanel } from '@/features/supermarket/products-panel';
+import { CategoriesPanel } from '@/features/supermarket/categories-panel';
+import { LegacyImportPanel } from '@/features/supermarket/legacy-import-panel';
 
 const ALL = '__all__';
 

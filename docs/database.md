@@ -119,20 +119,20 @@ There is **no** valuation-history table, no image table and no external-listing
 table. Value history is recoverable from `audit_logs`; images reuse `documents`;
 marketplace links are built client-side from a template.
 
-### Supermarket & receipts (M1, `app/models/receipts.py` + `app/models/products.py`)
+### Supermarket & receipts (M1, `app/models/supermarket.py` + `app/models/products.py`)
 
 - `merchant_parser_profiles` — how one merchant's layout is read. A partial
   unique index, `uq_merchant_parser_profiles_generic` (`merchant_id`, where
   `merchant_id IS NULL AND is_deleted = false`), keeps the generic fallback
   single and undeletable — see [ADR 0016](decisions/0016-per-merchant-parsers-over-one-configurable-parser.md).
-- `receipts` — one payment transaction at one merchant. Two partial unique
-  indexes prevent duplicates rather than merely detecting them: `uq_receipts_entity_atcud`
+- `supermarket_receipts` — one payment transaction at one merchant. Two partial unique
+  indexes prevent duplicates rather than merely detecting them: `uq_supermarket_receipts_entity_atcud`
   (`entity_id, atcud_code`, where `atcud_code IS NOT NULL AND is_deleted = false`)
   makes the fiscal document identity itself impossible to duplicate (see
   [ADR 0017](decisions/0017-fiscal-qr-is-the-highest-confidence-anchor.md)), and
-  `uq_receipts_entity_document` (`entity_id, document_id`, same `is_deleted`
+  `uq_supermarket_receipts_entity_document` (`entity_id, document_id`, same `is_deleted`
   guard) stops one uploaded file from creating two receipts.
-- `receipt_items` — one row per printed line, or one appended Fs article. Two
+- `supermarket_receipt_items` — one row per printed line, or one appended Fs article. Two
   `CHECK` constraints enforce [ADR 0015](decisions/0015-fs-articles-are-appended-not-flagged.md)
   at the database level rather than in application code: `fs_pays_nothing`
   (`is_fs = false OR paid_price_eur = 0`) and `fs_has_no_document_fields`
@@ -195,15 +195,15 @@ The indexes that matter today:
 - `ix_lego_set_instances_model_id` — copy grouping and `owned_copies_count`.
 - `ix_audit_logs_record (table_name, record_id, created_at)` — reconstructing an
   object's history.
-- `ix_receipts_entity_purchase_date_id (entity_id, purchase_date, id)` — the shape
+- `ix_supermarket_receipts_entity_purchase_date_id (entity_id, purchase_date, id)` — the shape
   of every receipt list and dashboard query.
-- `ix_receipt_items_receipt_id_line_no`, `ix_receipt_items_master_product_id` —
+- `ix_supermarket_receipt_items_receipt_id_line_no`, `ix_supermarket_receipt_items_master_product_id` —
   category spend joins through the product, which is a small table.
 - `ix_master_products_category_l1_id_l2_id_l3_id` — spend grouped by any level
   without a recursive join (see ADR-0020).
 - `ix_product_price_history_product_merchant_observed` — the €/kg series and the
   shrinkflation window. `is_fs` lives on the row itself, so the `fs` filter never
-  forces a join back to `receipt_items`.
+  forces a join back to `supermarket_receipt_items`.
 
 ### What has actually been measured
 

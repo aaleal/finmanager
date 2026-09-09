@@ -570,7 +570,7 @@ DEMO_FS_ARTICLE = {
 def _find_or_create_demo_product(db: DbSession, line: dict[str, Any]):  # type: ignore[no-untyped-def]
     """Reuse whatever the legacy import already created — the seed never forks it."""
     from app.models.products import MasterProduct
-    from app.services.receipts import products_service
+    from app.services.supermarket import products_service
 
     name = str(line["description"]).title()
     existing = db.scalar(
@@ -591,17 +591,20 @@ def _find_or_create_demo_product(db: DbSession, line: dict[str, Any]):  # type: 
 
 def seed_supermarket(db: DbSession, entity: Entity) -> None:
     """A demo receipt whose arithmetic is worth reading, plus its price history."""
-    from app.models.receipts import Receipt, ReceiptItem
-    from app.services.receipts import arithmetic, prices_service
-    from app.services.receipts import service as receipts_service
-    from app.services.receipts.normalize import normalize_description
+    from app.models.supermarket import SupermarketReceipt, SupermarketReceiptItem
+    from app.services.supermarket import arithmetic, prices_service
+    from app.services.supermarket import service as receipts_service
+    from app.services.supermarket.normalize import normalize_description
 
     merchant = db.scalar(select(Merchant).where(Merchant.name == "Continente"))
     if merchant is None:
         return
     purchased_at = dt.datetime(2026, 8, 12, 18, 30)
     if db.scalar(
-        select(Receipt).where(Receipt.entity_id == entity.id, Receipt.purchased_at == purchased_at)
+        select(SupermarketReceipt).where(
+            SupermarketReceipt.entity_id == entity.id,
+            SupermarketReceipt.purchased_at == purchased_at,
+        )
     ):
         return
 
@@ -610,7 +613,7 @@ def seed_supermarket(db: DbSession, entity: Entity) -> None:
     loyalty_discount = Decimal("0.50")
     total = gross - promos - loyalty_discount
 
-    receipt = Receipt(
+    receipt = SupermarketReceipt(
         entity_id=entity.id,
         merchant_id=merchant.id,
         purchased_at=purchased_at,
@@ -645,7 +648,7 @@ def seed_supermarket(db: DbSession, entity: Entity) -> None:
         unit = line.get("unit", "UN")
         canonical, canonical_unit = arithmetic.canonical_quantity(quantity, unit)
         db.add(
-            ReceiptItem(
+            SupermarketReceiptItem(
                 receipt_id=receipt.id,
                 entity_id=entity.id,
                 line_no=index,
@@ -698,7 +701,7 @@ def seed_supermarket_invoices(db: DbSession, entity: Entity) -> int:
     document* works on seeded data too. Re-running is idempotent — the same bytes
     resolve to the same document and return the receipt already held.
     """
-    from app.services.receipts import service as receipts_service
+    from app.services.supermarket import service as receipts_service
 
     if not INVOICES_DIR.is_dir():
         return 0

@@ -129,10 +129,10 @@ a Continente or Lidl PDF reconciles to the cent with none. The OS packages
 behind it (`apps/api/Dockerfile`) are `tesseract-ocr`, `tesseract-ocr-por` and
 `libzbar0`. `make seed` now also creates the household's merchant NIFs and the
 five parser profiles, and the reconciliation tolerance is a `Setting`
-(`receipts.arithmetic_tolerance_eur`, default `0.02`) rather than a constant.
+(`supermarket.arithmetic_tolerance_eur`, default `0.02`) rather than a constant.
 
 M1b's «Importar folha» tab, under **Supermercado**, migrates a household's own
-years-old `SUPERMARKET_YYYY` spreadsheet into the same `Receipt`/`ReceiptItem`
+years-old `SUPERMARKET_YYYY` spreadsheet into the same `SupermarketReceipt`/`SupermarketReceiptItem`
 model a scanned *talão* produces: it snaps each Fs row's nudged timestamp back
 onto its invoice, recomputes the invoice-level discount rather than trusting a
 column the sheet only filled in by hand, and scores every imported receipt like
