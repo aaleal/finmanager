@@ -47,3 +47,15 @@ export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTa
 export function TableCell({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return <td className={cn('px-3 py-2.5 align-middle', className)} {...props} />;
 }
+
+export function TableFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLTableSectionElement>) {
+  return (
+    <tfoot
+      className={cn('border-t-2 border-border bg-muted/40 [&_tr]:hover:bg-transparent', className)}
+      {...props}
+    />
+  );
+}

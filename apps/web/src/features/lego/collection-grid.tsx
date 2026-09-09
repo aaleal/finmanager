@@ -41,6 +41,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -676,6 +677,27 @@ function GroupedRow({
   );
 }
 
+/** Totals for whatever rows are currently on screen (the visible page), not the
+ * whole filtered set — that grand total already lives in `SummaryStrip` above
+ * the table. Shared by both the grouped and flat tables since `data.items` is
+ * the same flat instance list either way; only the row count differs. */
+function computeFooterTotals(items: LegoSetInstance[]) {
+  const themes = new Set<string>();
+  let paid = 0;
+  let rrp = 0;
+  let value = 0;
+  for (const item of items) {
+    const model = item.set_model;
+    if (model?.theme) themes.add(model.theme);
+    paid += Number(item.acquisition_cost_eur);
+    if (model?.rrp_eur) rrp += Number(model.rrp_eur);
+    if (model?.current_value_eur) value += Number(model.current_value_eur);
+  }
+  const appreciation = rrp > 0 ? value - rrp : null;
+  const roiPct = appreciation !== null ? (appreciation / rrp) * 100 : null;
+  return { themeCount: themes.size, paid, rrp, value, appreciation, roiPct };
+}
+
 function SummaryStrip({ summary, basis }: { summary: CollectionSummary; basis: RoiBasis }) {
   const items = [
     { label: 'cópias', value: num(summary.copies) },
@@ -769,6 +791,11 @@ export function CollectionGrid({
     }
     return [...map.entries()].map(([key, items]) => ({ key, items }));
   }, [grouped, data]);
+
+  const footerTotals = React.useMemo(
+    () => computeFooterTotals(data?.items ?? []),
+    [data],
+  );
 
   const page = Number(filters.page ?? '1');
   const pageSize = Number(filters.page_size ?? '25');
@@ -1226,6 +1253,31 @@ export function CollectionGrid({
                 />
               ))}
             </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell className="font-semibold">
+                  {num(groups.length)} conjuntos
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {num(footerTotals.themeCount)} temas
+                </TableCell>
+                <TableCell colSpan={3} />
+                <TableCell className="numeric">
+                  <CostCell rrpEur={footerTotals.rrp} paidEur={footerTotals.paid} />
+                </TableCell>
+                <TableCell className="numeric">{eur(footerTotals.value)}</TableCell>
+                <TableCell className="text-right">
+                  {footerTotals.roiPct !== null ? (
+                    <RoiValue
+                      pct={footerTotals.roiPct}
+                      amountEur={footerTotals.appreciation ?? 0}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         ) : (
           <Table>
@@ -1318,6 +1370,31 @@ export function CollectionGrid({
                 </TableRow>
               ))}
             </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell className="font-semibold">
+                  {num(data.items.length)} cópias
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {num(footerTotals.themeCount)} temas
+                </TableCell>
+                <TableCell colSpan={3} />
+                <TableCell className="numeric text-right">
+                  <CostCell rrpEur={footerTotals.rrp} paidEur={footerTotals.paid} />
+                </TableCell>
+                <TableCell className="numeric text-right">{eur(footerTotals.value)}</TableCell>
+                <TableCell className="text-right">
+                  {footerTotals.roiPct !== null ? (
+                    <RoiValue
+                      pct={footerTotals.roiPct}
+                      amountEur={footerTotals.appreciation ?? 0}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         )}
       </div>
