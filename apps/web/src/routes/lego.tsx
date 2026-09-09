@@ -64,8 +64,10 @@ export function LegoPage() {
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [storageImportOpen, setStorageImportOpen] = React.useState(false);
   const [instancesImportOpen, setInstancesImportOpen] = React.useState(false);
-  // «Tudo» chains storage → instances, same workbook read twice by sheet name.
+  // «Tudo» chains storage → instances, same uploaded workbook handed over instead
+  // of asked for a second time.
   const [chainToInstances, setChainToInstances] = React.useState(false);
+  const [chainedFile, setChainedFile] = React.useState<File | null>(null);
 
   function handleBulkImportPick(scope: BulkImportScope) {
     if (scope === 'instances') {
@@ -252,15 +254,21 @@ export function LegoPage() {
               if (!open && chainToInstances) setInstancesImportOpen(true);
             }}
             stepLabel={chainToInstances ? '1 de 2' : undefined}
+            chained={chainToInstances}
+            onContinue={setChainedFile}
           />
           <BulkImportDialog
             open={instancesImportOpen}
             onOpenChange={(open) => {
               setInstancesImportOpen(open);
-              if (!open) setChainToInstances(false);
+              if (!open) {
+                setChainToInstances(false);
+                setChainedFile(null);
+              }
             }}
             storageLocations={storage.data ?? []}
             stepLabel={chainToInstances ? '2 de 2' : undefined}
+            initialFile={chainToInstances ? chainedFile : null}
           />
         </>
       ) : null}

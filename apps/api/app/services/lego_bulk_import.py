@@ -93,27 +93,26 @@ _REVERSE_CONDITION_PT = {_norm(label): code for code, label in CONDITION_PT.item
 
 
 # --- Sheet reading -------------------------------------------------------------
-def _load_rows(
-    data: bytes, *, sheet_names: tuple[str, ...], aliases: dict[str, tuple[str, ...]]
-) -> list[dict[str, Any]]:
-    try:
-        workbook = openpyxl.load_workbook(io.BytesIO(data), data_only=True, read_only=True)
-    except Exception as exc:
-        raise ValidationError("Não foi possível ler o ficheiro Excel.") from exc
-
-    sheet = None
+def _find_sheet(workbook: Any, sheet_names: tuple[str, ...]) -> Any | None:
+    """Strict lookup by name only — unlike `_load_rows`, no fallback to the
+    first sheet. Used by `check_sheets`, which needs to tell "sheet isn't
+    there" apart from "sheet is there but happens to be the only one"."""
     for wanted in sheet_names:
         match = next((name for name in workbook.sheetnames if _norm(name) == _norm(wanted)), None)
         if match is not None:
-            sheet = workbook[match]
-            break
-    if sheet is None:
-        sheet = workbook[workbook.sheetnames[0]]
+            return workbook[match]
+    return None
 
+
+def _rows_from_sheet(
+    sheet: Any, aliases: dict[str, tuple[str, ...]]
+) -> tuple[bool, list[dict[str, Any]]]:
+    """Returns (sheet_has_header, rows) — the flag lets `_load_rows` tell a
+    genuinely empty sheet apart from one with only a header and no data rows."""
     iterator = sheet.iter_rows(values_only=True)
     header_row = next(iterator, None)
     if header_row is None:
-        raise ValidationError("A folha está vazia.")
+        return False, []
 
     columns: dict[str, int] = {}
     for index, cell in enumerate(header_row):
@@ -132,7 +131,44 @@ def _load_rows(
         for field_name, index in columns.items():
             row[field_name] = values[index] if index < len(values) else None
         rows.append(row)
+    return True, rows
+
+
+def _load_rows(
+    data: bytes, *, sheet_names: tuple[str, ...], aliases: dict[str, tuple[str, ...]]
+) -> list[dict[str, Any]]:
+    try:
+        workbook = openpyxl.load_workbook(io.BytesIO(data), data_only=True, read_only=True)
+    except Exception as exc:
+        raise ValidationError("Não foi possível ler o ficheiro Excel.") from exc
+
+    sheet = _find_sheet(workbook, sheet_names) or workbook[workbook.sheetnames[0]]
+    has_header, rows = _rows_from_sheet(sheet, aliases)
+    if not has_header:
+        raise ValidationError("A folha está vazia.")
     return rows
+
+
+def check_sheets(data: bytes) -> tuple[bool, bool]:
+    """Whether the workbook has at least one data row for storage locations and
+    for instances, matched STRICTLY by sheet name (no first-sheet fallback,
+    unlike `_load_rows`) — used by the "Tudo" bulk-import flow to fail fast
+    with a clear message instead of silently importing zero rows for
+    whichever sheet isn't actually there."""
+    try:
+        workbook = openpyxl.load_workbook(io.BytesIO(data), data_only=True, read_only=True)
+    except Exception as exc:
+        raise ValidationError("Não foi possível ler o ficheiro Excel.") from exc
+
+    storage_sheet = _find_sheet(workbook, STORAGE_SHEET_NAMES)
+    instance_sheet = _find_sheet(workbook, INSTANCE_SHEET_NAMES)
+    has_storage = storage_sheet is not None and bool(
+        _rows_from_sheet(storage_sheet, STORAGE_HEADER_ALIASES)[1]
+    )
+    has_instances = instance_sheet is not None and bool(
+        _rows_from_sheet(instance_sheet, INSTANCE_HEADER_ALIASES)[1]
+    )
+    return has_storage, has_instances
 
 
 # --- Cell parsing ---------------------------------------------------------------

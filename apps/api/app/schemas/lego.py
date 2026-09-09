@@ -412,6 +412,15 @@ class StorageBulkImportOut(BaseModel):
     errors: list[StorageBulkImportError]
 
 
+class BulkSheetsCheckOut(BaseModel):
+    """Whether an uploaded workbook has data for each sheet the "Tudo" bulk-import
+    flow needs — checked upfront so a single-sheet file fails fast with a clear
+    message instead of silently importing zero rows for the missing half."""
+
+    has_storage: bool
+    has_instances: bool
+
+
 class BricksetImportOut(ApiModel):
     """What one press of «Importar do Brickset» actually brought down."""
 

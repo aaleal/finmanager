@@ -17,6 +17,7 @@ from app.schemas.lego import (
     BulkImportCommitIn,
     BulkImportPreviewOut,
     BulkImportRowResult,
+    BulkSheetsCheckOut,
     CompletenessFilter,
     CopiesFilter,
     FsFilter,
@@ -447,6 +448,17 @@ def set_instance_display_image(
 
 
 # --- Bulk import (M9.5) -------------------------------------------------------
+@router.post("/bulk/check", response_model=BulkSheetsCheckOut)
+def bulk_check_sheets(ctx: CurrentAuth, file: Annotated[UploadFile, File()]) -> BulkSheetsCheckOut:
+    """Upfront sheet-presence check for the «Tudo» flow — read-only, no DB writes,
+    lets the client warn about a missing sheet before running the storage import."""
+    data = file.file.read()
+    if not data:
+        raise ValidationError("Ficheiro vazio.")
+    has_storage, has_instances = lego_bulk_import.check_sheets(data)
+    return BulkSheetsCheckOut(has_storage=has_storage, has_instances=has_instances)
+
+
 @router.post("/instances/bulk/preview", response_model=BulkImportPreviewOut)
 def bulk_preview_instances(
     ctx: CurrentAuth, db: Db, file: Annotated[UploadFile, File()]

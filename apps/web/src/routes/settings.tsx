@@ -241,8 +241,8 @@ function LegoDangerZoneCard() {
           <DialogBody className="space-y-3 text-sm text-muted-foreground">
             <p>
               Isto elimina <strong className="text-foreground">definitivamente</strong> todos os
-              locais de arrumação. As cópias que lá estavam guardadas ficam sem local atribuído,
-              mas não são eliminadas. Não pode ser desfeito.
+              locais de arrumação. As cópias que lá estavam guardadas ficam sem local atribuído, mas
+              não são eliminadas. Não pode ser desfeito.
             </p>
           </DialogBody>
           <DialogFooter>

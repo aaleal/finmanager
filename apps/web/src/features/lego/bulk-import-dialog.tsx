@@ -72,11 +72,15 @@ export function BulkImportDialog({
   onOpenChange,
   storageLocations,
   stepLabel,
+  initialFile,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   storageLocations: StorageLocation[];
   stepLabel?: string;
+  /** Supplied by the «Tudo» flow — the same workbook already uploaded for the
+   * storage step, read again for its «Cópias» sheet without asking twice. */
+  initialFile?: File | null;
 }) {
   const { entities } = useSession();
   const writable = React.useMemo(
@@ -116,6 +120,13 @@ export function BulkImportDialog({
       /* toasted by the hook */
     }
   }
+
+  // Chained from the storage step: skip the dropzone entirely, same file, no
+  // second upload prompt.
+  React.useEffect(() => {
+    if (open && initialFile && !rows && !results) void handleFile(initialFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialFile]);
 
   function toggleRow(rowNumber: number, checked: boolean) {
     setSelected((current) => {

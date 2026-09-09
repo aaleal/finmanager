@@ -4,6 +4,7 @@ import { api, ApiError, streamNdjson } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
   BricksetImport,
+  BulkSheetsCheck,
   LegoBricksetJob,
   LegoBulkImportPreview,
   LegoBulkImportRow,
@@ -501,6 +502,20 @@ export function useStorageMutations() {
   });
 
   return { create, update, remove };
+}
+
+/** Upfront sheet-presence check used only by the «Tudo» picker option — lets the
+ * client warn about a missing sheet before running the (one-step, no undo)
+ * storage import. Read-only, no invalidation needed. */
+export function useBulkCheckSheets() {
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.upload<BulkSheetsCheck>('/lego/bulk/check', formData, undefined, 'POST');
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível ler o ficheiro.')),
+  });
 }
 
 /** Spreadsheet → preview table → commit, mirroring the manual add-copy flow one row

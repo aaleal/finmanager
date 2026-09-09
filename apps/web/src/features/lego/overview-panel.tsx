@@ -1431,24 +1431,26 @@ export function LegoOverviewPanel({
 
                           return (
                             <g className="recharts-custom-totals">
-                              {releaseYearDataWithTotals.map((item: (typeof releaseYearDataWithTotals)[number], idx: number) => {
-                                const pos = topsByIndex[idx];
-                                if (!pos || !item.total) return null;
+                              {releaseYearDataWithTotals.map(
+                                (item: (typeof releaseYearDataWithTotals)[number], idx: number) => {
+                                  const pos = topsByIndex[idx];
+                                  if (!pos || !item.total) return null;
 
-                                return (
-                                  <text
-                                    key={`total-${idx}`}
-                                    x={pos.x + pos.width / 2}
-                                    y={pos.minY - 6}
-                                    textAnchor="middle"
-                                    fontSize={10}
-                                    fontWeight={600}
-                                    fill="hsl(var(--muted-foreground))"
-                                  >
-                                    {num(item.total)}
-                                  </text>
-                                );
-                              })}
+                                  return (
+                                    <text
+                                      key={`total-${idx}`}
+                                      x={pos.x + pos.width / 2}
+                                      y={pos.minY - 6}
+                                      textAnchor="middle"
+                                      fontSize={10}
+                                      fontWeight={600}
+                                      fill="hsl(var(--muted-foreground))"
+                                    >
+                                      {num(item.total)}
+                                    </text>
+                                  );
+                                },
+                              )}
                             </g>
                           );
                         }}

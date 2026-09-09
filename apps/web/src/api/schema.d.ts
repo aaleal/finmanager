@@ -411,6 +411,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/lego/collection': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Purge Collection
+     * @description Hard-deletes the whole collection ahead of a fresh import — no per-row
+     *     guards, unlike ``delete_model``. See ADR-0053.
+     */
+    delete: operations['purge_collection_api_lego_collection_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/lego/models/{model_id}/image': {
     parameters: {
       query?: never;
@@ -691,6 +712,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/lego/bulk/check': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Bulk Check Sheets
+     * @description Upfront sheet-presence check for the «Tudo» flow — read-only, no DB writes,
+     *     lets the client warn about a missing sheet before running the storage import.
+     */
+    post: operations['bulk_check_sheets_api_lego_bulk_check_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/lego/instances/bulk/preview': {
     parameters: {
       query?: never;
@@ -747,7 +789,12 @@ export interface paths {
     put?: never;
     /** Create Storage */
     post: operations['create_storage_api_lego_storage_locations_post'];
-    delete?: never;
+    /**
+     * Purge Storage
+     * @description Hard-deletes every storage location ahead of a fresh import — no
+     *     per-row guard, unlike ``delete_storage``. See ADR-0054.
+     */
+    delete: operations['purge_storage_api_lego_storage_locations_delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -1845,6 +1892,26 @@ export interface components {
       actor_display_name?: string | null;
     };
     /**
+     * AreaBreakdown
+     * @description Number of sets/copies and PVP sitting in each storage area — "onde está
+     *     o dinheiro", not just "onde estão as caixas".
+     */
+    AreaBreakdown: {
+      /** Area */
+      area: string;
+      /** Copies */
+      copies: number;
+      /** Unique Sets */
+      unique_sets: number;
+      /** Rrp Eur */
+      rrp_eur: string;
+      /**
+       * Sealed Copies
+       * @default 0
+       */
+      sealed_copies: number;
+    };
+    /**
      * BackupImportReport
      * @description One entry per module restored — one for a single-module archive, several
      *     for the global container.
@@ -1873,6 +1940,14 @@ export interface components {
     Body_add_model_instruction_api_lego_models__model_id__instructions_post: {
       /** File */
       file?: string | null;
+    };
+    /** Body_bulk_check_sheets_api_lego_bulk_check_post */
+    Body_bulk_check_sheets_api_lego_bulk_check_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
     };
     /** Body_bulk_import_storage_api_lego_storage_locations_bulk_post */
     Body_bulk_import_storage_api_lego_storage_locations_bulk_post: {
@@ -1978,6 +2053,13 @@ export interface components {
       started_at: string | null;
       /** Completed At */
       completed_at: string | null;
+    };
+    /** BuildStateCount */
+    BuildStateCount: {
+      /** Build State */
+      build_state: string | null;
+      /** Copies */
+      copies: number;
     };
     /** BulkImportCommitIn */
     BulkImportCommitIn: {
@@ -2126,6 +2208,18 @@ export interface components {
       /** Lego Set Instance Id */
       lego_set_instance_id?: string | null;
     };
+    /**
+     * BulkSheetsCheckOut
+     * @description Whether an uploaded workbook has data for each sheet the "Tudo" bulk-import
+     *     flow needs — checked upfront so a single-sheet file fails fast with a clear
+     *     message instead of silently importing zero rows for the missing half.
+     */
+    BulkSheetsCheckOut: {
+      /** Has Storage */
+      has_storage: boolean;
+      /** Has Instances */
+      has_instances: boolean;
+    };
     /** CategoryCreate */
     CategoryCreate: {
       /** Display Name Pt */
@@ -2256,6 +2350,21 @@ export interface components {
       path: string;
       /** Product Count */
       product_count: number;
+    };
+    /**
+     * ChannelBreakdown
+     * @description Real cost paid vs. original PVP, per acquisition source — highlights
+     *     channels where cards/promotions widen the PVP-vs-custo gap.
+     */
+    ChannelBreakdown: {
+      /** Source */
+      source: string;
+      /** Copies */
+      copies: number;
+      /** Cost Eur */
+      cost_eur: string;
+      /** Rrp Eur */
+      rrp_eur: string;
     };
     /**
      * CollectionSummary
@@ -3551,6 +3660,35 @@ export interface components {
       /** New Password */
       new_password: string;
     };
+    /**
+     * PieceBracketCount
+     * @description Unique models bucketed by volumetric size (Micro/Pequeno/Médio/Grande/
+     *     Gigante), in fixed bracket order regardless of which brackets are empty.
+     */
+    PieceBracketCount: {
+      /** Bracket */
+      bracket: string;
+      /** Unique Sets */
+      unique_sets: number;
+    };
+    /**
+     * PiecePricePoint
+     * @description One physical copy's cost-per-piece, for the PPP scatter plot.
+     */
+    PiecePricePoint: {
+      /** Name */
+      name: string;
+      /** Set Number */
+      set_number?: string | null;
+      /** Piece Count */
+      piece_count: number;
+      /** Cost Per Piece Eur */
+      cost_per_piece_eur: string;
+      /** Rrp Per Piece Eur */
+      rrp_per_piece_eur?: string | null;
+      /** Theme */
+      theme: string;
+    };
     /** PriceHistoryOut */
     PriceHistoryOut: {
       /**
@@ -4132,6 +4270,30 @@ export interface components {
       /** Notes */
       notes?: string | null;
     };
+    /** ReleaseYearCount */
+    ReleaseYearCount: {
+      /** Year */
+      year: number | null;
+      /** Unique Sets */
+      unique_sets: number;
+    };
+    /**
+     * ReleaseYearPiecePoint
+     * @description One unique model's release year vs. piece count, for the size-over-time
+     *     scatter. Deduped by model — a set owned in triplicate only plots once.
+     */
+    ReleaseYearPiecePoint: {
+      /** Name */
+      name: string;
+      /** Set Number */
+      set_number?: string | null;
+      /** Year */
+      year: number;
+      /** Piece Count */
+      piece_count: number;
+      /** Theme */
+      theme: string;
+    };
     /** ReviewResolution */
     ReviewResolution: {
       /**
@@ -4387,6 +4549,26 @@ export interface components {
       /** Capacity Pct */
       capacity_pct?: number | null;
     };
+    /**
+     * SubthemeBreakdown
+     * @description One (theme, subtema) leaf, for a treemap weighted by cost or peças.
+     */
+    SubthemeBreakdown: {
+      /** Theme */
+      theme: string;
+      /** Subtheme */
+      subtheme: string;
+      /** Copies */
+      copies: number;
+      /** Unique Sets */
+      unique_sets: number;
+      /** Cost Eur */
+      cost_eur: string;
+      /** Rrp Eur */
+      rrp_eur: string;
+      /** Piece Count */
+      piece_count: number;
+    };
     /** SuggestionResponse */
     SuggestionResponse: {
       /** Ledger Available */
@@ -4437,98 +4619,11 @@ export interface components {
       value_eur: string;
       /** Rrp Eur */
       rrp_eur: string;
-      /** Piece Count */
+      /**
+       * Piece Count
+       * @default 0
+       */
       piece_count: number;
-    };
-    /** SubthemeBreakdown */
-    SubthemeBreakdown: {
-      /** Theme */
-      theme: string;
-      /** Subtheme */
-      subtheme: string;
-      /** Copies */
-      copies: number;
-      /** Unique Sets */
-      unique_sets: number;
-      /** Cost Eur */
-      cost_eur: string;
-      /** Rrp Eur */
-      rrp_eur: string;
-      /** Piece Count */
-      piece_count: number;
-    };
-    /** AreaBreakdown */
-    AreaBreakdown: {
-      /** Area */
-      area: string;
-      /** Copies */
-      copies: number;
-      /** Unique Sets */
-      unique_sets: number;
-      /** Rrp Eur */
-      rrp_eur: string;
-      /** Sealed Copies */
-      sealed_copies: number;
-    };
-    /** ChannelBreakdown */
-    ChannelBreakdown: {
-      /** Source */
-      source: string;
-      /** Copies */
-      copies: number;
-      /** Cost Eur */
-      cost_eur: string;
-      /** Rrp Eur */
-      rrp_eur: string;
-    };
-    /** ReleaseYearCount */
-    ReleaseYearCount: {
-      /** Year */
-      year: number | null;
-      /** Unique Sets */
-      unique_sets: number;
-    };
-    /** BuildStateCount */
-    BuildStateCount: {
-      /** Build State */
-      build_state: string | null;
-      /** Copies */
-      copies: number;
-    };
-    /** PiecePricePoint */
-    PiecePricePoint: {
-      /** Name */
-      name: string;
-      /** Set Number */
-      set_number?: string | null;
-      /** Piece Count */
-      piece_count: number;
-      /** Cost Per Piece Eur */
-      cost_per_piece_eur: string;
-      /** Rrp Per Piece Eur */
-      rrp_per_piece_eur?: string | null;
-      /** Theme */
-      theme: string;
-    };
-    /** ReleaseYearPiecePoint */
-    ReleaseYearPiecePoint: {
-      /** Name */
-      name: string;
-      /** Set Number */
-      set_number?: string | null;
-      /** Year */
-      year: number;
-      /** Piece Count */
-      piece_count: number;
-      /** Theme */
-      theme: string;
-    };
-    /** PieceBracketCount */
-    PieceBracketCount: {
-      /** Bracket */
-      bracket: string;
-      /** Unique Sets */
-      unique_sets: number;
     };
     /**
      * TimelinePoint
@@ -5631,6 +5726,26 @@ export interface operations {
       };
     };
   };
+  purge_collection_api_lego_collection_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+    };
+  };
   set_model_image_api_lego_models__model_id__image_put: {
     parameters: {
       query?: {
@@ -6030,12 +6145,23 @@ export interface operations {
         storage_area?: string | null;
         build_state?: string | null;
         condition?: string | null;
+        acquisition_source?: string | null;
+        release_year?: number | null;
         ownership_status?: string | null;
         completeness?: 'all' | 'complete' | 'incomplete';
         retirement?: 'all' | 'retired' | 'available';
         copies?: 'all' | 'single' | 'multiple';
+        fs?: 'all' | 'fs' | 'not_fs';
+        gift?: 'all' | 'gift' | 'not_gift';
+        paid_min?: number | string | null;
+        paid_max?: number | string | null;
+        rrp_min?: number | string | null;
+        rrp_max?: number | string | null;
+        roi_min?: number | string | null;
+        roi_max?: number | string | null;
         sort?: string;
         direction?: string;
+        roi_basis?: string;
         page?: number;
         page_size?: number;
       };
@@ -6269,6 +6395,39 @@ export interface operations {
       };
     };
   };
+  bulk_check_sheets_api_lego_bulk_check_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_bulk_check_sheets_api_lego_bulk_check_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BulkSheetsCheckOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   bulk_preview_instances_api_lego_instances_bulk_preview_post: {
     parameters: {
       query?: never;
@@ -6384,6 +6543,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  purge_storage_api_lego_storage_locations_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
         };
       };
     };

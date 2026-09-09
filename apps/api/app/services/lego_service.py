@@ -421,7 +421,9 @@ def delete_model(
     db.flush()
 
 
-def purge_collection(db: DbSession, *, entity_ids: list[uuid.UUID], actor_user_id: uuid.UUID) -> int:
+def purge_collection(
+    db: DbSession, *, entity_ids: list[uuid.UUID], actor_user_id: uuid.UUID
+) -> int:
     """Hard-deletes every set model owned by these entities — copies, gallery
     images and manuals all go with it (the last two by DB cascade). For clearing
     the collection ahead of a fresh import, without a full ``./fm reset``.
@@ -1570,9 +1572,9 @@ def purge_storage_locations(db: DbSession, *, actor_user_id: uuid.UUID) -> int:
         actor_user_id=actor_user_id,
         reason=f"purged {len(location_ids)} location(s) ahead of a fresh import",
     )
-    db.query(LegoSetInstance).filter(
-        LegoSetInstance.storage_location_id.in_(location_ids)
-    ).update({LegoSetInstance.storage_location_id: None}, synchronize_session=False)
+    db.query(LegoSetInstance).filter(LegoSetInstance.storage_location_id.in_(location_ids)).update(
+        {LegoSetInstance.storage_location_id: None}, synchronize_session=False
+    )
     db.query(StorageLocation).filter(StorageLocation.id.in_(location_ids)).delete(
         synchronize_session=False
     )

@@ -50,6 +50,7 @@ export type LegoBulkImportRow = Schemas['BulkImportRow-Output'];
 export type LegoBulkImportPreview = Schemas['BulkImportPreviewOut'];
 export type LegoBulkImportRowResult = Schemas['BulkImportRowResult'];
 export type StorageBulkImportResult = Schemas['StorageBulkImportOut'];
+export type BulkSheetsCheck = Schemas['BulkSheetsCheckOut'];
 
 export type AcquisitionSource = NonNullable<LegoSetInstance['acquisition_source']>;
 export type BuildState = NonNullable<LegoSetInstance['build_state']>;
