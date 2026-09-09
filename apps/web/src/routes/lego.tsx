@@ -54,6 +54,7 @@ const DEFAULTS = {
   page: '1',
   page_size: '25',
   agrupar: undefined,
+  density: undefined,
 } satisfies Record<string, string | undefined>;
 
 export function LegoPage() {

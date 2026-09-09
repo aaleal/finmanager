@@ -25,7 +25,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/primitives';
+import { Checkbox, TooltipContent, TooltipRoot, TooltipTrigger } from '@/components/ui/primitives';
 import {
   Select,
   SelectContent,
@@ -51,6 +51,7 @@ import {
   CONDITION_LABELS,
   CONDITION_VARIANTS,
   COPIES_OPTIONS,
+  DENSITY_OPTIONS,
   FS_OPTIONS,
   GIFT_OPTIONS,
   OWNERSHIP_LABELS,
@@ -70,6 +71,19 @@ type RoiBasis = 'cost' | 'rrp';
 function roiBasis(filters: Record<string, string | undefined>): RoiBasis {
   return filters.roi_basis === 'rrp' ? 'rrp' : 'cost';
 }
+
+type Density = 'compact' | 'cozy' | 'large';
+
+/** `density` is absent for the default (compact) reading, mirroring `roiBasis`. */
+function resolveDensity(filters: Record<string, string | undefined>): Density {
+  return filters.density === 'cozy' || filters.density === 'large' ? filters.density : 'compact';
+}
+
+const THUMB_SIZE_CLASS: Record<Density, string> = {
+  compact: 'size-10',
+  cozy: 'size-16',
+  large: 'size-24',
+};
 
 const ROI_BASIS_OPTIONS: { value: RoiBasis; label: string; hint: string }[] = [
   { value: 'cost', label: 'Pago', hint: 'ROI calculado sobre o valor efectivamente pago.' },
@@ -133,11 +147,16 @@ function RangeFilter({
   );
 }
 
-function Thumb({ instance }: { instance: LegoSetInstance }) {
+function Thumb({ instance, density = 'compact' }: { instance: LegoSetInstance; density?: Density }) {
   const image =
     instance.photo_url ?? instance.display_image_url ?? instance.set_model?.image_url ?? null;
-  return (
-    <div className="size-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+  const box = (
+    <div
+      className={cn(
+        THUMB_SIZE_CLASS[density],
+        'shrink-0 overflow-hidden rounded-md border border-border bg-muted',
+      )}
+    >
       {image ? (
         <img src={image} alt="" className="size-full object-contain" loading="lazy" />
       ) : (
@@ -146,6 +165,19 @@ function Thumb({ instance }: { instance: LegoSetInstance }) {
         </div>
       )}
     </div>
+  );
+  if (!image) return box;
+  // Portalled tooltip content escapes the table's overflow-hidden ancestor.
+  return (
+    <TooltipRoot>
+      <TooltipTrigger asChild>{box}</TooltipTrigger>
+      <TooltipContent
+        side="right"
+        className="max-w-none border border-border bg-card p-1 shadow-pop"
+      >
+        <img src={image} alt="" className="max-h-72 max-w-72 rounded object-contain" />
+      </TooltipContent>
+    </TooltipRoot>
   );
 }
 
@@ -289,11 +321,11 @@ function YearsCell({ instance }: { instance: LegoSetInstance }) {
  * truncates with the full name on hover, which keeps the ten columns inside the
  * viewport instead of pushing them behind a horizontal scrollbar.
  */
-function SetCell({ instance }: { instance: LegoSetInstance }) {
+function SetCell({ instance, density = 'compact' }: { instance: LegoSetInstance; density?: Density }) {
   const model = instance.set_model;
   return (
     <div className="flex max-w-[15rem] items-center gap-2.5">
-      <Thumb instance={instance} />
+      <Thumb instance={instance} density={density} />
       <div className="min-w-0">
         <p className="flex items-center gap-1.5 font-medium">
           <span className="truncate" title={model?.name}>
@@ -567,10 +599,12 @@ function GroupRoiCell({ items, basis }: { items: LegoSetInstance[]; basis: RoiBa
 function GroupedRow({
   group,
   basis,
+  density,
   onSelect,
 }: {
   group: { key: string; items: LegoSetInstance[] };
   basis: RoiBasis;
+  density: Density;
   onSelect: (instance: LegoSetInstance) => void;
 }) {
   const first = group.items[0];
@@ -587,7 +621,7 @@ function GroupedRow({
       onClick={() => onSelect(first)}
     >
       <TableCell>
-        <SetCell instance={first} />
+        <SetCell instance={first} density={density} />
       </TableCell>
       <TableCell className="text-muted-foreground">{model?.theme ?? '—'}</TableCell>
       <TableCell>
@@ -708,6 +742,7 @@ export function CollectionGrid({
   const pageSize = Number(filters.page_size ?? '25');
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
   const descending = (filters.direction ?? 'desc') === 'desc';
+  const density = resolveDensity(filters);
 
   const clearFilters = () =>
     setFilters({
@@ -807,6 +842,25 @@ export function CollectionGrid({
           />
           Agrupar por conjunto
         </label>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Densidade</span>
+          <Select
+            value={density}
+            onValueChange={(value) => setFilters({ density: value === 'compact' ? undefined : value })}
+          >
+            <SelectTrigger className="w-[8.5rem]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DENSITY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {filters.release_year ? (
           <Badge variant="secondary" className="gap-1.5 py-1.5 pl-2.5 pr-1.5 text-sm">
@@ -1122,6 +1176,7 @@ export function CollectionGrid({
                   key={group.key}
                   group={group}
                   basis={roiBasis(filters)}
+                  density={density}
                   onSelect={onSelect}
                 />
               ))}
@@ -1171,7 +1226,7 @@ export function CollectionGrid({
                   onClick={() => onSelect(instance)}
                 >
                   <TableCell>
-                    <SetCell instance={instance} />
+                    <SetCell instance={instance} density={density} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {instance.set_model?.theme ?? '—'}

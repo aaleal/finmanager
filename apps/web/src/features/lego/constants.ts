@@ -104,6 +104,12 @@ export const GIFT_OPTIONS = [
 
 export const PAGE_SIZES = ['10', '25', '50', '100', '200'];
 
+export const DENSITY_OPTIONS = [
+  { value: 'compact', label: 'Compacta' },
+  { value: 'cozy', label: 'Confortável' },
+  { value: 'large', label: 'Grande' },
+];
+
 /**
  * External marketplace links are built from `set_number` on the client and never
  * stored, fetched or refreshed (M9 FR-9.10).
