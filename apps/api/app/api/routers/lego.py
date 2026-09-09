@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Query, Response, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.api.deps import CurrentAuth, Db, Writer, household_entity_ids, resolve_write_entity
+from app.api.deps import CurrentAuth, Db, Owner, Writer, household_entity_ids, resolve_write_entity
 from app.core.errors import ValidationError
 from app.schemas.common import Ok, Page
 from app.schemas.lego import (
@@ -131,6 +131,16 @@ def delete_model(model_id: uuid.UUID, ctx: Writer, db: Db, hard: bool = False) -
     model = lego_service.get_model(db, model_id)
     lego_service.delete_model(db, model, hard=hard, actor_user_id=ctx.user.id)
     return Ok(message="Conjunto eliminado.")
+
+
+@router.delete("/collection", response_model=Ok)
+def purge_collection(ctx: Owner, db: Db) -> Ok:
+    """Hard-deletes the whole collection ahead of a fresh import — no per-row
+    guards, unlike ``delete_model``. See ADR-0053."""
+    count = lego_service.purge_collection(
+        db, entity_ids=household_entity_ids(db, ctx), actor_user_id=ctx.user.id
+    )
+    return Ok(message=f"{count} conjunto(s) eliminado(s).")
 
 
 @router.put("/models/{model_id}/image", response_model=LegoSetModelOut)
@@ -512,6 +522,14 @@ def delete_storage(location_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
     location = lego_service.get_storage_location(db, location_id)
     lego_service.delete_storage_location(db, location, actor_user_id=ctx.user.id)
     return Ok(message="Local eliminado.")
+
+
+@router.delete("/storage-locations", response_model=Ok)
+def purge_storage(ctx: Owner, db: Db) -> Ok:
+    """Hard-deletes every storage location ahead of a fresh import — no
+    per-row guard, unlike ``delete_storage``. See ADR-0054."""
+    count = lego_service.purge_storage_locations(db, actor_user_id=ctx.user.id)
+    return Ok(message=f"{count} local(is) eliminado(s).")
 
 
 @router.post("/storage-locations/bulk", response_model=StorageBulkImportOut)

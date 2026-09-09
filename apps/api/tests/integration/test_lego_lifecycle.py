@@ -205,3 +205,60 @@ def test_setting_a_value_stamps_its_freshness_date(
         db, model, LegoSetModelUpdate(current_value_eur=None), actor_user_id=owner.id
     )
     assert model.value_updated_at is None
+
+
+def test_purge_collection_ignores_the_live_copies_guard(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    copy = _make_copy(db, entity, owner)
+    model_id = copy.lego_set_model_id
+
+    count = lego_service.purge_collection(db, entity_ids=[entity.id], actor_user_id=owner.id)
+
+    assert count == 1
+    assert db.get(LegoSetModel, model_id) is None
+    assert db.get(LegoSetInstance, copy.id) is None
+    assert (
+        db.scalar(
+            select(func.count())
+            .select_from(AuditLog)
+            .where(AuditLog.action == "PURGE", AuditLog.table_name == "lego_set_models")
+        )
+        == 1
+    )
+
+
+def test_purge_collection_is_scoped_to_the_callers_entities(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    _make_copy(db, entity, owner)
+
+    count = lego_service.purge_collection(db, entity_ids=[], actor_user_id=owner.id)
+
+    assert count == 0
+    assert db.scalar(select(func.count()).select_from(LegoSetModel)) == 1
+
+
+def test_purge_storage_locations_clears_the_reference_not_the_copy(
+    db: Session, entity: Entity, owner: User
+) -> None:
+    location = lego_service.create_storage_location(
+        db,
+        StorageLocationCreate(area="Garagem", container="Caixa TV", capacity_pct=75),
+        actor_user_id=owner.id,
+    )
+    copy = _make_copy(db, entity, owner)
+    lego_service.update_instance(
+        db,
+        copy,
+        LegoSetInstanceUpdate(storage_location_id=location.id),
+        actor_user_id=owner.id,
+    )
+
+    count = lego_service.purge_storage_locations(db, actor_user_id=owner.id)
+
+    assert count == 1
+    assert db.get(StorageLocation, location.id) is None
+    db.refresh(copy)
+    assert copy.storage_location_id is None
+    assert copy.is_deleted is False

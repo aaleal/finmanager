@@ -421,6 +421,33 @@ def delete_model(
     db.flush()
 
 
+def purge_collection(db: DbSession, *, entity_ids: list[uuid.UUID], actor_user_id: uuid.UUID) -> int:
+    """Hard-deletes every set model owned by these entities — copies, gallery
+    images and manuals all go with it (the last two by DB cascade). For clearing
+    the collection ahead of a fresh import, without a full ``./fm reset``.
+    See docs/decisions/0053-a-collection-purge-skips-the-per-row-guards.md.
+    """
+    model_ids = list(
+        db.scalars(select(LegoSetModel.id).where(LegoSetModel.entity_id.in_(entity_ids))).all()
+    )
+    if not model_ids:
+        return 0
+    audit.record(
+        db,
+        action="PURGE",
+        table_name=MODEL_TABLE,
+        record_id=uuid.uuid4(),
+        actor_user_id=actor_user_id,
+        reason=f"purged {len(model_ids)} set(s) ahead of a fresh import",
+    )
+    db.query(LegoSetInstance).filter(LegoSetInstance.lego_set_model_id.in_(model_ids)).delete(
+        synchronize_session=False
+    )
+    db.query(LegoSetModel).filter(LegoSetModel.id.in_(model_ids)).delete(synchronize_session=False)
+    db.flush()
+    return len(model_ids)
+
+
 def set_model_image(
     db: DbSession,
     model: LegoSetModel,
@@ -1524,6 +1551,33 @@ def delete_storage_location(
     location.is_deleted = True
     location.deleted_at = dt.datetime.now(dt.UTC)
     db.flush()
+
+
+def purge_storage_locations(db: DbSession, *, actor_user_id: uuid.UUID) -> int:
+    """Hard-deletes every storage location, bypassing the "still holds copies"
+    guard — copies simply lose the reference instead of blocking the purge. For
+    clearing storage ahead of a fresh import, without a full ``./fm reset``.
+    See docs/decisions/0054-a-storage-purge-clears-the-reference-not-the-copy.md.
+    """
+    location_ids = list(db.scalars(select(StorageLocation.id)).all())
+    if not location_ids:
+        return 0
+    audit.record(
+        db,
+        action="PURGE",
+        table_name=STORAGE_TABLE,
+        record_id=uuid.uuid4(),
+        actor_user_id=actor_user_id,
+        reason=f"purged {len(location_ids)} location(s) ahead of a fresh import",
+    )
+    db.query(LegoSetInstance).filter(
+        LegoSetInstance.storage_location_id.in_(location_ids)
+    ).update({LegoSetInstance.storage_location_id: None}, synchronize_session=False)
+    db.query(StorageLocation).filter(StorageLocation.id.in_(location_ids)).delete(
+        synchronize_session=False
+    )
+    db.flush()
+    return len(location_ids)
 
 
 # --- Overview ----------------------------------------------------------------

@@ -1,0 +1,22 @@
+{
+  "owner": {
+    "household_name": "Casa",
+    "display_name": "André Alves",
+    "email": "andre@finmanager.local",
+    "password": "finmanager-dev-only"
+  },
+  "members": [
+    {
+      "display_name": "Daniela Alves",
+      "email": "daniela@finmanager.local",
+      "role": "MEMBER",
+      "temporary_password": "daniela-dev-only"
+    }
+  ],
+  "entities": [
+    {
+      "name": "André & Daniela",
+      "members": ["André Alves", "Daniela Alves"]
+    }
+  ]
+}

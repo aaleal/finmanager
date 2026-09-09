@@ -57,3 +57,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0050](0050-a-bare-number-tries-the-closed-pack-before-the-ordinary-set.md) | A bare number tries the closed pack (`-0`) before the ordinary set (`-1`) |
 | [0051](0051-a-dollar-rrp-is-better-than-no-rrp.md) | A dollar RRP, assumed 1:1 as euros, is better than no RRP at all (supersedes part of 0039) |
 | [0052](0052-the-sheets-pvp-only-fills-what-brickset-left-empty.md) | The sheet's own PVP only fills what Brickset left empty |
+| [0053](0053-a-collection-purge-skips-the-per-row-guards.md) | A collection purge skips the per-row guards |
+| [0054](0054-a-storage-purge-clears-the-reference-not-the-copy.md) | A storage purge clears the reference, not the copy |

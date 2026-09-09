@@ -1,12 +1,20 @@
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { DatabaseBackup, KeyRound, ShieldAlert, Upload } from 'lucide-react';
+import { DatabaseBackup, KeyRound, ShieldAlert, Trash2, Upload } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type { AppSettings } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Field, Input, PasswordInput } from '@/components/ui/input';
 import { Separator, Switch } from '@/components/ui/primitives';
 import {
@@ -18,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { PageHeader } from '@/components/ui/feedback';
 import { useBackupModules, useExportBackup, useImportBackup } from '@/features/settings/backup-api';
+import { usePurgeCollection, usePurgeStorageLocations } from '@/features/lego/api';
 
 const KEYS = {
   bricksetEnabled: 'lego.brickset.enabled',
@@ -154,6 +163,105 @@ function BackupCard() {
           ) : null}
         </div>
       </CardContent>
+    </Card>
+  );
+}
+
+function LegoDangerZoneCard() {
+  const [confirmCollection, setConfirmCollection] = React.useState(false);
+  const [confirmStorage, setConfirmStorage] = React.useState(false);
+  const purgeCollection = usePurgeCollection();
+  const purgeStorage = usePurgeStorageLocations();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trash2 className="size-4 text-muted-foreground" />
+          LEGO — limpar para reimportar
+        </CardTitle>
+        <CardDescription>
+          Elimina definitivamente conjuntos, cópias ou locais de arrumação, sem passar por
+          <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">./fm reset</code>
+          nem pelo resto da instalação. Use antes de uma reimportação limpa.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-2">
+        <Button variant="destructive" onClick={() => setConfirmCollection(true)}>
+          <Trash2 />
+          Eliminar toda a coleção
+        </Button>
+        <Button variant="destructive" onClick={() => setConfirmStorage(true)}>
+          <Trash2 />
+          Eliminar locais de arrumação
+        </Button>
+      </CardContent>
+
+      <Dialog open={confirmCollection} onOpenChange={setConfirmCollection}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar toda a coleção
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">definitivamente</strong> todos os
+              conjuntos e cópias registados — galeria de imagens e manuais incluídos. Não afeta os
+              locais de arrumação. Não pode ser desfeito.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmCollection(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={purgeCollection.isPending}
+              onClick={async () => {
+                await purgeCollection.mutateAsync();
+                setConfirmCollection(false);
+              }}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmStorage} onOpenChange={setConfirmStorage}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar locais de arrumação
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">definitivamente</strong> todos os
+              locais de arrumação. As cópias que lá estavam guardadas ficam sem local atribuído,
+              mas não são eliminadas. Não pode ser desfeito.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmStorage(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={purgeStorage.isPending}
+              onClick={async () => {
+                await purgeStorage.mutateAsync();
+                setConfirmStorage(false);
+              }}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -301,6 +409,7 @@ export function SettingsPage() {
           </Card>
 
           <BackupCard />
+          {isOwner ? <LegoDangerZoneCard /> : null}
           <PasswordCard />
         </div>
       </div>

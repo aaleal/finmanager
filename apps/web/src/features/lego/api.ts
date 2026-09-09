@@ -13,6 +13,7 @@ import type {
   LegoSetInstance,
   LegoSetModel,
   LookupResult,
+  Ok,
   Page,
   StorageBulkImportResult,
   StorageLocation,
@@ -220,6 +221,32 @@ export function useExportCollection() {
     mutationFn: () => api.download('/lego/export.xlsx'),
     onSuccess: () => toast.success('Ficheiro exportado.'),
     onError: (error) => toast.error(errorMessage(error, 'Não foi possível exportar a coleção.')),
+  });
+}
+
+/** Hard-deletes the whole collection ahead of a fresh import. See ADR-0053. */
+export function usePurgeCollection() {
+  const invalidate = useInvalidateLego();
+  return useMutation({
+    mutationFn: () => api.delete<Ok>('/lego/collection'),
+    onSuccess: (result) => {
+      toast.success(result.message);
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível eliminar a coleção.')),
+  });
+}
+
+/** Hard-deletes every storage location ahead of a fresh import. See ADR-0054. */
+export function usePurgeStorageLocations() {
+  const invalidate = useInvalidateLego();
+  return useMutation({
+    mutationFn: () => api.delete<Ok>('/lego/storage-locations'),
+    onSuccess: (result) => {
+      toast.success(result.message);
+      invalidate();
+    },
+    onError: (error) => toast.error(errorMessage(error, 'Não foi possível eliminar os locais.')),
   });
 }
 

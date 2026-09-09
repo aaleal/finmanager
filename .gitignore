@@ -2,6 +2,7 @@
 .env
 .env.local
 *.pem
+dev/bootstrap-household.json
 
 # ---- Python -----------------------------------------------------------------
 __pycache__/

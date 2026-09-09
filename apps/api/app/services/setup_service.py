@@ -61,8 +61,17 @@ def bootstrap(db: DbSession, payload: SetupRequest) -> User:
         )
     )
 
+    # Guarded, not unconditional: a boot-time `.env` key (e.g. BRICKSET_API_KEY)
+    # may already have set some of these, and first-run setup must not clobber it.
     for key, value in settings_service.DEFAULTS.items():
-        settings_service.set_value(db, key, value)
+        existing = db.scalar(
+            select(settings_service.Setting).where(
+                settings_service.Setting.key == key,
+                settings_service.Setting.scope == "GLOBAL",
+            )
+        )
+        if existing is None:
+            settings_service.set_value(db, key, value)
 
     db.flush()
     audit.record(
