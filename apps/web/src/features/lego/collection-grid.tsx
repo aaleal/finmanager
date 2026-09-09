@@ -1,16 +1,20 @@
 import * as React from 'react';
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowDownWideNarrow,
   ArrowUp,
   ArrowUpNarrowWide,
+  Ban,
   Blocks,
+  BookX,
   ChevronsLeft,
   ChevronsRight,
   ChevronsUpDown,
   Filter,
   Gift,
   Package,
+  PackageX,
   Search,
   X,
 } from 'lucide-react';
@@ -175,7 +179,7 @@ function Thumb({ instance, density = 'compact' }: { instance: LegoSetInstance; d
         side="right"
         className="max-w-none border border-border bg-card p-1 shadow-pop"
       >
-        <img src={image} alt="" className="max-h-72 max-w-72 rounded object-contain" />
+        <img src={image} alt="" className="max-h-md max-w-md rounded object-contain" />
       </TooltipContent>
     </TooltipRoot>
   );
@@ -316,6 +320,24 @@ function YearsCell({ instance }: { instance: LegoSetInstance }) {
   );
 }
 
+/** One notable-state chip: icon only, meaning conveyed on hover via `title` (no
+ * Radix tooltip — this can render up to 6× per row, native `title` is cheap). */
+function StatusIcon({
+  icon: Icon,
+  label,
+  variant = 'outline',
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  variant?: 'outline' | 'destructive' | 'warning';
+}) {
+  return (
+    <Badge variant={variant} className="shrink-0 gap-1 px-1.5" title={label}>
+      <Icon className="size-3" />
+    </Badge>
+  );
+}
+
 /**
  * The name is the only free-text column, so it is the one that gets capped: it
  * truncates with the full name on hover, which keeps the ten columns inside the
@@ -323,38 +345,48 @@ function YearsCell({ instance }: { instance: LegoSetInstance }) {
  */
 function SetCell({ instance, density = 'compact' }: { instance: LegoSetInstance; density?: Density }) {
   const model = instance.set_model;
+  // Only the exceptions are worth a chip (mirrors `is_complete`'s existing
+  // convention) — a set with a box, a manual, in the collection is unremarkable.
+  const hasBadges =
+    !instance.is_complete ||
+    model?.is_retired ||
+    instance.is_potential_gift ||
+    instance.is_fs ||
+    !instance.has_box ||
+    !instance.has_instructions;
   return (
     <div className="flex max-w-[15rem] items-center gap-2.5">
       <Thumb instance={instance} density={density} />
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 font-medium">
-          <span className="truncate" title={model?.name}>
-            {model?.name}
-          </span>
-          {!instance.is_complete ? (
-            <Badge
-              variant="destructive"
-              className="shrink-0"
-              title={instance.missing_parts ?? 'Incompleto'}
-            >
-              incompleto
-            </Badge>
-          ) : null}
-          {model?.is_retired ? (
-            <Badge
-              variant="warning"
-              className="shrink-0"
-              title={`Retirado em ${model.retired_year}`}
-            >
-              retirado
-            </Badge>
-          ) : null}
-          {instance.is_potential_gift ? (
-            <Badge variant="outline" className="shrink-0 gap-1" title="Potencial presente">
-              <Gift className="size-3" />
-            </Badge>
-          ) : null}
+        <p className="truncate font-medium" title={model?.name}>
+          {model?.name}
         </p>
+        {hasBadges ? (
+          <p className="flex flex-wrap items-center gap-1 py-0.5">
+            {!instance.is_complete ? (
+              <StatusIcon
+                icon={AlertTriangle}
+                label={instance.missing_parts ?? 'Incompleto'}
+                variant="destructive"
+              />
+            ) : null}
+            {model?.is_retired ? (
+              <StatusIcon icon={Ban} label={`Retirado em ${model.retired_year}`} variant="warning" />
+            ) : null}
+            {instance.is_potential_gift ? (
+              <StatusIcon icon={Gift} label="Potencial presente" />
+            ) : null}
+            {instance.is_fs ? (
+              <Badge variant="outline" className="shrink-0 px-1.5" title="Fs">
+                Fs
+              </Badge>
+            ) : null}
+            {!instance.has_box ? <StatusIcon icon={PackageX} label="Sem caixa" /> : null}
+            {!instance.has_instructions ? (
+              <StatusIcon icon={BookX} label="Sem instruções" />
+            ) : null}
+          </p>
+        ) : null}
         <p className="numeric truncate text-xs text-muted-foreground">
           {model?.set_number ?? 'MOC'}
           {model?.piece_count ? ` · ${num(model.piece_count)} peças` : ''}
