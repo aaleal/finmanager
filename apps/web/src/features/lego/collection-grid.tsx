@@ -378,7 +378,7 @@ function SetCell({ instance, density = 'compact' }: { instance: LegoSetInstance;
             ) : null}
             {instance.is_fs ? (
               <Badge variant="outline" className="shrink-0 px-1.5" title="Fs">
-                Fs
+                F
               </Badge>
             ) : null}
             {!instance.has_box ? <StatusIcon icon={PackageX} label="Sem caixa" /> : null}
@@ -806,11 +806,24 @@ export function CollectionGrid({
         <div className="relative min-w-[14rem] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className="pl-9"
+            className={cn("pl-9", searchDraft && "pr-9")}
             placeholder="Procurar por número, nome, tema ou notas…"
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
           />
+          {searchDraft ? (
+            <button
+              type="button"
+              aria-label="Limpar pesquisa"
+              onClick={() => {
+                setSearchDraft('');
+                setFilters({ search: undefined, page: '1' });
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          ) : null}
         </div>
 
         <Button

@@ -190,9 +190,18 @@ function ValueEditor({ instance }: { instance: LegoSetInstance }) {
 
 function OwnershipControls({ instance }: { instance: LegoSetInstance }) {
   const update = useUpdateInstance();
+  const [copyId, setCopyId] = React.useState(instance.id);
   const [status, setStatus] = React.useState(instance.ownership_status);
   const [salePrice, setSalePrice] = React.useState(instance.sale_price_eur ?? '');
   const [saleDate, setSaleDate] = React.useState(toDateInput(instance.sale_date));
+
+  // Reset the edited fields when the copy switcher points at a different copy.
+  if (instance.id !== copyId) {
+    setCopyId(instance.id);
+    setStatus(instance.ownership_status);
+    setSalePrice(instance.sale_price_eur ?? '');
+    setSaleDate(toDateInput(instance.sale_date));
+  }
 
   const changed =
     status !== instance.ownership_status ||
@@ -794,20 +803,32 @@ function EditCopyForm({
 }) {
   const update = useUpdateInstance();
   const [pickerOpen, setPickerOpen] = React.useState(false);
-  const [form, setForm] = React.useState({
-    acquisition_cost_eur: instance.acquisition_cost_eur,
-    acquisition_date: toDateInput(instance.acquisition_date),
-    acquisition_source: instance.acquisition_source ?? '',
-    storage_location_id: instance.storage_location_id ?? '',
-    build_state: instance.build_state ?? '',
-    condition: instance.condition ?? '',
-    has_box: instance.has_box,
-    has_instructions: instance.has_instructions,
-    is_fs: instance.is_fs,
-    is_potential_gift: instance.is_potential_gift,
-    missing_parts: instance.missing_parts ?? '',
-    notes: instance.notes ?? '',
-  });
+  const [copyId, setCopyId] = React.useState(instance.id);
+
+  function formFor(source: LegoSetInstance) {
+    return {
+      acquisition_cost_eur: source.acquisition_cost_eur,
+      acquisition_date: toDateInput(source.acquisition_date),
+      acquisition_source: source.acquisition_source ?? '',
+      storage_location_id: source.storage_location_id ?? '',
+      build_state: source.build_state ?? '',
+      condition: source.condition ?? '',
+      has_box: source.has_box,
+      has_instructions: source.has_instructions,
+      is_fs: source.is_fs,
+      is_potential_gift: source.is_potential_gift,
+      missing_parts: source.missing_parts ?? '',
+      notes: source.notes ?? '',
+    };
+  }
+
+  const [form, setForm] = React.useState(() => formFor(instance));
+
+  // Reset the edited fields when the copy switcher points at a different copy.
+  if (instance.id !== copyId) {
+    setCopyId(instance.id);
+    setForm(formFor(instance));
+  }
 
   const selectedLocation = storageLocations.find(
     (location) => location.id === form.storage_location_id,
