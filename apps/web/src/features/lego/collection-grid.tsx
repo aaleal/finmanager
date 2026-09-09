@@ -703,10 +703,11 @@ function SummaryStrip({ summary, basis }: { summary: CollectionSummary; basis: R
     { label: 'cópias', value: num(summary.copies) },
     { label: 'conjuntos', value: num(summary.unique_sets) },
     { label: 'peças', value: num(summary.total_pieces) },
+    { label: 'temas', value: num(summary.unique_themes) },
+    { label: '', value: " | " },
     { label: 'custo', value: eur(summary.total_cost_eur) },
     { label: 'pvp', value: eur(summary.total_rrp_eur) },
     { label: 'valor atual', value: eur(summary.total_value_eur) },
-    { label: 'temas', value: num(summary.unique_themes) },
   ];
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm">
