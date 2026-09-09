@@ -64,6 +64,18 @@ import type { InstanceFilters } from './api';
 
 const ALL = '__all__';
 
+type RoiBasis = 'cost' | 'rrp';
+
+/** `roi_basis` is absent for the default (cost) reading, so the URL stays clean. */
+function roiBasis(filters: Record<string, string | undefined>): RoiBasis {
+  return filters.roi_basis === 'rrp' ? 'rrp' : 'cost';
+}
+
+const ROI_BASIS_OPTIONS: { value: RoiBasis; label: string; hint: string }[] = [
+  { value: 'cost', label: 'Pago', hint: 'ROI calculado sobre o valor efectivamente pago.' },
+  { value: 'rrp', label: 'PVP', hint: 'ROI calculado sobre o PVP original do conjunto.' },
+];
+
 /** A debounced text draft for a single numeric filter key, mirroring the search box. */
 function useFilterDraft(value: string | undefined, onCommit: (value: string | undefined) => void) {
   const [draft, setDraft] = React.useState(value ?? '');
@@ -172,7 +184,7 @@ function RoiValue({
 /** `basis=rrp` is an alternate, explicit reading — today's value against the
  * original PVP for every row — never a silent replacement of the cost ROI
  * headline (ADR-0010). `basis=cost` keeps the M9.1 PVP fallback for gifts. */
-function RoiCell({ instance, basis }: { instance: LegoSetInstance; basis: 'cost' | 'rrp' }) {
+function RoiCell({ instance, basis }: { instance: LegoSetInstance; basis: RoiBasis }) {
   const model = instance.set_model;
 
   if (basis === 'rrp') {
@@ -184,7 +196,15 @@ function RoiCell({ instance, basis }: { instance: LegoSetInstance; basis: 'cost'
       );
     }
     return (
-      <RoiValue pct={Number(model.rrp_roi_pct)} amountEur={Number(model.rrp_appreciation_eur)} />
+      <RoiValue
+        pct={Number(model.rrp_roi_pct)}
+        amountEur={Number(model.rrp_appreciation_eur)}
+        hint={
+          instance.roi_pct != null
+            ? `Face ao pago: ${percent(instance.roi_pct)} (${signedEur(instance.appreciation_eur)})`
+            : undefined
+        }
+      />
     );
   }
 
@@ -208,7 +228,17 @@ function RoiCell({ instance, basis }: { instance: LegoSetInstance; basis: 'cost'
     );
   }
 
-  return <RoiValue pct={Number(instance.roi_pct)} amountEur={Number(instance.appreciation_eur)} />;
+  return (
+    <RoiValue
+      pct={Number(instance.roi_pct)}
+      amountEur={Number(instance.appreciation_eur)}
+      hint={
+        model?.rrp_roi_pct != null
+          ? `Face ao PVP: ${percent(model.rrp_roi_pct)} (${signedEur(model.rrp_appreciation_eur)})`
+          : undefined
+      }
+    />
+  );
 }
 
 /** PVP is the headline — it's what the set is "worth" on the shelf — with the
@@ -322,10 +352,12 @@ function SortHead({
   const descending = (filters.direction ?? 'desc') === 'desc';
 
   return (
-    <TableHead className={cn(align === 'right' && 'text-right', className)}>
+    <TableHead
+      aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
+      className={cn(align === 'right' && 'text-right', className)}
+    >
       <button
         type="button"
-        aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
         onClick={() =>
           setFilters({
             sort: field,
@@ -362,8 +394,8 @@ function SortHead({
 }
 
 /** The ROI column ranks by what was paid or by the original PVP (ADR-0010's
- * second reading); the toggle beneath the label switches both what is shown
- * and what is sorted on, independently of which one is picked. */
+ * second reading); the reading itself is picked by `RoiBasisSwitch` in the
+ * toolbar, not here — this header only ever reports which one is active. */
 function RoiHead({
   filters,
   setFilters,
@@ -371,76 +403,77 @@ function RoiHead({
   filters: Record<string, string | undefined>;
   setFilters: (patch: Record<string, string | undefined>) => void;
 }) {
-  const active = (filters.sort ?? 'created') === 'roi';
-  const descending = (filters.direction ?? 'desc') === 'desc';
-  const basis = filters.roi_basis === 'rrp' ? 'rrp' : 'cost';
+  return (
+    <SortHead
+      field="roi"
+      label={roiBasis(filters) === 'rrp' ? 'ROI (PVP)' : 'ROI (pago)'}
+      filters={filters}
+      setFilters={setFilters}
+      align="right"
+    />
+  );
+}
+
+/** Lives in the toolbar, not the table header: it changes what every ROI cell
+ * means and what `sort=roi` ranks by, so it is a view-wide mode rather than
+ * column decoration. */
+function RoiBasisSwitch({
+  filters,
+  setFilters,
+}: {
+  filters: Record<string, string | undefined>;
+  setFilters: (patch: Record<string, string | undefined>) => void;
+}) {
+  const basis = roiBasis(filters);
+
+  function select(value: RoiBasis) {
+    setFilters({ roi_basis: value === 'cost' ? undefined : value, page: '1' });
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    select(ROI_BASIS_OPTIONS[(index + 1) % ROI_BASIS_OPTIONS.length].value);
+  }
 
   return (
-    <TableHead className="text-right">
-      <div className="flex flex-col items-end gap-1">
-        <button
-          type="button"
-          aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
-          onClick={() =>
-            setFilters({
-              sort: 'roi',
-              direction: active ? (descending ? 'asc' : 'desc') : 'desc',
-              page: '1',
-            })
-          }
-          className={cn(
-            'group inline-flex flex-row-reverse items-center gap-1 uppercase transition-colors hover:text-foreground',
-            active ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          ROI
-          {active ? (
-            descending ? (
-              <ArrowDown className="size-3" />
-            ) : (
-              <ArrowUp className="size-3" />
-            )
-          ) : (
-            <ChevronsUpDown className="size-3 opacity-0 transition-opacity group-hover:opacity-60" />
-          )}
-        </button>
-        <div className="flex overflow-hidden rounded border border-input text-[10px] normal-case">
+    <div
+      role="radiogroup"
+      aria-label="Base de cálculo do ROI"
+      className="flex h-9 items-center gap-1 rounded-lg border border-input bg-card px-2 shadow-soft"
+    >
+      <span className="shrink-0 text-xs text-muted-foreground">ROI face a</span>
+      {ROI_BASIS_OPTIONS.map((option, index) => {
+        const selected = option.value === basis;
+        return (
           <button
+            key={option.value}
             type="button"
-            aria-pressed={basis === 'cost'}
-            onClick={() => setFilters({ roi_basis: undefined, page: '1' })}
+            role="radio"
+            aria-checked={selected}
+            tabIndex={selected ? 0 : -1}
+            title={option.hint}
+            onClick={() => select(option.value)}
+            onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              'px-1.5 py-0.5 transition-colors',
-              basis === 'cost'
+              'h-6 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              selected
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            Custo
+            {option.label}
           </button>
-          <button
-            type="button"
-            aria-pressed={basis === 'rrp'}
-            onClick={() => setFilters({ roi_basis: 'rrp', page: '1' })}
-            className={cn(
-              'px-1.5 py-0.5 transition-colors',
-              basis === 'rrp'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            PVP
-          </button>
-        </div>
-      </div>
-    </TableHead>
+        );
+      })}
+    </div>
   );
 }
 
 const TEXT_FIELDS = new Set(['number', 'name', 'theme', 'storage', 'ownership']);
 
 /** Every distinct build state / condition present across the group's copies,
- * each tagged with a count when more than one copy shares it \u2014 the grouped-view
+ * each tagged with a count when more than one copy shares it — the grouped-view
  * equivalent of the flat table's per-copy Estado column. */
 function StateSummaryCell({ items }: { items: LegoSetInstance[] }) {
   const buildCounts = new Map<BuildState, number>();
@@ -477,7 +510,7 @@ function StateSummaryCell({ items }: { items: LegoSetInstance[] }) {
 /** The grouped-view rollup of `RoiCell`: same basis toggle, same percentage +
  * amount presentation (via `RoiValue`), just summed/scaled across every copy
  * in the group instead of read off a single instance. */
-function GroupRoiCell({ items, basis }: { items: LegoSetInstance[]; basis: 'cost' | 'rrp' }) {
+function GroupRoiCell({ items, basis }: { items: LegoSetInstance[]; basis: RoiBasis }) {
   const model = items[0].set_model;
   const totalCost = items.reduce((sum, item) => sum + Number(item.acquisition_cost_eur), 0);
   const totalValue = model?.current_value_eur
@@ -537,7 +570,7 @@ function GroupedRow({
   onSelect,
 }: {
   group: { key: string; items: LegoSetInstance[] };
-  basis: 'cost' | 'rrp';
+  basis: RoiBasis;
   onSelect: (instance: LegoSetInstance) => void;
 }) {
   const first = group.items[0];
@@ -577,7 +610,7 @@ function GroupedRow({
   );
 }
 
-function SummaryStrip({ summary }: { summary: CollectionSummary }) {
+function SummaryStrip({ summary, basis }: { summary: CollectionSummary; basis: RoiBasis }) {
   const items = [
     { label: 'cópias', value: num(summary.copies) },
     { label: 'conjuntos', value: num(summary.unique_sets) },
@@ -595,6 +628,9 @@ function SummaryStrip({ summary }: { summary: CollectionSummary }) {
           <span className="text-xs text-muted-foreground">{item.label}</span>
         </span>
       ))}
+      <span className="text-xs text-muted-foreground">
+        ROI face a {basis === 'rrp' ? 'PVP' : 'valor pago'}
+      </span>
       <span className="ml-auto text-xs text-muted-foreground">totais dos filtros aplicados</span>
     </div>
   );
@@ -761,6 +797,8 @@ export function CollectionGrid({
             {descending ? <ArrowDownWideNarrow /> : <ArrowUpNarrowWide />}
           </Button>
         </div>
+
+        <RoiBasisSwitch filters={filters} setFilters={setFilters} />
 
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-soft">
           <Checkbox
@@ -1036,7 +1074,7 @@ export function CollectionGrid({
         </div>
       ) : null}
 
-      {data ? <SummaryStrip summary={data.summary} /> : null}
+      {data ? <SummaryStrip summary={data.summary} basis={roiBasis(filters)} /> : null}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         {isLoading ? (
@@ -1063,7 +1101,7 @@ export function CollectionGrid({
                 <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
                 <SortHead
                   field="cost"
-                  label="Custo"
+                  label="PVP / Pago"
                   filters={filters}
                   setFilters={setFilters}
                   align="left"
@@ -1083,7 +1121,7 @@ export function CollectionGrid({
                 <GroupedRow
                   key={group.key}
                   group={group}
-                  basis={filters.roi_basis === 'rrp' ? 'rrp' : 'cost'}
+                  basis={roiBasis(filters)}
                   onSelect={onSelect}
                 />
               ))}
@@ -1105,7 +1143,7 @@ export function CollectionGrid({
                 <SortHead field="state" label="Estado" filters={filters} setFilters={setFilters} />
                 <SortHead
                   field="cost"
-                  label="Custo"
+                  label="PVP / Pago"
                   filters={filters}
                   setFilters={setFilters}
                   align="right"
@@ -1175,10 +1213,7 @@ export function CollectionGrid({
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <RoiCell
-                      instance={instance}
-                      basis={filters.roi_basis === 'rrp' ? 'rrp' : 'cost'}
-                    />
+                    <RoiCell instance={instance} basis={roiBasis(filters)} />
                   </TableCell>
                 </TableRow>
               ))}
