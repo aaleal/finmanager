@@ -224,6 +224,26 @@ class CategoryOperationResult(BaseModel):
     message: str | None = None
 
 
+class CategoryImportRowError(BaseModel):
+    row_number: int
+    message: str
+
+
+class CategoryImportOut(BaseModel):
+    """Additive only, like `ensure_categories` at boot: a name already in the
+    tree is left alone, never renamed or moved by re-importing (Decision #56)."""
+
+    created: int
+    existing: int
+    errors: list[CategoryImportRowError]
+
+
+class CategoryDefaultsLoadOut(BaseModel):
+    """What loading the shipped default taxonomy just created (Decision #57)."""
+
+    created: int
+
+
 # --- Legacy import ------------------------------------------------------------
 
 

@@ -69,7 +69,7 @@ lives here, where it can be corrected when code moves.
 | Merchant CRUD + Portuguese NIF checksum validation | `apps/api/app/api/routers/reference.py` | Phase 0 |
 | Category read API (filter by domain, level, parent) | `apps/api/app/api/routers/reference.py` | Phase 0 |
 | Tag CRUD | `apps/api/app/api/routers/reference.py` | Phase 0 |
-| pt-PT grocery taxonomy shipped with the release and ensured at every boot (27 L1 nodes) | `apps/api/app/services/reference_data.py`, `apps/api/app/data/supermarket-categories.pt-PT.json` | Phase 0, moved out of the seed (ADR-0029) |
+| pt-PT grocery taxonomy shipped as a human-editable default (`app/data/supermarket-categories.pt-PT.json`), loaded on demand — once, from an empty categories table — instead of at boot (27 L1 nodes) | `apps/api/app/services/reference_data.py`, `apps/api/app/api/routers/products.py::load_default_categories` | Phase 0, moved out of the boot ensure (ADR-0057, superseding part of ADR-0029) |
 | Portuguese merchants (Continente, Pingo Doce, Auchan, Galp, EDP, …) ensured at every boot | `apps/api/app/services/reference_data.py` | Phase 0, moved out of the seed (ADR-0029) |
 | Merchant NIFs (Continente, Pingo Doce, Lidl, Piquete da Fruta) and the five parser profiles ensured at every boot | `apps/api/app/services/reference_data.py`, `apps/api/app/main.py::lifespan` | Phase 3 (M1a), moved out of the seed (ADR-0029) |
 
@@ -153,6 +153,7 @@ lives here, where it can be corrected when code moves.
 | Product merge and merge-candidate detection | `apps/api/app/services/supermarket/products_service.py` | Phase 3 (M1b) |
 | Master product manager UI («Produtos» tab) | `apps/web/src/features/supermarket/products-panel.tsx` | Phase 3 (M1b) |
 | Taxonomy editor UI («Categorias» tab) | `apps/web/src/features/supermarket/categories-panel.tsx` | Phase 3 (M1b) |
+| Whole-tree category export/import (Excel round trip, additive-only import) | `GET /api/categories/export.xlsx`, `POST /api/categories/import`, `apps/api/app/services/supermarket/products_service.py`, `apps/web/src/features/supermarket/category-import-dialog.tsx` | ADR-0056 |
 | Product and category autocomplete pickers | `apps/web/src/features/supermarket/product-picker.tsx`, `category-picker.tsx` | Phase 3 (M1b) |
 | Legacy spreadsheet importer — the `SUPERMARKET_YYYY` migration («Importar folha» tab) | `apps/api/app/services/supermarket/legacy_import.py`, `apps/web/src/features/supermarket/legacy-import-panel.tsx` | Phase 3 (M1b) |
 | `confirm-categories` and line-level product reassignment | `POST /api/supermarket/{id}/confirm-categories`, `PATCH /api/supermarket-items/{id}/product`, `apps/web/src/features/supermarket/review-pane.tsx` | Phase 3 (M1b) |

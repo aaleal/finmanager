@@ -7,15 +7,16 @@ because M1 is the module that lives or dies by that tree (Decision #18).
 
 from __future__ import annotations
 
+import datetime as dt
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, Query, Response, UploadFile
 from rapidfuzz import fuzz, process
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
-from app.api.deps import CurrentAuth, Db, Writer, resolve_write_entity
+from app.api.deps import CurrentAuth, Db, Owner, Writer, resolve_write_entity
 from app.core.errors import ValidationError
 from app.models.core import Category, Merchant
 from app.models.products import MasterProduct, ProductAlias
@@ -27,7 +28,10 @@ from app.schemas.products import (
     BulkProductImportRow,
     BulkProductImportRowResult,
     CategoryCreate,
+    CategoryDefaultsLoadOut,
     CategoryImpactOut,
+    CategoryImportOut,
+    CategoryImportRowError,
     CategoryMerge,
     CategoryOperationResult,
     CategoryRename,
@@ -48,7 +52,7 @@ from app.schemas.products import (
     ProductOccurrence,
     ProductSearchResult,
 )
-from app.services import documents
+from app.services import documents, reference_data
 from app.services.supermarket import catalogue, legacy_import, prices_service, products_service
 from app.services.supermarket import service as supermarket
 from app.services.supermarket.normalize import normalize_description
@@ -358,6 +362,16 @@ def merge_products(
     return product_out(db, target)
 
 
+@products_router.delete("/purge", response_model=Ok)
+def purge_products(ctx: Owner, db: Db) -> Ok:
+    """Hard-deletes the whole catalogue ahead of a fresh import — no per-row
+    in-use guard, unlike `delete_product`. Registered ahead of the `/{product_id}`
+    route below so "purge" is never parsed as a product id (see supermarket-rename
+    routing gotcha in repo notes)."""
+    count = products_service.purge_products(db, actor_user_id=ctx.user.id)
+    return Ok(message=f"{count} produto(s) eliminado(s) definitivamente.")
+
+
 @products_router.delete("/{product_id}", response_model=Ok)
 def delete_product(product_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
     product = products_service.get_product(db, product_id)
@@ -500,6 +514,18 @@ def create_category(payload: CategoryCreate, ctx: Writer, db: Db) -> CategorySea
     )
 
 
+@categories_router.post("/defaults/load", response_model=CategoryDefaultsLoadOut, status_code=201)
+def load_default_categories(ctx: Writer, db: Db) -> CategoryDefaultsLoadOut:
+    """Load the shipped GROCERY taxonomy on demand (ADR-0057).
+
+    Not run at boot: a household presses this once the table is empty. Safe to
+    press again later — additive only, same idempotent contract as
+    ``ensure_categories`` had at boot before this release.
+    """
+    created = reference_data.ensure_categories(db)
+    return CategoryDefaultsLoadOut(created=created)
+
+
 @categories_router.patch("/{category_id}", response_model=CategorySearchResult)
 def rename_category(
     category_id: uuid.UUID, payload: CategoryRename, ctx: Writer, db: Db
@@ -545,12 +571,59 @@ def merge_categories(
     )
 
 
+@categories_router.delete("/purge", response_model=Ok)
+def purge_categories(ctx: Owner, db: Db) -> Ok:
+    """Hard-deletes the whole GROCERY taxonomy — no in-use guard, unlike
+    `retire_category`. Registered ahead of the `/{category_id}` route below so
+    "purge" is never parsed as a category id."""
+    count = products_service.purge_categories(db, actor_user_id=ctx.user.id)
+    return Ok(message=f"{count} categoria(s) eliminada(s) definitivamente.")
+
+
 @categories_router.delete("/{category_id}", response_model=Ok)
 def retire_category(category_id: uuid.UUID, ctx: Writer, db: Db) -> Ok:
     """Refused while in use, with the usage count returned."""
     category = products_service.get_category(db, category_id)
     products_service.retire_category(db, category, actor_user_id=ctx.user.id)
     return Ok(message="Categoria retirada.")
+
+
+# --- Whole-tree export / import (Decision #56) ---------------------------------
+
+
+@categories_router.get("/export.xlsx", response_class=Response)
+def export_categories(ctx: CurrentAuth, db: Db) -> Response:
+    """Every node, one row per category — a valid input for «Importar» below."""
+    payload = products_service.export_categories_workbook(db)
+    return Response(
+        content=payload,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="categorias-{dt.date.today():%Y%m%d}.xlsx"'
+            )
+        },
+    )
+
+
+@categories_router.post("/import", response_model=CategoryImportOut)
+def import_categories(
+    ctx: Writer, db: Db, file: Annotated[UploadFile, File()]
+) -> CategoryImportOut:
+    """Additive only: ensures every L1›L2›L3 path in the sheet exists, same as
+    the export it round-trips (Decision #56)."""
+    data = file.file.read()
+    if not data:
+        raise ValidationError("Ficheiro vazio.")
+    report = products_service.import_categories_workbook(db, data=data, actor_user_id=ctx.user.id)
+    return CategoryImportOut(
+        created=report.created,
+        existing=report.existing,
+        errors=[
+            CategoryImportRowError(row_number=issue.row_number, message=issue.message)
+            for issue in report.errors
+        ],
+    )
 
 
 # --- Legacy import (FR-1.19) ---------------------------------------------------

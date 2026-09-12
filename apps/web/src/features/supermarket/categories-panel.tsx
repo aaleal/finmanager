@@ -1,5 +1,18 @@
 import * as React from 'react';
-import { Check, ChevronRight, GitMerge, Move, PencilLine, Plus, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Download,
+  FoldVertical,
+  GitMerge,
+  Move,
+  PencilLine,
+  Plus,
+  Trash2,
+  UnfoldVertical,
+  Upload,
+  X,
+} from 'lucide-react';
 import type { CategoryResult, CategoryTreeNode } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,16 +25,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/primitives';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
+import { num } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/features/auth/session';
+import { CategoryImportDialog } from './category-import-dialog';
 import { CategoryPicker } from './category-picker';
 import {
   useCategoryImpact,
   useCategoryTree,
   useCreateCategory,
+  useDeleteAllCategories,
+  useExportCategories,
+  useLoadDefaultCategories,
   useMergeCategories,
+  usePurgeCategories,
   useRenameCategory,
   useReparentCategory,
   useRetireCategory,
@@ -29,6 +54,54 @@ import {
 
 interface TreeNode extends CategoryTreeNode {
   children: TreeNode[];
+}
+
+/** Lifted so the toolbar's "collapse/expand all" can reach every row without prop
+ *  drilling through the recursive tree — a node with no entry here is expanded. */
+const ExpansionContext = React.createContext<{
+  isCollapsed: (id: string) => boolean;
+  toggle: (id: string) => void;
+} | null>(null);
+
+function useExpansion() {
+  const value = React.useContext(ExpansionContext);
+  if (!value) throw new Error('useExpansion must be used within CategoriesPanel');
+  return value;
+}
+
+/** Counted from the already-fetched tree — one query, no extra round trip for a summary bar. */
+function CategoryStatsRow({ nodes, isLoading }: { nodes: CategoryTreeNode[]; isLoading: boolean }) {
+  const counts = React.useMemo(() => {
+    const byLevel = { 1: 0, 2: 0, 3: 0 };
+    let productsCatalogued = 0;
+    for (const node of nodes) {
+      byLevel[node.level as 1 | 2 | 3] = (byLevel[node.level as 1 | 2 | 3] ?? 0) + 1;
+      productsCatalogued += node.product_count;
+    }
+    return { byLevel, productsCatalogued };
+  }, [nodes]);
+
+  if (isLoading) return <Skeleton className="h-10 rounded-xl" />;
+
+  const items = [
+    { label: 'categorias', value: num(nodes.length) },
+    { label: 'nível 1', value: num(counts.byLevel[1]) },
+    { label: 'nível 2', value: num(counts.byLevel[2]) },
+    { label: 'nível 3', value: num(counts.byLevel[3]) },
+    { label: '', value: ' | ' },
+    { label: 'produtos catalogados', value: num(counts.productsCatalogued) },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm">
+      {items.map((item, index) => (
+        <span key={`${item.label}-${index}`} className="flex items-baseline gap-1.5">
+          <span className="numeric font-semibold">{item.value}</span>
+          <span className="text-xs text-muted-foreground">{item.label}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 /** Built from `parent_id`, not by slicing the display path: a category is free to
@@ -208,6 +281,11 @@ function RetireDialog({
         </DialogHeader>
         <DialogBody className="space-y-3">
           {open ? <ImpactNote nodeId={node.id} /> : null}
+          {open && node.level < 3 && impact.data && impact.data.descendants > 0 ? (
+            <p className="text-sm font-medium text-destructive">
+              Vai eliminar também {impact.data.descendants} sub-categoria(s) desta árvore.
+            </p>
+          ) : null}
           <p className="text-sm text-muted-foreground">
             A categoria fica marcada como retirada e deixa de aparecer nas listas de escolha.
           </p>
@@ -237,7 +315,8 @@ function CategoryNodeRow({ node, depth }: { node: TreeNode; depth: number }) {
   const { canWrite } = useSession();
   const rename = useRenameCategory();
   const impact = useCategoryImpact(node.id);
-  const [expanded, setExpanded] = React.useState(true);
+  const { isCollapsed, toggle } = useExpansion();
+  const expanded = !isCollapsed(node.id);
   const [renaming, setRenaming] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(node.display_name_pt);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -257,7 +336,7 @@ function CategoryNodeRow({ node, depth }: { node: TreeNode; depth: number }) {
         {node.children.length ? (
           <button
             type="button"
-            onClick={() => setExpanded((previous) => !previous)}
+            onClick={() => toggle(node.id)}
             aria-label={
               expanded ? `Fechar ${node.display_name_pt}` : `Abrir ${node.display_name_pt}`
             }
@@ -429,12 +508,216 @@ function NewCategoryDialog({
   );
 }
 
+function DeleteAllDialog({
+  nodes,
+  rootIds,
+  open,
+  onOpenChange,
+}: {
+  nodes: CategoryTreeNode[];
+  rootIds: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const deleteAll = useDeleteAllCategories();
+  const [hardDelete, setHardDelete] = React.useState(false);
+  const [purgeOpen, setPurgeOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) setHardDelete(false);
+  }, [open]);
+
+  const l1 = nodes.filter((node) => node.level === 1).length;
+  const l2 = nodes.filter((node) => node.level === 2).length;
+  const l3 = nodes.filter((node) => node.level === 3).length;
+  const productCount = nodes.reduce((sum, node) => sum + node.product_count, 0);
+
+  return (<>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar todas as categorias
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4 text-sm">
+            {/* Bloco de Categorias Afetadas */}
+            <div className="space-y-2">
+              <p className="font-medium text-destructive">
+                Isto afeta o seguinte volume de categorias:
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-md border bg-muted/40 p-2">
+                  <span className="block text-xs text-muted-foreground">Nível 1</span>
+                  <span className="text-base font-semibold">{num(l1)}</span>
+                </div>
+                <div className="rounded-md border bg-muted/40 p-2">
+                  <span className="block text-xs text-muted-foreground">Nível 2</span>
+                  <span className="text-base font-semibold">{num(l2)}</span>
+                </div>
+                <div className="rounded-md border bg-muted/40 p-2">
+                  <span className="block text-xs text-muted-foreground">Nível 3</span>
+                  <span className="text-base font-semibold">{num(l3)}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+                <span>Total de categorias</span>
+                <span className="text-sm font-semibold text-foreground">{num(nodes.length)}</span>
+              </div>
+            </div>
+
+            {/* Impacto em Produtos */}
+            <div
+              className={`rounded-md p-2.5 text-xs font-medium ${
+                productCount > 0
+                  ? 'border border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300'
+                  : 'bg-muted/50 text-muted-foreground'
+              }`}
+            >
+              {productCount > 0
+                ? `⚠️ ${num(productCount)} produto(s) têm alguma destas categorias atribuída.`
+                : '✓ Nenhum produto tem alguma destas categorias atribuída.'}
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Por norma, uma categoria (ou sub-árvore) ainda em uso por algum produto é apenas
+              retirada — ignorada, não eliminada à força — e pode voltar aqui depois de a fundir
+              noutra.
+            </p>
+
+            <label className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <Checkbox
+                checked={hardDelete}
+                onCheckedChange={(checked) => setHardDelete(checked === true)}
+              />
+              <span>
+                Eliminar <strong>definitivamente</strong>, incluindo as categorias em uso — os
+                produtos afetados ficam sem categoria em vez de bloquear a eliminação.
+              </span>
+            </label>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            {hardDelete ? (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onOpenChange(false);
+                  setPurgeOpen(true);
+                }}
+              >
+                Continuar
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                loading={deleteAll.isPending}
+                onClick={async () => {
+                  await deleteAll.mutateAsync(rootIds);
+                  onOpenChange(false);
+                }}
+              >
+                Eliminar tudo
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <PurgeCategoriesDialog open={purgeOpen} onOpenChange={setPurgeOpen} />
+    </>
+  );
+}
+
+function PurgeCategoriesDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const purge = usePurgeCategories();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Trash2 className="size-4" />
+            Confirmar eliminação definitiva
+          </DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Isto elimina <strong className="text-foreground">definitivamente</strong> toda a árvore
+            de categorias, mesmo as que ainda estão em uso — os produtos afetados ficam sem
+            categoria, nunca eliminados. Não pode ser desfeito.
+          </p>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            loading={purge.isPending}
+            onClick={async () => {
+              await purge.mutateAsync();
+              onOpenChange(false);
+            }}
+          >
+            Eliminar definitivamente
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CategoriesPanel() {
   const { canWrite } = useSession();
   const categories = useCategoryTree();
+  const exportCategories = useExportCategories();
+  const loadDefaults = useLoadDefaultCategories();
   const [createOpen, setCreateOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [deleteAllOpen, setDeleteAllOpen] = React.useState(false);
+  const [collapsedIds, setCollapsedIds] = React.useState<Set<string>>(new Set());
 
-  const tree = React.useMemo(() => buildTree(categories.data ?? []), [categories.data]);
+  const nodes = React.useMemo(() => categories.data ?? [], [categories.data]);
+  const tree = React.useMemo(() => buildTree(nodes), [nodes]);
+
+  const expansion = React.useMemo(
+    () => ({
+      isCollapsed: (id: string) => collapsedIds.has(id),
+      toggle: (id: string) =>
+        setCollapsedIds((previous) => {
+          const next = new Set(previous);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        }),
+    }),
+    [collapsedIds],
+  );
+
+  /** `levels` picks which rows the bulk action touches — a leaf (N3) has no
+   *  children, so including it is harmless but never does anything visible. */
+  function setCollapsedForLevels(levels: (1 | 2)[], collapsed: boolean) {
+    const ids = nodes.filter((node) => levels.includes(node.level as 1 | 2)).map((node) => node.id);
+    setCollapsedIds((previous) => {
+      const next = new Set(previous);
+      for (const id of ids) {
+        if (collapsed) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  const rootIds = tree.map((node) => node.id);
 
   return (
     <div className="space-y-4">
@@ -443,13 +726,31 @@ export function CategoriesPanel() {
           Mudar o nome não custa nada — as linhas referem-se às categorias por identificador. Mover
           recalcula os ascendentes dos produtos afetados numa só transação auditada.
         </p>
-        {canWrite ? (
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus />
-            Nova categoria
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            loading={exportCategories.isPending}
+            onClick={() => exportCategories.mutate()}
+          >
+            <Download />
+            Exportar
           </Button>
-        ) : null}
+          {canWrite ? (
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload />
+              Importar
+            </Button>
+          ) : null}
+          {canWrite ? (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus />
+              Nova categoria
+            </Button>
+          ) : null}
+        </div>
       </div>
+
+      <CategoryStatsRow nodes={nodes} isLoading={categories.isLoading} />
 
       {categories.isLoading ? (
         <div className="space-y-2">
@@ -458,16 +759,94 @@ export function CategoriesPanel() {
           ))}
         </div>
       ) : !tree.length ? (
-        <EmptyState title="Sem categorias na taxonomia GROCERY." />
+        <EmptyState
+          title="Sem categorias na taxonomia GROCERY."
+          description={
+            canWrite
+              ? 'Pretende fazer loading das categorias por defeito?'
+              : 'Peça a um utilizador com permissão de escrita para carregar as categorias por defeito.'
+          }
+          action={
+            canWrite ? (
+              <Button loading={loadDefaults.isPending} onClick={() => loadDefaults.mutate()}>
+                <Download />
+                Carregar categorias por defeito
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
-        <ul className="space-y-0.5 rounded-xl border border-border bg-card p-3">
-          {tree.map((node) => (
-            <CategoryNodeRow key={node.id} node={node} depth={0} />
-          ))}
-        </ul>
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FoldVertical />
+                  Colapsar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onSelect={() => setCollapsedForLevels([1], true)}>
+                  Nível 1
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setCollapsedForLevels([2], true)}>
+                  Nível 2
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setCollapsedForLevels([1, 2], true)}>
+                  Níveis 1 e 2
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <UnfoldVertical />
+                  Expandir
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onSelect={() => setCollapsedForLevels([1], false)}>
+                  Nível 1
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setCollapsedForLevels([2], false)}>
+                  Nível 2
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setCollapsedForLevels([1, 2], false)}>
+                  Níveis 1 e 2
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {canWrite ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="ml-auto"
+                onClick={() => setDeleteAllOpen(true)}
+              >
+                <Trash2 />
+                Eliminar tudo
+              </Button>
+            ) : null}
+          </div>
+
+          <ExpansionContext.Provider value={expansion}>
+            <ul className="space-y-0.5 rounded-xl border border-border bg-card p-3">
+              {tree.map((node) => (
+                <CategoryNodeRow key={node.id} node={node} depth={0} />
+              ))}
+            </ul>
+          </ExpansionContext.Provider>
+        </>
       )}
 
       <NewCategoryDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CategoryImportDialog open={importOpen} onOpenChange={setImportOpen} />
+      <DeleteAllDialog
+        nodes={nodes}
+        rootIds={rootIds}
+        open={deleteAllOpen}
+        onOpenChange={setDeleteAllOpen}
+      />
     </div>
   );
 }

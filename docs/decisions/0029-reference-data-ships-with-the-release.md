@@ -43,3 +43,10 @@ The seed keeps a `reference data` step that calls the same `ensure_all()`, so
   A failure is logged and swallowed — a missing category must not stop the API
   from serving the rest of the household's data.
 - `app.seed` is now what its name says: demonstration data only.
+
+> **Superseded in part by [ADR-0057](0057-the-grocery-taxonomy-loads-on-demand-not-at-boot.md):**
+> the grocery taxonomy is no longer ensured at boot — it loads on demand,
+> triggered by the household from an empty categories table. Merchants and
+> parser profiles are unaffected and are still ensured on every boot exactly
+> as described above.
+

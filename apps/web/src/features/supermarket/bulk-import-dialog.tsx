@@ -171,7 +171,7 @@ export function BulkImportDialog({
                     : 'Arraste um Excel (.xlsx), ou clique para escolher'}
                 </span>
                 <span className="text-xs">
-                  Nome, Marca, Categoria, Vendido a peso, Formatos (kg)…
+                  Nome, Marca, Categoria (ou Cat1/Cat2/Cat3), Vendido a peso, Formatos (kg)…
                 </span>
               </button>
             </>

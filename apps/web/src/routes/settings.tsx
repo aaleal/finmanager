@@ -27,6 +27,7 @@ import {
 import { PageHeader } from '@/components/ui/feedback';
 import { useBackupModules, useExportBackup, useImportBackup } from '@/features/settings/backup-api';
 import { usePurgeCollection, usePurgeStorageLocations } from '@/features/lego/api';
+import { usePurgeCategories, usePurgeProducts } from '@/features/supermarket/catalogue-api';
 
 const KEYS = {
   bricksetEnabled: 'lego.brickset.enabled',
@@ -266,6 +267,106 @@ function LegoDangerZoneCard() {
   );
 }
 
+function SupermarketDangerZoneCard() {
+  const [confirmProducts, setConfirmProducts] = React.useState(false);
+  const [confirmCategories, setConfirmCategories] = React.useState(false);
+  const purgeProducts = usePurgeProducts();
+  const purgeCategories = usePurgeCategories();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trash2 className="size-4 text-muted-foreground" />
+          Supermercado — limpar para reimportar
+        </CardTitle>
+        <CardDescription>
+          Elimina definitivamente todos os produtos ou toda a árvore de categorias, sem passar por
+          <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">./fm reset</code>
+          nem pelo resto da instalação. Use antes de uma reimportação limpa.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-2">
+        <Button variant="destructive" onClick={() => setConfirmProducts(true)}>
+          <Trash2 />
+          Eliminar todos os produtos
+        </Button>
+        <Button variant="destructive" onClick={() => setConfirmCategories(true)}>
+          <Trash2 />
+          Eliminar todas as categorias
+        </Button>
+      </CardContent>
+
+      <Dialog open={confirmProducts} onOpenChange={setConfirmProducts}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar todos os produtos
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">definitivamente</strong> todo o
+              catálogo de produtos, mesmo os já referenciados por recibos — as linhas de recibo
+              ficam sem produto associado, mas os próprios recibos não são afetados. Não pode ser
+              desfeito.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmProducts(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={purgeProducts.isPending}
+              onClick={async () => {
+                await purgeProducts.mutateAsync();
+                setConfirmProducts(false);
+              }}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmCategories} onOpenChange={setConfirmCategories}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar todas as categorias
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">definitivamente</strong> toda a
+              árvore de categorias, mesmo as ainda em uso — os produtos afetados ficam sem
+              categoria, nunca eliminados. Não pode ser desfeito.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmCategories(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={purgeCategories.isPending}
+              onClick={async () => {
+                await purgeCategories.mutateAsync();
+                setConfirmCategories(false);
+              }}
+            >
+              Eliminar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 export function SettingsPage() {
   const { isOwner } = useSession();
   const queryClient = useQueryClient();
@@ -410,6 +511,7 @@ export function SettingsPage() {
 
           <BackupCard />
           {isOwner ? <LegoDangerZoneCard /> : null}
+          {isOwner ? <SupermarketDangerZoneCard /> : null}
           <PasswordCard />
         </div>
       </div>

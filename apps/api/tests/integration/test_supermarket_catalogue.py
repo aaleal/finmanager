@@ -6,8 +6,11 @@ four category-governance rules (rename, reparent, merge, retire).
 
 from __future__ import annotations
 
+import io
 from decimal import Decimal
+from typing import Any
 
+import openpyxl
 import pytest
 from app.core.errors import Conflict, ValidationError
 from app.models import Entity, Merchant, User
@@ -153,6 +156,74 @@ def test_an_unused_category_retires_cleanly(
 ) -> None:
     products_service.retire_category(db, tree["other"], actor_user_id=owner.id)
     assert db.get(Category, tree["other"].id).is_deleted is True
+
+
+# --- Whole-tree export / import (Decision #56) ----------------------------------
+
+
+def _category_import_workbook(rows: list[list[Any]]) -> bytes:
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.append(["Nível 1", "Nível 2", "Nível 3", "Eixo de marca"])
+    for row in rows:
+        sheet.append(row)
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+def test_export_writes_one_row_per_node_with_its_full_path(
+    db: Session, tree: dict[str, Category]
+) -> None:
+    payload = products_service.export_categories_workbook(db)
+    workbook = openpyxl.load_workbook(io.BytesIO(payload))
+    rows = list(workbook["Categorias"].iter_rows(values_only=True))[1:]
+
+    assert ("Laticínios", None, None, None) in rows
+    assert ("Laticínios", "Queijo Fresco", None, None) in rows
+    assert ("Laticínios", "Queijo Fresco", "Queijo Mascarpone", None) in rows
+    assert ("Mercearia", None, None, None) in rows
+
+
+def test_import_only_creates_what_is_missing_and_is_safe_to_rerun(
+    db: Session, tree: dict[str, Category], owner: User
+) -> None:
+    data = _category_import_workbook(
+        [
+            ["Laticínios", "Queijo Fresco", "Queijo Mascarpone", None],  # already there
+            ["Laticínios", "Queijo Fresco", "Queijo Creme", None],  # new leaf, known parents
+            ["Bebidas", "Águas", None, "Sim"],  # brand new branch
+        ]
+    )
+
+    report = products_service.import_categories_workbook(db, data=data, actor_user_id=owner.id)
+    assert report.errors == []
+    assert report.existing == 1
+    assert report.created == 3  # Queijo Creme + Bebidas + Águas
+
+    aguas = db.scalar(select(Category).where(Category.display_name_pt == "Águas"))
+    assert aguas is not None
+    assert aguas.brand_axis is True
+    assert aguas.level == 2
+
+    # Re-running the exact same sheet creates nothing new.
+    again = products_service.import_categories_workbook(db, data=data, actor_user_id=owner.id)
+    assert again.created == 0
+    assert again.existing == 3
+
+
+def test_import_rejects_a_row_with_a_gap_before_a_filled_level(
+    db: Session, tree: dict[str, Category], owner: User
+) -> None:
+    data = _category_import_workbook([[None, "Órfã", None, None]])
+
+    report = products_service.import_categories_workbook(db, data=data, actor_user_id=owner.id)
+
+    assert report.created == 0
+    assert report.existing == 0
+    assert [(e.row_number, e.message) for e in report.errors] == [
+        (2, "Falta um nível antes de um nível preenchido.")
+    ]
 
 
 # --- Resolution and the learning loop ------------------------------------------

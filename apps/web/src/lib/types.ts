@@ -82,6 +82,9 @@ export type CategoryResult = Schemas['CategorySearchResult'];
 export type CategoryTreeNode = Schemas['CategoryTreeNode'];
 export type CategoryImpact = Schemas['CategoryImpactOut'];
 export type CategoryOperationResult = Schemas['CategoryOperationResult'];
+export type CategoryImportResult = Schemas['CategoryImportOut'];
+export type CategoryImportRowError = Schemas['CategoryImportRowError'];
+export type CategoryDefaultsLoadResult = Schemas['CategoryDefaultsLoadOut'];
 export type LegacyImportResult = Schemas['LegacyImportResult'];
 export type CategoryStatus = MasterProduct['category_status'];
 // Same `-Output`/`-Input` split as the LEGO bulk import, for the same reason

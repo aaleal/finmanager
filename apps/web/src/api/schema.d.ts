@@ -1410,6 +1410,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/master-products/purge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Purge Products
+     * @description Hard-deletes the whole catalogue ahead of a fresh import — no per-row
+     *     in-use guard, unlike `delete_product`. Registered ahead of the `/{product_id}`
+     *     route below so "purge" is never parsed as a product id (see supermarket-rename
+     *     routing gotcha in repo notes).
+     */
+    delete: operations['purge_products_api_master_products_purge_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/product-aliases/learn': {
     parameters: {
       query?: never;
@@ -1487,6 +1510,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/categories/defaults/load': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Load Default Categories
+     * @description Load the shipped GROCERY taxonomy on demand (ADR-0057).
+     *
+     *     Not run at boot: a household presses this once the table is empty. Safe to
+     *     press again later — additive only, same idempotent contract as
+     *     ``ensure_categories`` had at boot before this release.
+     */
+    post: operations['load_default_categories_api_categories_defaults_load_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/categories/{category_id}': {
     parameters: {
       query?: never;
@@ -1539,6 +1586,69 @@ export interface paths {
     put?: never;
     /** Merge Categories */
     post: operations['merge_categories_api_categories__category_id__merge_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/purge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Purge Categories
+     * @description Hard-deletes the whole GROCERY taxonomy — no in-use guard, unlike
+     *     `retire_category`. Registered ahead of the `/{category_id}` route below so
+     *     "purge" is never parsed as a category id.
+     */
+    delete: operations['purge_categories_api_categories_purge_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/export.xlsx': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export Categories
+     * @description Every node, one row per category — a valid input for «Importar» below.
+     */
+    get: operations['export_categories_api_categories_export_xlsx_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/categories/import': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import Categories
+     * @description Additive only: ensures every L1›L2›L3 path in the sheet exists, same as
+     *     the export it round-trips (Decision #56).
+     */
+    post: operations['import_categories_api_categories_import_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2017,6 +2127,14 @@ export interface components {
        */
       file: string;
     };
+    /** Body_import_categories_api_categories_import_post */
+    Body_import_categories_api_categories_import_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
+    };
     /** Body_import_legacy_api_supermarket_import_legacy_post */
     Body_import_legacy_api_supermarket_import_legacy_post: {
       /**
@@ -2374,6 +2492,14 @@ export interface components {
        */
       brand_axis: boolean;
     };
+    /**
+     * CategoryDefaultsLoadOut
+     * @description What loading the shipped default taxonomy just created (Decision #57).
+     */
+    CategoryDefaultsLoadOut: {
+      /** Created */
+      created: number;
+    };
     /** CategoryImpactOut */
     CategoryImpactOut: {
       /**
@@ -2389,6 +2515,26 @@ export interface components {
       receipt_items: number;
       /** In Use */
       in_use: boolean;
+    };
+    /**
+     * CategoryImportOut
+     * @description Additive only, like `ensure_categories` at boot: a name already in the
+     *     tree is left alone, never renamed or moved by re-importing (Decision #56).
+     */
+    CategoryImportOut: {
+      /** Created */
+      created: number;
+      /** Existing */
+      existing: number;
+      /** Errors */
+      errors: components['schemas']['CategoryImportRowError'][];
+    };
+    /** CategoryImportRowError */
+    CategoryImportRowError: {
+      /** Row Number */
+      row_number: number;
+      /** Message */
+      message: string;
     };
     /** CategoryMerge */
     CategoryMerge: {
@@ -8049,6 +8195,26 @@ export interface operations {
       };
     };
   };
+  purge_products_api_master_products_purge_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+    };
+  };
   learn_alias_api_product_aliases_learn_post: {
     parameters: {
       query?: never;
@@ -8177,6 +8343,26 @@ export interface operations {
       };
     };
   };
+  load_default_categories_api_categories_defaults_load_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryDefaultsLoadOut'];
+        };
+      };
+    };
+  };
   retire_category_api_categories__category_id__delete: {
     parameters: {
       query?: never;
@@ -8300,6 +8486,77 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CategoryOperationResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  purge_categories_api_categories_purge_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+    };
+  };
+  export_categories_api_categories_export_xlsx_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  import_categories_api_categories_import_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_import_categories_api_categories_import_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryImportOut'];
         };
       };
       /** @description Validation Error */

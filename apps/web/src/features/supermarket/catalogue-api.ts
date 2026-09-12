@@ -5,7 +5,9 @@ import type {
   BulkProductImportPreview,
   BulkProductImportRow,
   BulkProductImportRowResult,
+  CategoryDefaultsLoadResult,
   CategoryImpact,
+  CategoryImportResult,
   CategoryOperationResult,
   CategoryResult,
   CategoryTreeNode,
@@ -13,6 +15,7 @@ import type {
   MasterProduct,
   Merchant,
   MergeCandidate,
+  Ok,
   Page,
   ProductAlias,
   ProductOccurrence,
@@ -217,6 +220,33 @@ export function useUpdateProduct() {
   });
 }
 
+/** Refused by the API while the product is still referenced by a receipt line. */
+export function useDeleteProduct() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (productId: string) => api.delete(`/master-products/${productId}`),
+    onSuccess: () => {
+      toast.success('Produto eliminado.');
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Hard-deletes every product in the catalogue \u2014 no in-use guard, unlike
+ * `useDeleteProduct`. Receipt lines are unlinked, never deleted. */
+export function usePurgeProducts() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: () => api.delete<Ok>('/master-products/purge'),
+    onSuccess: (result) => {
+      toast.success(result.message ?? 'Produtos eliminados.');
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
 /** Idempotent on the weight, so appending a format never has to send the others. */
 export function useAddPackVariant() {
   const invalidate = useInvalidate();
@@ -341,6 +371,98 @@ export function useRetireCategory() {
     mutationFn: (categoryId: string) => api.delete(`/categories/${categoryId}`),
     onSuccess: () => {
       toast.success('Categoria retirada.');
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Retires every root (L1) passed in \u2014 each call cascades its whole subtree, so
+ * one call per root is enough. A root still referenced by a product is skipped,
+ * not allowed to fail the rest of the tree. */
+export function useDeleteAllCategories() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async (rootIds: string[]) => {
+      let retired = 0;
+      let blocked = 0;
+      for (const id of rootIds) {
+        try {
+          await api.delete(`/categories/${id}`);
+          retired += 1;
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 409) {
+            blocked += 1;
+            continue;
+          }
+          throw error;
+        }
+      }
+      return { retired, blocked };
+    },
+    onSuccess: ({ retired, blocked }) => {
+      if (blocked > 0) {
+        toast.warning(
+          `${retired} categoria(s) de topo retirada(s). ${blocked} continuam em uso e foram ignoradas.`,
+        );
+      } else {
+        toast.success(`${retired} categoria(s) de topo retirada(s).`);
+      }
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Hard-deletes the whole GROCERY taxonomy \u2014 no in-use guard, unlike
+ * `useDeleteAllCategories`. Any product or merchant still pointing at one of
+ * these categories is unlinked, never deleted. */
+export function usePurgeCategories() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: () => api.delete<Ok>('/categories/purge'),
+    onSuccess: (result) => {
+      toast.success(result.message ?? 'Categorias eliminadas.');
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+export function useExportCategories() {
+  return useMutation({
+    mutationFn: () => api.download('/categories/export.xlsx'),
+    onSuccess: () => toast.success('Ficheiro exportado.'),
+    onError: (error) => report(error),
+  });
+}
+
+/** Loads the shipped GROCERY taxonomy default — see ADR-0057. Safe to press more than once. */
+export function useLoadDefaultCategories() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: () => api.post<CategoryDefaultsLoadResult>('/categories/defaults/load'),
+    onSuccess: (result) => {
+      toast.success(`${result.created} categoria(s) carregada(s).`);
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Additive only — a name already in the tree is left untouched. See ADR-0056. */
+export function useImportCategories() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.upload<CategoryImportResult>('/categories/import', formData, undefined, 'POST');
+    },
+    onSuccess: (result) => {
+      toast.success(
+        `${result.created} categoria(s) criada(s), ${result.existing} já existente(s).`,
+      );
       invalidate();
     },
     onError: report,

@@ -24,12 +24,15 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from openpyxl.utils import get_column_letter
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.core import audit
 from app.core.errors import AppError, Conflict, NotFound, ValidationError
-from app.models.core import Category
+from app.models.core import Category, Merchant
 from app.models.products import MasterProduct, ProductAlias
 from app.models.supermarket import SupermarketReceiptItem
 from app.services.supermarket import catalogue, classify
@@ -356,6 +359,30 @@ def merge_candidates(db: DbSession, *, limit: int = 50) -> list[dict[str, Any]]:
     ]
 
 
+def purge_products(db: DbSession, *, actor_user_id: uuid.UUID | None) -> int:
+    """Hard-deletes every product in the catalogue — no per-row in-use guard,
+    unlike the regular delete. A receipt line that pointed to one is unlinked
+    (`master_product_id` set to `NULL`), never deleted: the receipt itself is
+    a household's own record, a purge here only clears its own catalogue."""
+    ids = list(db.scalars(select(MasterProduct.id)).all())
+    if not ids:
+        return 0
+    db.query(SupermarketReceiptItem).filter(
+        SupermarketReceiptItem.master_product_id.in_(ids)
+    ).update({SupermarketReceiptItem.master_product_id: None}, synchronize_session="fetch")
+    audit.record(
+        db,
+        action="PURGE",
+        table_name=PRODUCT_TABLE,
+        record_id=uuid.uuid4(),
+        actor_user_id=actor_user_id,
+        reason=f"purged {len(ids)} product(s) ahead of a fresh import",
+    )
+    db.query(MasterProduct).filter(MasterProduct.id.in_(ids)).delete(synchronize_session="fetch")
+    db.flush()
+    return len(ids)
+
+
 def suggest_category(
     db: DbSession, *, description: str, merchant_section: str | None
 ) -> classify.Classification:
@@ -657,6 +684,268 @@ def retire_category(db: DbSession, category: Category, *, actor_user_id: uuid.UU
     )
 
 
+def purge_categories(db: DbSession, *, actor_user_id: uuid.UUID | None) -> int:
+    """Hard-deletes the whole GROCERY taxonomy — no in-use guard, unlike
+    `retire_category`. Every product and merchant that still pointed at one of
+    these nodes is unlinked first (fields set to `NULL`, never the product or
+    merchant itself), so the delete never trips a foreign key."""
+    ids = list(db.scalars(select(Category.id).where(Category.domain == GROCERY)).all())
+    if not ids:
+        return 0
+    for column in (
+        MasterProduct.category_id,
+        MasterProduct.category_l1_id,
+        MasterProduct.category_l2_id,
+        MasterProduct.category_l3_id,
+    ):
+        db.query(MasterProduct).filter(column.in_(ids)).update(
+            {column: None}, synchronize_session="fetch"
+        )
+    for column in (Merchant.default_category_l1_id, Merchant.default_category_l2_id):
+        db.query(Merchant).filter(column.in_(ids)).update(
+            {column: None}, synchronize_session="fetch"
+        )
+    audit.record(
+        db,
+        action="PURGE",
+        table_name=CATEGORY_TABLE,
+        record_id=uuid.uuid4(),
+        actor_user_id=actor_user_id,
+        reason=f"purged {len(ids)} category/ies ahead of a fresh import",
+    )
+    db.query(Category).filter(Category.id.in_(ids)).delete(synchronize_session="fetch")
+    db.flush()
+    return len(ids)
+
+
+# --- Whole-tree export / import (Decision #56) --------------------------------
+#
+# One row per node, its own name in the column for its level and every
+# ancestor's name to its left — the same "L1/L2/L3 by name" shape the legacy
+# import already reads (`_category_from_sheet`), so an exported workbook is a
+# valid import input, and a hand-built one needs only the same three columns.
+
+CATEGORY_EXPORT_HEADERS = ("Nível 1", "Nível 2", "Nível 3", "Eixo de marca")
+
+_CATEGORY_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
+    "level1": ("nivel 1",),
+    "level2": ("nivel 2",),
+    "level3": ("nivel 3",),
+    "brand_axis": ("eixo de marca",),
+}
+
+
+def export_categories_workbook(db: DbSession) -> bytes:
+    nodes = db.scalars(
+        select(Category)
+        .where(Category.domain == GROCERY, Category.is_deleted.is_(False))
+        .order_by(Category.level, Category.display_name_pt)
+    ).all()
+    by_id = {node.id: node for node in nodes}
+
+    def path_names(node: Category) -> list[str]:
+        names: list[str] = []
+        current: Category | None = node
+        while current is not None:
+            names.append(current.display_name_pt)
+            current = by_id.get(current.parent_id) if current.parent_id else None
+        return list(reversed(names))
+
+    workbook = Workbook()
+    default_sheet = workbook.active
+    if default_sheet is not None:
+        workbook.remove(default_sheet)
+    sheet = workbook.create_sheet("Categorias")
+    sheet.append(list(CATEGORY_EXPORT_HEADERS))
+    for cell in sheet[1]:
+        cell.font = Font(bold=True)
+
+    for node in nodes:
+        names = path_names(node)
+        row: list[Any] = [names[i] if i < len(names) else None for i in range(3)]
+        row.append("Sim" if node.brand_axis else None)
+        sheet.append(row)
+
+    for index in range(1, 5):
+        sheet.column_dimensions[get_column_letter(index)].width = 28
+    sheet.freeze_panes = "A2"
+    sheet.auto_filter.ref = sheet.dimensions
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryImportRowIssue:
+    row_number: int
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryImportReport:
+    #: New `Category` rows created, across every level touched by the sheet.
+    created: int
+    #: Rows whose whole L1›L2›L3 chain already existed — left untouched.
+    existing: int
+    errors: list[CategoryImportRowIssue]
+
+
+def _find_or_create_category_level(
+    db: DbSession,
+    *,
+    name: str,
+    level: int,
+    parent_id: uuid.UUID | None,
+    brand_axis: bool,
+    actor_user_id: uuid.UUID | None,
+) -> tuple[Category, bool]:
+    """Case-insensitive match under the given parent; created (with the sheet's
+    `Eixo de marca` flag) if missing. An existing node's own fields are never
+    touched — see `CategoryImportReport`.
+
+    A retired (soft-deleted) node with the same name/level/parent is revived
+    instead of re-created: its `code_en` still owns the unique index (same
+    rule `ensure_categories` follows), so inserting a fresh row would fail
+    with a duplicate-key error."""
+    parent_filter = (Category.parent_id == parent_id) if parent_id else Category.parent_id.is_(None)
+    existing = db.scalar(
+        select(Category).where(
+            Category.domain == GROCERY,
+            Category.is_deleted.is_(False),
+            Category.level == level,
+            parent_filter,
+            func.lower(Category.display_name_pt) == name.lower(),
+        )
+    )
+    if existing is not None:
+        return existing, False
+
+    retired = db.scalar(
+        select(Category).where(
+            Category.domain == GROCERY,
+            Category.is_deleted.is_(True),
+            Category.level == level,
+            parent_filter,
+            func.lower(Category.display_name_pt) == name.lower(),
+        )
+    )
+    if retired is not None:
+        before = audit.snapshot(retired)
+        retired.is_deleted = False
+        retired.brand_axis = brand_axis
+        db.flush()
+        audit.record(
+            db,
+            action="UPDATE",
+            table_name=CATEGORY_TABLE,
+            record_id=retired.id,
+            actor_user_id=actor_user_id,
+            before=before,
+            after=audit.snapshot(retired),
+            reason="categoria reativada pela importação",
+        )
+        return retired, True
+
+    return (
+        create_category(
+            db,
+            display_name_pt=name,
+            parent_id=parent_id,
+            brand_axis=brand_axis,
+            actor_user_id=actor_user_id,
+        ),
+        True,
+    )
+
+
+def import_categories_workbook(
+    db: DbSession, *, data: bytes, actor_user_id: uuid.UUID | None
+) -> CategoryImportReport:
+    """Ensures every L1›L2›L3 path in the sheet exists, creating whatever is
+    missing — the same additive, re-run-safe contract as `ensure_categories`
+    at boot. It never renames, moves or deletes a category: use the taxonomy
+    editor for that."""
+    try:
+        workbook = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    except Exception as exc:
+        raise ValidationError("Não foi possível ler a folha de cálculo.") from exc
+
+    sheet = workbook.worksheets[0]
+    iterator = sheet.iter_rows(values_only=True)
+    header_row = next(iterator, None)
+    if header_row is None:
+        return CategoryImportReport(created=0, existing=0, errors=[])
+
+    columns: dict[str, int] = {}
+    for index, header_cell in enumerate(header_row):
+        if header_cell is None:
+            continue
+        normalized = _norm(str(header_cell))
+        for field_name, alias_list in _CATEGORY_HEADER_ALIASES.items():
+            if field_name not in columns and normalized in alias_list:
+                columns[field_name] = index
+
+    def cell(values: tuple[Any, ...], field: str) -> str | None:
+        index = columns.get(field)
+        if index is None or index >= len(values):
+            return None
+        raw = values[index]
+        text = str(raw).strip() if raw not in (None, "") else ""
+        return text or None
+
+    created = 0
+    existing = 0
+    errors: list[CategoryImportRowIssue] = []
+
+    for row_number, values in enumerate(iterator, start=2):
+        if all(value in (None, "") for value in values):
+            continue
+
+        level_names = [cell(values, "level1"), cell(values, "level2"), cell(values, "level3")]
+        if not any(name is not None for name in level_names):
+            continue
+
+        depth = next((i for i, name in enumerate(level_names) if name is None), len(level_names))
+        if any(name is not None for name in level_names[depth:]):
+            errors.append(
+                CategoryImportRowIssue(
+                    row_number=row_number,
+                    message="Falta um nível antes de um nível preenchido.",
+                )
+            )
+            continue
+
+        brand_axis = _parse_bool(cell(values, "brand_axis"))
+        try:
+            parent_id: uuid.UUID | None = None
+            row_created_count = 0
+            for level, name in enumerate(level_names[:depth], start=1):
+                assert name is not None
+                node, was_created = _find_or_create_category_level(
+                    db,
+                    name=name,
+                    level=level,
+                    parent_id=parent_id,
+                    # Only the row's own (deepest) node carries the flag.
+                    brand_axis=brand_axis if level == depth else False,
+                    actor_user_id=actor_user_id,
+                )
+                if was_created:
+                    row_created_count += 1
+                parent_id = node.id
+        except AppError as exc:
+            errors.append(CategoryImportRowIssue(row_number=row_number, message=str(exc.detail)))
+            continue
+
+        if row_created_count:
+            created += row_created_count
+        else:
+            existing += 1
+
+    return CategoryImportReport(created=created, existing=existing, errors=errors)
+
+
 # --- Counts for the status board ----------------------------------------------
 
 
@@ -701,6 +990,9 @@ _PRODUCT_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "canonical_name": ("nome", "produto", "nome canonico", "nome do produto"),
     "brand": ("marca",),
     "category_path": ("categoria", "categoria completa"),
+    "category_l1": ("cat1", "categoria 1", "categoria l1"),
+    "category_l2": ("cat2", "categoria 2", "categoria l2"),
+    "category_l3": ("cat3", "categoria 3", "categoria l3"),
     "sold_by_weight": ("vendido a peso", "a peso", "venda a peso"),
     "pack_weights": ("formatos", "formatos kg", "pesos", "pesos kg"),
 }
@@ -799,6 +1091,15 @@ def _resolve_bulk_row(db: DbSession, raw: dict[str, Any]) -> dict[str, Any]:
     path_value = (
         str(category_path_raw).strip() or None if category_path_raw not in (None, "") else None
     )
+    if path_value is None:
+        # No single "Categoria" column — fall back to the split Cat1/Cat2/Cat3
+        # columns, joined with the same separator category_path() writes.
+        levels = [
+            str(raw.get(field)).strip()
+            for field in ("category_l1", "category_l2", "category_l3")
+            if raw.get(field) not in (None, "") and str(raw.get(field)).strip()
+        ]
+        path_value = " › ".join(levels) or None
     category = find_category_by_path(db, path_value) if path_value else None
     if path_value and category is None:
         errors["category_path"] = "Categoria não encontrada."

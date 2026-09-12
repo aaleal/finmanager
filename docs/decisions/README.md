@@ -60,3 +60,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0053](0053-a-collection-purge-skips-the-per-row-guards.md) | A collection purge skips the per-row guards |
 | [0054](0054-a-storage-purge-clears-the-reference-not-the-copy.md) | A storage purge clears the reference, not the copy |
 | [0055](0055-the-supermarket-module-stops-calling-itself-receipts.md) | The supermarket module stops calling itself "receipts" |
+| [0056](0056-category-import-is-additive-only.md) | Category import is additive-only, and it round-trips through the export |
+| [0057](0057-the-grocery-taxonomy-loads-on-demand-not-at-boot.md) | The grocery taxonomy loads on demand, not at boot (supersedes part of 0029) |

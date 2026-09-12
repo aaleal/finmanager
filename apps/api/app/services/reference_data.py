@@ -1,11 +1,15 @@
-"""Reference data every installation needs, ensured at boot.
+"""Reference data every installation needs.
 
-The grocery taxonomy and the merchant parser profiles are not demonstration
-data: an empty installation cannot read a *talão* without a parser profile, nor
-file a product without a category. They ship with the application and are
-ensured on every API start (ADR-0029), so a clean database is usable before
-anything is seeded and a taxonomy that grows in a release reaches installations
-that were created before it.
+The merchants and the parser profiles are not demonstration data: an empty
+installation cannot read a *talão* without a parser profile. They ship with
+the application and are ensured on every API start (ADR-0029), so a clean
+database is usable before anything is seeded and data that grows in a release
+reaches installations that were created before it.
+
+The grocery taxonomy ships the same way — as a human-editable JSON file — but
+is **not** ensured at boot (ADR-0057): a household sees an empty categories
+table and loads the shipped default explicitly, on its own schedule, instead of
+having it silently repopulated on every restart.
 
 Every ``ensure_*`` function is row-level idempotent: it fills what is missing
 and never overwrites — or resurrects — what the household has since edited.
@@ -42,6 +46,10 @@ def slugify(value: str) -> str:
 # --- Grocery taxonomy ---------------------------------------------------------
 def ensure_categories(db: DbSession) -> int:
     """Create the grocery nodes this release ships that the database lacks.
+
+    Not called at boot (ADR-0057) — invoked explicitly, either by ``make seed``
+    or by the household pressing "Carregar categorias por defeito" once the
+    table is empty.
 
     Matching is by ``code_en``, soft-deleted rows included: a retired category
     was retired on purpose, and its code still owns the unique index.
@@ -260,11 +268,15 @@ def ensure_all(db: DbSession) -> dict[str, int]:
     same time and would otherwise take the same rows in different orders, which
     Postgres resolves by killing one of them with a deadlock. The lock is held
     for the transaction and costs nothing once the data is already there.
+
+    The grocery taxonomy is deliberately **not** ensured here (ADR-0057): an
+    empty ``categories`` table is a valid, visible state the household is
+    offered to fill from ``TAXONOMY_FILE`` on demand, via
+    :func:`ensure_categories`, instead of every boot silently repopulating it.
     """
     db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": _BOOTSTRAP_LOCK_KEY})
     merchants = ensure_merchants(db)
     return {
         "merchants": merchants,
-        "categories": ensure_categories(db),
         "parser_profiles": ensure_parser_profiles(db),
     }

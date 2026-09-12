@@ -18,7 +18,15 @@ import type { CategoryResult, MasterProduct } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
-import { Dialog, SheetContent } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  SheetContent,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -47,6 +55,7 @@ import {
   useMerchants,
   useMergeCandidates,
   useMergeProducts,
+  useDeleteProduct,
   useProduct,
   useProductAliases,
   useProductOccurrences,
@@ -304,9 +313,17 @@ function PackVariantsEditor({
   );
 }
 
-function ProductDetailsTab({ product }: { product: MasterProduct }) {
+function ProductDetailsTab({
+  product,
+  onDeleted,
+}: {
+  product: MasterProduct;
+  onDeleted: () => void;
+}) {
   const { canWrite } = useSession();
   const update = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [name, setName] = React.useState(product.canonical_name);
   const [brand, setBrand] = React.useState(product.brand ?? '');
   const [category, setCategory] = React.useState<CategoryResult | null>(null);
@@ -373,25 +390,65 @@ function ProductDetailsTab({ product }: { product: MasterProduct }) {
       </div>
 
       {canWrite ? (
-        <Button
-          loading={update.isPending}
-          disabled={packError !== null}
-          onClick={() =>
-            update.mutate({
-              productId: product.id,
-              patch: {
-                canonical_name: name.trim(),
-                brand: brand.trim() || null,
-                category_id: category ? category.id : product.category_id,
-                sold_by_weight: soldByWeight,
-                pack_variants: rowsToVariants(packRows),
-              },
-            })
-          }
-        >
-          Guardar alterações
-        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button
+            loading={update.isPending}
+            disabled={packError !== null}
+            onClick={() =>
+              update.mutate({
+                productId: product.id,
+                patch: {
+                  canonical_name: name.trim(),
+                  brand: brand.trim() || null,
+                  category_id: category ? category.id : product.category_id,
+                  sold_by_weight: soldByWeight,
+                  pack_variants: rowsToVariants(packRows),
+                },
+              })
+            }
+          >
+            Guardar alterações
+          </Button>
+          <Button variant="destructive" onClick={() => setConfirmDelete(true)}>
+            <Trash2 />
+            Eliminar produto
+          </Button>
+        </div>
       ) : null}
+
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar produto
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">{product.canonical_name}</strong> do
+              catálogo. É recusado enquanto o produto estiver referenciado por alguma linha de
+              fatura — funda-o noutro em vez de o eliminar nesse caso.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={deleteProduct.isPending}
+              onClick={async () => {
+                await deleteProduct.mutateAsync(product.id);
+                setConfirmDelete(false);
+                onDeleted();
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -585,7 +642,7 @@ function ProductDetailSheet({
                 <TabsTrigger value="ocorrencias">Ocorrências</TabsTrigger>
               </TabsList>
               <TabsContent value="detalhes">
-                <ProductDetailsTab product={product.data} />
+                <ProductDetailsTab product={product.data} onDeleted={onClose} />
               </TabsContent>
               <TabsContent value="aliases">
                 <ProductAliasesTab productId={product.data.id} />
@@ -612,6 +669,7 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
   const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [bulkImportOpen, setBulkImportOpen] = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
 
   React.useEffect(() => setPage(1), [debouncedSearch, categoryStatus, category]);
 
@@ -624,6 +682,7 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
   });
 
   const validateCategory = useValidateProductCategory();
+  const deleteProduct = useDeleteProduct();
 
   const total = products.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -707,7 +766,7 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
                 return (
                   <TableRow
                     key={product.id}
-                    className="cursor-pointer"
+                    className="group/row cursor-pointer"
                     onClick={() => setSelectedProductId(product.id)}
                   >
                     <TableCell className="font-medium">{product.canonical_name}</TableCell>
@@ -739,20 +798,37 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
                     <TableCell className="numeric">{num(product.alias_count)}</TableCell>
                     <TableCell className="numeric">{num(product.occurrence_count)}</TableCell>
                     <TableCell>
-                      {canWrite && product.category_status === 'AUTO' ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          loading={validateCategory.isPending}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            validateCategory.mutate(product.id);
-                          }}
-                        >
-                          <CheckCircle2 />
-                          Confirmar categoria
-                        </Button>
-                      ) : null}
+                      <div className="flex items-center justify-end gap-1">
+                        {canWrite && product.category_status === 'AUTO' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            loading={validateCategory.isPending}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              validateCategory.mutate(product.id);
+                            }}
+                          >
+                            <CheckCircle2 />
+                            Confirmar categoria
+                          </Button>
+                        ) : null}
+                        {canWrite ? (
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            title="Eliminar produto"
+                            aria-label={`Eliminar ${product.canonical_name}`}
+                            className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover/row:opacity-100"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setDeleteTarget({ id: product.id, name: product.canonical_name });
+                            }}
+                          >
+                            <Trash2 />
+                          </Button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -844,6 +920,40 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
       />
 
       <BulkImportDialog open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
+
+      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Eliminar produto
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Isto elimina <strong className="text-foreground">{deleteTarget?.name}</strong> do
+              catálogo. É recusado enquanto o produto estiver referenciado por alguma linha de
+              fatura — funda-o noutro em vez de o eliminar nesse caso.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              loading={deleteProduct.isPending}
+              onClick={async () => {
+                if (!deleteTarget) return;
+                await deleteProduct.mutateAsync(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

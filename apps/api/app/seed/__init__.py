@@ -7,9 +7,12 @@ a gift, a MOC, a missing part and a retirement date still in the future.
 
 It creates **no users**: the household and its owner come from the first-run setup
 (ADR-0011), and this only fills the collection alongside them. Reference data —
-grocery categories, merchants, parser profiles — is not demo data and lives in
+merchants, parser profiles — is not demo data and lives in
 ``app.services.reference_data``, ensured at every boot (ADR-0029); the seed only
 re-asserts it so it can run against a database the API has never started against.
+The grocery taxonomy is loaded here too, explicitly (ADR-0057): a demo
+installation ships with categorised products, but a real installation only gets
+the taxonomy when the household asks for it.
 Run it after the first login, with ``make seed``. Idempotent — re-running only
 fills what is missing.
 """
@@ -751,6 +754,7 @@ def main() -> None:
             household, entity = resolve_target(db)
             step("settings", seed_settings, db=db)
             step("reference data", reference_data.ensure_all, db=db)
+            step("grocery taxonomy", reference_data.ensure_categories, db=db)
             step("tags", seed_tags, db=db, household=household)
             step("supermarket demo receipt", seed_supermarket, db=db, entity=entity)
             invoices = step("supermarket invoices", seed_supermarket_invoices, db=db, entity=entity)

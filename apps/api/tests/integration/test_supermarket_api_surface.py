@@ -88,6 +88,7 @@ def test_upload_parses_and_serialises_a_full_receipt(client: TestClient, receipt
         "/api/master-products/merge-candidates",
         "/api/categories/tree",
         "/api/categories/search?q=fruta",
+        "/api/categories/export.xlsx",
         "/api/supermarket/analytics/shrinkflation",
         "/api/supermarket/analytics/category-spend",
         "/api/supermarket/analytics/loyalty",

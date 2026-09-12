@@ -1,4 +1,8 @@
-"""Reference data is a property of the release, not of the seed (ADR-0029)."""
+"""Reference data is a property of the release, not of the seed (ADR-0029).
+
+The grocery taxonomy is the one exception: it ships the same way but is loaded
+on demand, not at boot (ADR-0057).
+"""
 
 from __future__ import annotations
 
@@ -12,21 +16,19 @@ from sqlalchemy.orm import Session
 pytestmark = pytest.mark.integration
 
 
-def test_clean_database_gets_the_taxonomy_and_the_parser_profiles(db: Session) -> None:
+def test_clean_database_gets_merchants_and_parser_profiles_but_not_categories(
+    db: Session,
+) -> None:
     created = reference_data.ensure_all(db)
 
-    assert created["categories"] > 0
-    assert created["parser_profiles"] == len(reference_data.PARSER_PROFILES)
-    assert created["merchants"] == len(reference_data.PORTUGUESE_MERCHANTS)
-
-    levels = dict(
-        db.execute(
-            select(Category.level, func.count())
-            .where(Category.domain == "GROCERY")
-            .group_by(Category.level)
-        ).all()
+    assert created == {
+        "merchants": len(reference_data.PORTUGUESE_MERCHANTS),
+        "parser_profiles": len(reference_data.PARSER_PROFILES),
+    }
+    assert (
+        db.scalar(select(func.count()).select_from(Category).where(Category.domain == "GROCERY"))
+        == 0
     )
-    assert set(levels) == {1, 2, 3}
 
     # Every per-merchant profile resolved its merchant, and the fallback did not.
     profiles = db.scalars(select(MerchantParserProfile)).all()
@@ -38,18 +40,31 @@ def test_clean_database_gets_the_taxonomy_and_the_parser_profiles(db: Session) -
     assert all(p.merchant_id is not None for p in profiles if p.parser_key != "generic_v1")
 
 
+def test_ensure_categories_loads_the_shipped_taxonomy_on_demand(db: Session) -> None:
+    created = reference_data.ensure_categories(db)
+
+    assert created > 0
+    levels = dict(
+        db.execute(
+            select(Category.level, func.count())
+            .where(Category.domain == "GROCERY")
+            .group_by(Category.level)
+        ).all()
+    )
+    assert set(levels) == {1, 2, 3}
+
+
 def test_second_boot_writes_nothing(db: Session) -> None:
     reference_data.ensure_all(db)
 
     assert reference_data.ensure_all(db) == {
         "merchants": 0,
-        "categories": 0,
         "parser_profiles": 0,
     }
 
 
 def test_a_new_release_adds_only_what_is_missing(db: Session) -> None:
-    reference_data.ensure_all(db)
+    reference_data.ensure_categories(db)
     before = db.scalar(select(func.count()).select_from(Category))
 
     dropped = db.scalars(
