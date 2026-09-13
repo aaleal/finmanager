@@ -82,6 +82,9 @@ seed: ## Load the deterministic Portuguese demo dataset (after the first-run set
 	@$(DB_UP)
 	$(RUN_API) python -m app.seed $(ARGS)
 
+.PHONY: demo
+demo: seed ## Alias for `seed` — every default in one run, for a demo install
+
 .PHONY: passwd
 passwd: ## Set a member's password: make passwd EMAIL=ana@exemplo.pt
 	@$(DB_UP)

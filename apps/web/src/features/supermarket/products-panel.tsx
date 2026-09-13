@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   ChevronsLeft,
   ChevronsRight,
+  Download,
   ExternalLink,
   GitMerge,
   HelpCircle,
@@ -58,6 +59,7 @@ import { ProductCreateDialog } from './product-create-dialog';
 import { BulkImportDialog } from './bulk-import-dialog';
 import {
   useLearnAlias,
+  useLoadDefaultProducts,
   useMerchants,
   useMergeCandidates,
   useMergeProducts,
@@ -716,9 +718,18 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
   const validateCategory = useValidateProductCategory();
   const deleteProduct = useDeleteProduct();
   const vocabulary = useProductAttributes();
+  const loadDefaults = useLoadDefaultProducts();
 
   const total = products.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const noFiltersApplied =
+    !debouncedSearch &&
+    categoryStatus === ALL &&
+    !category &&
+    ownBrand === ALL &&
+    conservation === ALL &&
+    presentation === ALL &&
+    dietary.length === 0;
 
   return (
     <div className="space-y-4">
@@ -815,7 +826,20 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
           ))}
         </div>
       ) : !products.data?.items.length ? (
-        <EmptyState title="Sem produtos para os filtros escolhidos." />
+        noFiltersApplied && canWrite ? (
+          <EmptyState
+            title="O catálogo de produtos está vazio."
+            description="Pretende carregar o catálogo de produtos por defeito?"
+            action={
+              <Button loading={loadDefaults.isPending} onClick={() => loadDefaults.mutate()}>
+                <Download />
+                Carregar produtos por defeito
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState title="Sem produtos para os filtros escolhidos." />
+        )
       ) : (
         <div className="space-y-4">
           <Table>

@@ -18,6 +18,7 @@ from app.models.core import Document, Merchant, ProcessingJob
 from app.models.products import MasterProduct
 from app.models.supermarket import MerchantParserProfile, SupermarketReceipt, SupermarketReceiptItem
 from app.schemas.common import Ok, Page
+from app.schemas.products import InvoiceDefaultsLoadOut
 from app.schemas.supermarket import (
     FsFilter,
     FsItemCreate,
@@ -42,6 +43,7 @@ from app.schemas.supermarket import (
 )
 from app.services import documents
 from app.services.supermarket import arithmetic, parsers, pipeline, products_service
+from app.services.supermarket import defaults as supermarket_defaults
 from app.services.supermarket import service as supermarket
 
 router = APIRouter(prefix="/supermarket", tags=["supermarket"])
@@ -359,6 +361,23 @@ def queue(ctx: CurrentAuth, db: Db, status: str | None = None) -> list[QueueEntr
 @router.get("/status", response_model=StatusBoard)
 def status_board(ctx: CurrentAuth, db: Db) -> StatusBoard:
     return StatusBoard(**supermarket.status_counts(db, _scope(db, ctx)))
+
+
+@router.post("/defaults/load", response_model=InvoiceDefaultsLoadOut, status_code=201)
+def load_default_invoices(
+    ctx: Writer, db: Db, entity_id: uuid.UUID | None = None
+) -> InvoiceDefaultsLoadOut:
+    """Ingest the shipped real *talões* on demand (ADR-0061).
+
+    Static, two-segment path — matched before it could ever collide with a bare
+    ``/{receipt_id}`` route (see ADR-0055's routing-collision note), and safe to
+    press again: each invoice is deduplicated by content hash per entity.
+    """
+    target_entity = resolve_write_entity(db, ctx, entity_id)
+    created = supermarket_defaults.load_default_invoices(
+        db, entity_id=target_entity, actor_user_id=ctx.user.id
+    )
+    return InvoiceDefaultsLoadOut(created=created)
 
 
 # --- Listing ------------------------------------------------------------------

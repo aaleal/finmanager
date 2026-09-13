@@ -64,3 +64,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0057](0057-the-grocery-taxonomy-loads-on-demand-not-at-boot.md) | The grocery taxonomy loads on demand, not at boot (supersedes part of 0029) |
 | [0058](0058-a-cut-is-an-axis-of-the-product-not-a-second-identity.md) | A cut is an axis of the product, not a second identity |
 | [0059](0059-a-closed-set-gets-a-check-a-growing-one-gets-a-dictionary.md) | A closed set gets a CHECK, a growing one gets a dictionary |
+| [0060](0060-source-material-is-private-seed-data-is-derived.md) | Source material is private, seed data is derived and hand-editable |
+| [0061](0061-every-default-is-a-button-not-just-a-script.md) | Every default is a button, not just a script |

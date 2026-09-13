@@ -6,6 +6,7 @@ import type {
   BulkProductImportRow,
   BulkProductImportRowResult,
   CategoryDefaultsLoadResult,
+  ProductDefaultsLoadResult,
   CategoryImpact,
   CategoryImportResult,
   CategoryOperationResult,
@@ -465,6 +466,25 @@ export function useLoadDefaultCategories() {
     mutationFn: () => api.post<CategoryDefaultsLoadResult>('/categories/defaults/load'),
     onSuccess: (result) => {
       toast.success(`${result.created} categoria(s) carregada(s).`);
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Loads the household's own catalogue file, if one was dropped in — see
+ * ADR-0061. Safe to press more than once: rows already in the catalogue are
+ * skipped, not duplicated. */
+export function useLoadDefaultProducts() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: () => api.post<ProductDefaultsLoadResult>('/master-products/defaults/load'),
+    onSuccess: (result) => {
+      toast.success(
+        result.available
+          ? `${result.created} produto(s) carregado(s).`
+          : 'Sem ficheiro de catálogo por defeito para carregar.',
+      );
       invalidate();
     },
     onError: report,

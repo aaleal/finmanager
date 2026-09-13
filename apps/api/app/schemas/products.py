@@ -272,6 +272,19 @@ class CategoryDefaultsLoadOut(BaseModel):
     created: int
 
 
+class ProductDefaultsLoadOut(BaseModel):
+    """What loading the household's own catalogue file just created (ADR-0061)."""
+
+    created: int
+    available: bool
+
+
+class InvoiceDefaultsLoadOut(BaseModel):
+    """What ingesting the shipped *talões* just created (ADR-0061)."""
+
+    created: int
+
+
 # --- Legacy import ------------------------------------------------------------
 
 

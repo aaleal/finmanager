@@ -415,13 +415,24 @@ def purge_products(db: DbSession, *, actor_user_id: uuid.UUID | None) -> int:
     """Hard-deletes every product in the catalogue — no per-row in-use guard,
     unlike the regular delete. A receipt line that pointed to one is unlinked
     (`master_product_id` set to `NULL`), never deleted: the receipt itself is
-    a household's own record, a purge here only clears its own catalogue."""
+    a household's own record, a purge here only clears its own catalogue.
+
+    Price history has no such "unlinked" state — `master_product_id` is
+    `NOT NULL`, and an observation with no product is not a fact about
+    anything — so it is deleted outright rather than orphaned into a
+    constraint violation.
+    """
+    from app.models.prices import ProductPriceHistory
+
     ids = list(db.scalars(select(MasterProduct.id)).all())
     if not ids:
         return 0
     db.query(SupermarketReceiptItem).filter(
         SupermarketReceiptItem.master_product_id.in_(ids)
     ).update({SupermarketReceiptItem.master_product_id: None}, synchronize_session="fetch")
+    db.query(ProductPriceHistory).filter(ProductPriceHistory.master_product_id.in_(ids)).delete(
+        synchronize_session="fetch"
+    )
     audit.record(
         db,
         action="PURGE",

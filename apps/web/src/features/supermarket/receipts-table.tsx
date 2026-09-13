@@ -1,4 +1,5 @@
 import { CheckCircle2, ChevronsLeft, ChevronsRight, XCircle } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { Page, ReceiptSummary } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,12 +30,16 @@ export function ReceiptsTable({
   onOpen,
   onPageChange,
   onPageSizeChange,
+  emptyAction,
 }: {
   data: Page<ReceiptSummary> | undefined;
   isLoading: boolean;
   onOpen: (id: string) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  //: Shown instead of the bare empty state — the caller decides when "no rows"
+  //: means "nothing to see" versus "nothing loaded yet".
+  emptyAction?: ReactNode;
 }) {
   const page = data?.page ?? 1;
   const pageSize = data?.page_size ?? 25;
@@ -51,7 +56,7 @@ export function ReceiptsTable({
   }
 
   if (!data?.items.length) {
-    return <EmptyState title="Sem faturas para os filtros escolhidos." />;
+    return emptyAction ?? <EmptyState title="Sem faturas para os filtros escolhidos." />;
   }
 
   return (

@@ -3,8 +3,8 @@
 .env.local
 *.pem
 dev/bootstrap-household.json
-00.prompts/seed/Lego/*
-00.prompts/seed/supermarket/*
+00.prompts/seed/Lego
+00.prompts/seed/supermarket
 
 # ---- Python -----------------------------------------------------------------
 __pycache__/
@@ -35,3 +35,6 @@ storage/
 .DS_Store
 .idea/
 *.swp
+
+# Real household catalogue used by `make seed`; edit locally, never commit.
+apps/api/app/data/supermarket-products.pt-PT.xlsx

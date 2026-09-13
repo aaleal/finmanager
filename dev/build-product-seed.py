@@ -600,7 +600,12 @@ def main(source: str, taxonomy_path: str, target: str) -> None:
             {
                 "Nome": name,
                 "Marca": brand or "",
-                "Categoria": " › ".join(path),
+                # One level per column: the importer reads `Cat1/Cat2/Cat3` just
+                # as happily as a joined path, and a single `L1 › L2 › L3` cell
+                # is miserable to correct by hand in Excel.
+                "Cat1": path[0] if len(path) > 0 else "",
+                "Cat2": path[1] if len(path) > 1 else "",
+                "Cat3": path[2] if len(path) > 2 else "",
                 "Vendido a peso": "Sim" if sold_by_weight else "",
                 "Formatos": "; ".join(str(w) for w in formats),
                 "Marca branca": "Sim" if brand and key(brand) in OWN_LABELS else "",

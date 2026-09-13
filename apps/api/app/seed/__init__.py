@@ -20,7 +20,6 @@ fills what is missing.
 from __future__ import annotations
 
 import argparse
-import contextlib
 import datetime as dt
 import json
 import sys
@@ -40,14 +39,17 @@ from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, Storage
 from app.seed.images import cover_for
 from app.services import documents, reference_data, settings_service
 from app.services.reference_data import slugify
+from app.services.supermarket.defaults import INVOICES_DIR, PRODUCTS_FILE
+from app.services.supermarket.defaults import load_default_invoices as _load_default_invoices
+from app.services.supermarket.defaults import load_default_products as _load_default_products
 
 DATA_DIR = Path(__file__).parent / "data"
 INVENTORY_FILE = DATA_DIR / "lego-inventory.json"
-#: The eleven real *talões* — four Continente, four Pingo Doce, two Lidl and one
-#: Piquete photograph. They are seed data, not test scaffolding: the household's
-#: own invoices are what the module is judged on, and the parser tests read the
-#: very same files so a fixture and a demo can never drift apart.
-INVOICES_DIR = DATA_DIR / "invoices"
+#: Re-exported for the parser tests and `regenerate_golden.py`, which read the
+#: eleven real *talões* through this name (ADR-0027). The files themselves and
+#: the ingestion logic live in `app.services.supermarket.defaults` now, shared
+#: with the "carregar faturas por defeito" button.
+__all__ = ["INVOICES_DIR", "PRODUCTS_FILE", "main"]
 
 
 # --- Household ---------------------------------------------------------------
@@ -694,42 +696,14 @@ def seed_supermarket(db: DbSession, entity: Entity) -> None:
     prices_service.record_observations(db, receipt)
 
 
+def seed_products(db: DbSession) -> int:
+    """Thin wrapper so `main()` reports this step like every other one."""
+    return _load_default_products(db, actor_user_id=None)
+
+
 def seed_supermarket_invoices(db: DbSession, entity: Entity) -> int:
-    """Ingest the real *talões* the way an upload would — document and all.
-
-    Going through ``create_from_upload`` + ``parse_receipt`` rather than writing
-    rows directly is the whole point: each receipt ends up with a stored
-    ``Document``, a ``ProcessingJob`` and the parser profile that actually ran,
-    so the review pane has something to show and FR-1.16's *retry from the stored
-    document* works on seeded data too. Re-running is idempotent — the same bytes
-    resolve to the same document and return the receipt already held.
-    """
-    from app.services.supermarket import service as receipts_service
-
-    if not INVOICES_DIR.is_dir():
-        return 0
-
-    ingested = 0
-    for path in sorted(INVOICES_DIR.iterdir()):
-        if path.suffix.lower() not in {".pdf", ".jpg", ".jpeg", ".png"}:
-            continue
-        receipt, _job, created = receipts_service.create_from_upload(
-            db,
-            data=path.read_bytes(),
-            filename=path.name,
-            entity_id=entity.id,
-            actor_user_id=None,
-            idempotency_key=f"seed:invoices:{path.name}",
-        )
-        if not created:
-            continue
-        # A parse failure is a FAILED job row the queue can retry, never a seed
-        # that refuses to finish.
-        with contextlib.suppress(ValidationError):
-            receipts_service.parse_receipt(db, receipt, actor_user_id=None)
-        ingested += 1
-    db.flush()
-    return ingested
+    """Thin wrapper so `main()` reports this step like every other one."""
+    return _load_default_invoices(db, entity_id=entity.id, actor_user_id=None)
 
 
 def main() -> None:
@@ -755,6 +729,7 @@ def main() -> None:
             step("settings", seed_settings, db=db)
             step("reference data", reference_data.ensure_all, db=db)
             step("grocery taxonomy", reference_data.ensure_categories, db=db)
+            products = step("product catalogue", seed_products, db=db)
             step("tags", seed_tags, db=db, household=household)
             step("supermarket demo receipt", seed_supermarket, db=db, entity=entity)
             invoices = step("supermarket invoices", seed_supermarket_invoices, db=db, entity=entity)
@@ -764,6 +739,11 @@ def main() -> None:
 
     print(f"Seed concluído em «{household.name}», atribuído a «{entity.name}».")
     print(f"Faturas reais carregadas: {invoices}.")
+    print(
+        f"Produtos do catálogo: {products}."
+        if products
+        else f"Catálogo de produtos ignorado (sem {PRODUCTS_FILE.name})."
+    )
 
 
 if __name__ == "__main__":

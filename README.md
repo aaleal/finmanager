@@ -179,6 +179,7 @@ is waiting on the Banking module (M2) for a real ledger to search.
 - [`docs/database.md`](docs/database.md) — schema map, migrations, how to open a shell.
 - [`docs/debugging.md`](docs/debugging.md) — logs, debuggers, Celery/Redis, audit trails.
 - [`docs/testing.md`](docs/testing.md) — what is tested and why.
+- [`docs/supermarket-products.md`](docs/supermarket-products.md) — quick orientation for the product catalogue/attributes feature.
 - [`docs/decisions/`](docs/decisions/) — one ADR per non-obvious decision.
 
 ## Reset everything

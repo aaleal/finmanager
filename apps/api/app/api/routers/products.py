@@ -51,6 +51,7 @@ from app.schemas.products import (
     PackVariantAdd,
     ProductAliasOut,
     ProductAttributeVocabularyOut,
+    ProductDefaultsLoadOut,
     ProductOccurrence,
     ProductSearchResult,
 )
@@ -62,6 +63,7 @@ from app.services.supermarket import (
     prices_service,
     products_service,
 )
+from app.services.supermarket import defaults as supermarket_defaults
 from app.services.supermarket import service as supermarket
 from app.services.supermarket.normalize import normalize_description
 
@@ -229,6 +231,22 @@ def product_attribute_vocabulary(ctx: CurrentAuth) -> ProductAttributeVocabulary
             axis: [AttributeOption(**option) for option in options]
             for axis, options in attributes.vocabulary().items()
         }
+    )
+
+
+@products_router.post("/defaults/load", response_model=ProductDefaultsLoadOut, status_code=201)
+def load_default_products(ctx: Writer, db: Db) -> ProductDefaultsLoadOut:
+    """Load the household's own catalogue file on demand (ADR-0061).
+
+    Not run at boot, not run by ``make seed`` alone: a household presses this
+    once the catalogue is empty. Safe to press again — rows already present
+    (same name + brand) are skipped, never duplicated. ``available=false`` means
+    there is no file to load yet, which the empty state reads as a different
+    message than "loaded, but everything was already here".
+    """
+    created = supermarket_defaults.load_default_products(db, actor_user_id=ctx.user.id)
+    return ProductDefaultsLoadOut(
+        created=created, available=supermarket_defaults.PRODUCTS_FILE.exists()
     )
 
 

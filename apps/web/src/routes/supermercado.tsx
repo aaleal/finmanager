@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Search, X } from 'lucide-react';
-import { PageHeader } from '@/components/ui/feedback';
+import { Download, Search, X } from 'lucide-react';
+import { EmptyState, PageHeader } from '@/components/ui/feedback';
 import { Button } from '@/components/ui/button';
 import { DateInput, Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/primitives';
@@ -14,7 +14,12 @@ import {
 import { useSession } from '@/features/auth/session';
 import { useDebounced, useUrlFilters } from '@/lib/filters';
 import { RECEIPT_STATUS_OPTIONS } from '@/features/supermarket/constants';
-import { useReceiptItems, useProductSummary, useReceipts } from '@/features/supermarket/api';
+import {
+  useReceiptItems,
+  useProductSummary,
+  useReceipts,
+  useLoadDefaultInvoices,
+} from '@/features/supermarket/api';
 import { ReceiptStatusPanel } from '@/features/supermarket/status-panel';
 import { ReceiptUploadDialog } from '@/features/supermarket/upload-panel';
 import { ReceiptQueueTable } from '@/features/supermarket/queue-table';
@@ -124,6 +129,7 @@ function FilterBar({
 export function SupermercadoPage() {
   const { canWrite } = useSession();
   const [filters, setFilters] = useUrlFilters(DEFAULTS);
+  const loadDefaultInvoices = useLoadDefaultInvoices();
 
   const tab = filters.tab ?? 'estado';
   const selectedReceiptId = filters.receipt ?? null;
@@ -206,6 +212,28 @@ export function SupermercadoPage() {
             onOpen={openReceipt}
             onPageChange={(page) => setFilters({ page: String(page) })}
             onPageSizeChange={(pageSize) => setFilters({ page_size: String(pageSize), page: '1' })}
+            emptyAction={
+              !filters.search &&
+              !filters.merchant_id &&
+              !filters.status &&
+              !filters.date_from &&
+              !filters.date_to &&
+              canWrite ? (
+                <EmptyState
+                  title="Sem faturas carregadas."
+                  description="Pretende carregar as faturas reais de demonstração?"
+                  action={
+                    <Button
+                      loading={loadDefaultInvoices.isPending}
+                      onClick={() => loadDefaultInvoices.mutate()}
+                    >
+                      <Download />
+                      Carregar faturas por defeito
+                    </Button>
+                  }
+                />
+              ) : undefined
+            }
           />
         </TabsContent>
 

@@ -52,6 +52,7 @@ FinManager task runner
     revision "msg"     Autogenerate a migration
     downgrade          Roll back one migration
     seed               Load the deterministic Portuguese demo data
+    demo               Alias for seed — every default in one run, for a demo install
     passwd EMAIL       Set a member's password (last resort, no email recovery)
     shell-db           psql inside the database container
     shell-api          bash inside the API container
@@ -87,6 +88,7 @@ case "${1:-help}" in
   revision)  ensure_db; "${RUN_API[@]}" alembic revision --autogenerate -m "${2:?message required}" ;;
   downgrade) ensure_db; "${RUN_API[@]}" alembic downgrade -1 ;;
   seed)      ensure_db; "${RUN_API[@]}" python -m app.seed "${@:2}" ;;
+  demo)      ensure_db; "${RUN_API[@]}" python -m app.seed "${@:2}" ;;
   passwd)    ensure_db; "${DEV[@]}" run --rm --no-deps api python -m app.reset_password "${@:2}" ;;
   shell-db)  "${DEV[@]}" exec db psql -U "${POSTGRES_USER:-finmanager}" -d "${POSTGRES_DB:-finmanager}" ;;
   shell-api) "${DEV[@]}" exec api bash ;;

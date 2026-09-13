@@ -4,6 +4,7 @@ import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/features/auth/session';
 import type {
   FsFilter,
+  InvoiceDefaultsLoadResult,
   Page,
   ParserOption,
   ParserProfile,
@@ -182,6 +183,20 @@ export function useUploadReceipts() {
       const repeated = result.items.length - created;
       if (created) toast.success(`${created} fatura(s) em processamento.`);
       if (repeated) toast.info(`${repeated} fatura(s) já existiam e foram ignoradas.`);
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
+/** Ingests the eleven real *talões* shipped with the release — see ADR-0061.
+ * Safe to press more than once: each invoice is deduplicated by content hash. */
+export function useLoadDefaultInvoices() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: () => api.post<InvoiceDefaultsLoadResult>('/supermarket/defaults/load'),
+    onSuccess: (result) => {
+      toast.success(`${result.created} fatura(s) carregada(s).`);
       invalidate();
     },
     onError: report,
