@@ -55,6 +55,7 @@ import { RECEIPT_STATUS_META } from './constants';
 import { WhyPopover } from './why-popover';
 import { AddFsItemDialog } from './fs-item-dialog';
 import { ProductPicker } from './product-picker';
+import { AttributeBadges } from './product-attributes';
 import { ProductCreateDialog } from './product-create-dialog';
 import { ReceiptLinkPanel } from './link-panel';
 import {
@@ -196,25 +197,37 @@ function ProductCell({
 }) {
   const reassign = useReassignItemProduct();
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="min-w-0 flex-1">
-        <ProductPicker
-          value={item.display_name ?? item.description_raw}
-          merchantDescription={item.description_raw}
-          disabled={disabled}
-          onSelect={(product: ProductSearchResult) =>
-            reassign.mutate({ itemId: item.id, masterProductId: product.id })
-          }
-          onCreate={disabled ? undefined : (name) => onCreateProduct(item, name)}
-        />
+    <div className="min-w-0 space-y-0.5">
+      <div className="flex items-center gap-1.5">
+        <div className="min-w-0 flex-1">
+          <ProductPicker
+            value={item.display_name ?? item.description_raw}
+            merchantDescription={item.description_raw}
+            disabled={disabled}
+            onSelect={(product: ProductSearchResult) =>
+              reassign.mutate({ itemId: item.id, masterProductId: product.id })
+            }
+            onCreate={disabled ? undefined : (name) => onCreateProduct(item, name)}
+          />
+        </div>
+        {!item.master_product_id ? (
+          <span
+            className="flex shrink-0 items-center gap-1 text-xs font-medium text-warning"
+            title="Esta linha ainda não resolveu para um produto — sem produto não há categoria."
+          >
+            <AlertTriangle className="size-3.5" />
+          </span>
+        ) : null}
       </div>
-      {!item.master_product_id ? (
-        <span
-          className="flex shrink-0 items-center gap-1 text-xs font-medium text-warning"
-          title="Esta linha ainda não resolveu para um produto — sem produto não há categoria."
-        >
-          <AlertTriangle className="size-3.5" />
-        </span>
+      {/* The brand lives outside the name by design, so the name alone cannot say
+          which of three «Batata Frita Azeite» this line resolved to. */}
+      {item.master_product_id ? (
+        <div className="flex min-w-0 items-center gap-1.5 px-1">
+          <span className="truncate text-xs text-muted-foreground">
+            {item.brand ?? 'sem marca'}
+          </span>
+          <AttributeBadges conservation={item.conservation} presentation={item.presentation} />
+        </div>
       ) : null}
     </div>
   );

@@ -11,6 +11,7 @@ import {
   Plus,
   Scale,
   Search,
+  Split,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -64,6 +65,7 @@ import {
   useMergeCandidates,
   useMergeProducts,
   useDeleteProduct,
+  useDismissMergeCandidate,
   useProduct,
   useProductAliases,
   useProductOccurrences,
@@ -182,6 +184,7 @@ function packVariantsError(rows: VariantRow[]): string | null {
 function MergeCandidatesSection() {
   const candidates = useMergeCandidates();
   const merge = useMergeProducts();
+  const dismiss = useDismissMergeCandidate();
   const [targets, setTargets] = React.useState<Record<string, string>>({});
 
   const groups = candidates.data ?? [];
@@ -192,7 +195,9 @@ function MergeCandidatesSection() {
       <div>
         <p className="text-sm font-semibold">Produtos a fundir</p>
         <p className="text-xs text-muted-foreground">
-          Nomes canónicos quase idênticos — escolha o produto sobrevivente e funda os restantes.
+          Mesmo nome <em>e</em> mesma marca, escritos de maneiras diferentes — escolha o produto
+          sobrevivente e funda os restantes. Se forem mesmo produtos distintos, marque-os como tal:
+          o aviso desaparece e nada é destruído.
         </p>
       </div>
       {candidates.isLoading ? (
@@ -218,6 +223,10 @@ function MergeCandidatesSection() {
                     <span className="text-xs text-muted-foreground">
                       {product.brand ?? EM_DASH}
                     </span>
+                    <AttributeBadges
+                      conservation={product.conservation}
+                      presentation={product.presentation}
+                    />
                   </label>
                   {targetId !== product.id ? (
                     <Button
@@ -234,6 +243,17 @@ function MergeCandidatesSection() {
                   )}
                 </div>
               ))}
+              <div className="flex justify-end border-t border-border pt-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  loading={dismiss.isPending}
+                  onClick={() => dismiss.mutate(products.map((product) => product.id))}
+                >
+                  <Split />
+                  Não são o mesmo produto
+                </Button>
+              </div>
             </div>
           );
         })

@@ -396,3 +396,53 @@ def test_merging_two_products_moves_their_lines_and_aliases(
     assert db.get(SupermarketReceiptItem, item.id).master_product_id == target.id
     alias = db.scalar(select(ProductAlias).where(ProductAlias.description_norm == "MASC 250"))
     assert alias is not None and alias.master_product_id == target.id
+
+
+def test_one_article_under_three_brands_is_not_a_duplicate(
+    db: Session, tree: dict[str, Category]
+) -> None:
+    """The brand is half of the identity key (ADR-0058), so these three rows are
+    what the model asks for — flagging them left no exit but destroying one."""
+    for brand in ("Mercadona", "Continente", "Lidl"):
+        products_service.create_product(
+            db, canonical_name="Batata Frita Azeite", brand=brand, category_id=tree["l3"].id
+        )
+    assert products_service.merge_candidates(db) == []
+
+
+def test_one_brand_spelled_two_ways_is_still_flagged(
+    db: Session, tree: dict[str, Category]
+) -> None:
+    products_service.create_product(
+        db, canonical_name="Batata Frita Azeite", brand="Lidl", category_id=tree["l3"].id
+    )
+    products_service.create_product(
+        db, canonical_name="BATATA-FRITA AZEITE", brand="lidl", category_id=tree["l3"].id
+    )
+    groups = products_service.merge_candidates(db)
+    assert [len(group["products"]) for group in groups] == [2]
+
+
+def test_a_dismissed_group_comes_back_when_a_new_look_alike_joins_it(
+    db: Session, tree: dict[str, Category]
+) -> None:
+    first = products_service.create_product(
+        db, canonical_name="Batata Frita Azeite", brand="Lidl", category_id=tree["l3"].id
+    )
+    second = products_service.create_product(
+        db, canonical_name="BATATA-FRITA AZEITE", brand="lidl", category_id=tree["l3"].id
+    )
+    products_service.dismiss_merge_candidate(db, product_ids=[second.id, first.id])
+    assert products_service.merge_candidates(db) == []
+
+    products_service.create_product(
+        db, canonical_name="Batata frita, azeite", brand="LIDL", category_id=tree["l3"].id
+    )
+    groups = products_service.merge_candidates(db)
+    assert [len(group["products"]) for group in groups] == [3]
+
+
+def test_a_dismissal_needs_two_products(db: Session, tree: dict[str, Category]) -> None:
+    product = make_product(db, tree)
+    with pytest.raises(ValidationError):
+        products_service.dismiss_merge_candidate(db, product_ids=[product.id, product.id])

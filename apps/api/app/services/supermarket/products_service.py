@@ -33,7 +33,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.core import audit
 from app.core.errors import AppError, Conflict, NotFound, ValidationError
 from app.models.core import Category, Merchant
-from app.models.products import MasterProduct, ProductAlias
+from app.models.products import MasterProduct, ProductAlias, ProductMergeDismissal
 from app.models.supermarket import SupermarketReceiptItem
 from app.services.supermarket import attributes, catalogue, classify
 from app.services.supermarket.normalize import normalize_description
@@ -394,21 +394,73 @@ def merge_products(
 
 
 def merge_candidates(db: DbSession, *, limit: int = 50) -> list[dict[str, Any]]:
-    """Near-duplicate canonical names, so the catalogue does not silently fork."""
+    """Near-duplicate products, so the catalogue does not silently fork.
+
+    Grouped on **the identity key itself**, `(name, brand)` normalized, not on
+    the name alone. Two products differing only by brand are two products by
+    construction (ADR-0058), so grouping by name flagged every brand of one
+    article as a duplicate and offered no exit but destroying a legitimate row.
+    What is left is the case worth flagging: one brand, two spellings the
+    unique index does not catch — «Batata Frita Azeite» beside «BATATA-FRITA
+    AZEITE».
+    """
     products = db.execute(
-        select(MasterProduct.id, MasterProduct.canonical_name, MasterProduct.brand).where(
-            MasterProduct.is_deleted.is_(False)
-        )
+        select(
+            MasterProduct.id,
+            MasterProduct.canonical_name,
+            MasterProduct.brand,
+            MasterProduct.presentation,
+            MasterProduct.conservation,
+        ).where(MasterProduct.is_deleted.is_(False))
     ).all()
-    by_key: dict[str, list[dict[str, Any]]] = {}
-    for product_id, name, brand in products:
-        key = normalize_description(name)
+    by_key: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for product_id, name, brand, presentation, conservation in products:
+        key = (normalize_description(name), normalize_description(brand or ""))
         by_key.setdefault(key, []).append(
-            {"id": product_id, "canonical_name": name, "brand": brand}
+            {
+                "id": product_id,
+                "canonical_name": name,
+                "brand": brand,
+                "presentation": presentation,
+                "conservation": conservation,
+            }
         )
-    return [{"key": key, "products": group} for key, group in by_key.items() if len(group) > 1][
-        :limit
-    ]
+
+    dismissed = {tuple(row) for row in db.scalars(select(ProductMergeDismissal.product_ids)).all()}
+    candidates: list[dict[str, Any]] = []
+    for (name_key, brand_key), group in by_key.items():
+        if len(group) < 2:
+            continue
+        if tuple(sorted(product["id"] for product in group)) in dismissed:
+            continue
+        candidates.append({"key": f"{name_key}|{brand_key}", "products": group})
+    return candidates[:limit]
+
+
+def dismiss_merge_candidate(db: DbSession, *, product_ids: Iterable[uuid.UUID]) -> None:
+    """Record that these products are *not* the same thing.
+
+    The whole set is the key, so adding a fourth look-alike later asks again
+    rather than inheriting an answer given about three.
+    """
+    ids = sorted(set(product_ids))
+    if len(ids) < 2:
+        raise ValidationError("Uma dispensa precisa de pelo menos dois produtos.")
+    found = set(
+        db.scalars(
+            select(MasterProduct.id).where(
+                MasterProduct.id.in_(ids), MasterProduct.is_deleted.is_(False)
+            )
+        ).all()
+    )
+    if found != set(ids):
+        raise NotFound("Produto não encontrado.")
+    existing = db.scalar(
+        select(ProductMergeDismissal).where(ProductMergeDismissal.product_ids == ids)
+    )
+    if existing is None:
+        db.add(ProductMergeDismissal(product_ids=ids))
+        db.flush()
 
 
 def purge_products(db: DbSession, *, actor_user_id: uuid.UUID | None) -> int:

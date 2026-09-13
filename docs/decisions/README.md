@@ -67,3 +67,4 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0060](0060-source-material-is-private-seed-data-is-derived.md) | Source material is private, seed data is derived and hand-editable |
 | [0061](0061-every-default-is-a-button-not-just-a-script.md) | Every default is a button, not just a script |
 | [0062](0062-demo-data-is-packaged-household-data-is-mounted.md) | Demo data is packaged; the household's own data is mounted (supersedes part of 0060, narrows 0027) |
+| [0063](0063-a-look-alike-is-a-pair-and-not-the-same-is-an-answer.md) | A look-alike is a pair, and «not the same» is an answer |

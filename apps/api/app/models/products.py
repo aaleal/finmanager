@@ -30,7 +30,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -184,4 +184,31 @@ class ProductAlias(Base, TimestampMixin):
     last_used_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-__all__ = ["CATEGORY_STATUSES", "CONSERVATION_KINDS", "MasterProduct", "ProductAlias"]
+class ProductMergeDismissal(Base, TimestampMixin):
+    """A set of look-alike products a human has declared to be distinct.
+
+    Keyed by the **exact set of products**, not by the shared name: a product
+    joining the group later is a question nobody has answered yet, so it has to
+    surface again. A row whose products were since merged or deleted is inert —
+    that set can never reappear — so nothing prunes them.
+    """
+
+    __tablename__ = "product_merge_dismissals"
+    __table_args__ = (
+        UniqueConstraint("product_ids", name="uq_product_merge_dismissals_product_ids"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    #: Always stored sorted, which is what makes the set comparable at all.
+    product_ids: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(PgUUID(as_uuid=True)), nullable=False
+    )
+
+
+__all__ = [
+    "CATEGORY_STATUSES",
+    "CONSERVATION_KINDS",
+    "MasterProduct",
+    "ProductAlias",
+    "ProductMergeDismissal",
+]

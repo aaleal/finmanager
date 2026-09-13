@@ -311,6 +311,20 @@ export function useMergeProducts() {
   });
 }
 
+/** «Não são o mesmo produto» — the group stops being flagged, nothing is destroyed. */
+export function useDismissMergeCandidate() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (productIds: string[]) =>
+      api.post('/master-products/merge-candidates/dismiss', { product_ids: productIds }),
+    onSuccess: () => {
+      toast.success('Marcados como produtos distintos.');
+      invalidate();
+    },
+    onError: report,
+  });
+}
+
 export function useReassignItemProduct() {
   const invalidate = useInvalidate();
   return useMutation({

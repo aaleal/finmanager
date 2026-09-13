@@ -47,6 +47,8 @@ export function ProductPicker({
         category_id: product.category_id,
         category_path: product.category_path ?? null,
         sold_by_weight: product.sold_by_weight,
+        presentation: product.presentation,
+        conservation: product.conservation,
         score: 0,
         last_known_price: product.last_known_price,
       }));
@@ -115,7 +117,9 @@ export function ProductPicker({
                       ) : null}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
-                      {product.brand ?? '—'} · {product.category_path ?? '—'}
+                      {[product.brand ?? '—', product.presentation, product.category_path ?? '—']
+                        .filter(Boolean)
+                        .join(' · ')}
                     </span>
                   </button>
                 </li>

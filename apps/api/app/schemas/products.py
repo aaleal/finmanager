@@ -102,7 +102,12 @@ class MasterProductUpdate(BaseModel):
 
 
 class ProductSearchResult(BaseModel):
-    """What every picker pre-fills from: identity, category and last known price."""
+    """What every picker pre-fills from: identity, category and last known price.
+
+    Carries the cut and the conservation state as well, because the brand lives
+    outside the name by design (ADR-0058) and a picker showing only the name
+    cannot tell «Amêndoa Laminada» from «Amêndoa Palitada» at a glance.
+    """
 
     id: uuid.UUID
     canonical_name: str
@@ -110,6 +115,8 @@ class ProductSearchResult(BaseModel):
     category_id: uuid.UUID | None
     category_path: str | None
     sold_by_weight: bool
+    presentation: str | None = None
+    conservation: str | None = None
     score: float
     last_known_price: LastKnownPrice | None = None
 
@@ -172,11 +179,19 @@ class MergeCandidateProduct(BaseModel):
     id: uuid.UUID
     canonical_name: str
     brand: str | None = None
+    presentation: str | None = None
+    conservation: str | None = None
 
 
 class MergeCandidate(BaseModel):
     key: str
     products: list[MergeCandidateProduct]
+
+
+class MergeCandidateDismiss(BaseModel):
+    """The whole look-alike group, declared distinct in one go."""
+
+    product_ids: list[uuid.UUID] = Field(min_length=2)
 
 
 class ReassignProductRequest(BaseModel):

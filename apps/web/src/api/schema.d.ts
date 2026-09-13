@@ -1280,6 +1280,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/master-products/merge-candidates/dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Dismiss Merge Candidate
+     * @description «These are not the same thing» — the answer the panel never accepted.
+     *
+     *     Without it the only way out of a false positive was to merge two legitimate
+     *     rows, which moves receipt lines and retires a product for good.
+     */
+    post: operations['dismiss_merge_candidate_api_master_products_merge_candidates_dismiss_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/master-products/attributes': {
     parameters: {
       query?: never;
@@ -1592,7 +1615,8 @@ export interface paths {
     put?: never;
     /**
      * Load Default Categories
-     * @description Load the shipped GROCERY taxonomy on demand (ADR-0057).
+     * @description Load the shipped GROCERY taxonomy on demand (ADR-0057), plus the
+     *     household's own workbook if one is mounted (ADR-0062).
      *
      *     Not run at boot: a household presses this once the table is empty. Safe to
      *     press again later — additive only, same idempotent contract as
@@ -3787,6 +3811,14 @@ export interface components {
       /** Products */
       products: components['schemas']['MergeCandidateProduct'][];
     };
+    /**
+     * MergeCandidateDismiss
+     * @description The whole look-alike group, declared distinct in one go.
+     */
+    MergeCandidateDismiss: {
+      /** Product Ids */
+      product_ids: string[];
+    };
     /** MergeCandidateProduct */
     MergeCandidateProduct: {
       /**
@@ -3798,6 +3830,10 @@ export interface components {
       canonical_name: string;
       /** Brand */
       brand?: string | null;
+      /** Presentation */
+      presentation?: string | null;
+      /** Conservation */
+      conservation?: string | null;
     };
     /** MergeRequest */
     MergeRequest: {
@@ -4265,6 +4301,10 @@ export interface components {
     /**
      * ProductSearchResult
      * @description What every picker pre-fills from: identity, category and last known price.
+     *
+     *     Carries the cut and the conservation state as well, because the brand lives
+     *     outside the name by design (ADR-0058) and a picker showing only the name
+     *     cannot tell «Amêndoa Laminada» from «Amêndoa Palitada» at a glance.
      */
     ProductSearchResult: {
       /**
@@ -4282,6 +4322,10 @@ export interface components {
       category_path: string | null;
       /** Sold By Weight */
       sold_by_weight: boolean;
+      /** Presentation */
+      presentation?: string | null;
+      /** Conservation */
+      conservation?: string | null;
       /** Score */
       score: number;
       last_known_price?: components['schemas']['LastKnownPrice'] | null;
@@ -4606,6 +4650,12 @@ export interface components {
       notional_value_eur?: string | null;
       /** Display Name */
       display_name?: string | null;
+      /** Brand */
+      brand?: string | null;
+      /** Presentation */
+      presentation?: string | null;
+      /** Conservation */
+      conservation?: string | null;
       /** Category Path */
       category_path?: string | null;
       /** Category Status */
@@ -8103,6 +8153,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['MergeCandidate'][];
+        };
+      };
+    };
+  };
+  dismiss_merge_candidate_api_master_products_merge_candidates_dismiss_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MergeCandidateDismiss'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Ok'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

@@ -26,7 +26,7 @@ from app.models.household import (
 )
 from app.models.lego import LegoSetImage, LegoSetInstance, LegoSetModel, StorageLocation
 from app.models.prices import ProductPriceHistory
-from app.models.products import MasterProduct, ProductAlias
+from app.models.products import MasterProduct, ProductAlias, ProductMergeDismissal
 from app.models.supermarket import MerchantParserProfile, SupermarketReceipt, SupermarketReceiptItem
 
 __all__ = [
@@ -49,6 +49,7 @@ __all__ = [
     "MerchantParserProfile",
     "ProcessingJob",
     "ProductAlias",
+    "ProductMergeDismissal",
     "ProductPriceHistory",
     "ReviewTask",
     "Session",

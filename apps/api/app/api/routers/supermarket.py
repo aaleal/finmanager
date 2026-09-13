@@ -101,6 +101,9 @@ def item_out(
     # trail against paper, and `description_norm` is never displayed at all.
     product = (products or {}).get(item.master_product_id) if item.master_product_id else None
     payload.display_name = product.canonical_name if product else item.description_raw
+    payload.brand = product.brand if product else None
+    payload.presentation = product.presentation if product else None
+    payload.conservation = product.conservation if product else None
     payload.category_path = product.category_path if product else None
     payload.category_status = product.category_status if product else None
     payload.sold_by_weight = bool(product and product.sold_by_weight)

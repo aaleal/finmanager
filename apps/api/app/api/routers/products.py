@@ -46,6 +46,7 @@ from app.schemas.products import (
     MasterProductOut,
     MasterProductUpdate,
     MergeCandidate,
+    MergeCandidateDismiss,
     MergeCandidateProduct,
     MergeRequest,
     PackVariantAdd,
@@ -181,6 +182,8 @@ def search_products(
             MasterProduct.brand,
             MasterProduct.category_id,
             MasterProduct.sold_by_weight,
+            MasterProduct.presentation,
+            MasterProduct.conservation,
         ).where(MasterProduct.is_deleted.is_(False))
     ).all()
     if not rows or not needle:
@@ -204,6 +207,8 @@ def search_products(
                 category_id=row[3],
                 category_path=products_service.category_path(db, row[3]),
                 sold_by_weight=row[4],
+                presentation=row[5],
+                conservation=row[6],
                 score=round(score / 100, 3),
                 last_known_price=_last_known_price(db, row[0]),
             )
@@ -220,6 +225,17 @@ def list_merge_candidates(ctx: CurrentAuth, db: Db) -> list[MergeCandidate]:
         )
         for candidate in products_service.merge_candidates(db)
     ]
+
+
+@products_router.post("/merge-candidates/dismiss", response_model=Ok)
+def dismiss_merge_candidate(payload: MergeCandidateDismiss, ctx: Writer, db: Db) -> Ok:
+    """«These are not the same thing» — the answer the panel never accepted.
+
+    Without it the only way out of a false positive was to merge two legitimate
+    rows, which moves receipt lines and retires a product for good.
+    """
+    products_service.dismiss_merge_candidate(db, product_ids=payload.product_ids)
+    return Ok()
 
 
 @products_router.get("/attributes", response_model=ProductAttributeVocabularyOut)

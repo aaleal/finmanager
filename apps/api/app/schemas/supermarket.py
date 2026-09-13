@@ -56,6 +56,13 @@ class ReceiptItemOut(ApiModel):
     price_per_kg_unavailable_reason: str | None = None
     notional_value_eur: Decimal | None = None
     display_name: str | None = None
+    #: The rest of the identity. The brand lives outside ``canonical_name`` by
+    #: design (ADR-0058), so a line showing only the name cannot say which of
+    #: three «Batata Frita Azeite» it resolved to; the cut and the conservation
+    #: state separate products whose names differ by one word.
+    brand: str | None = None
+    presentation: str | None = None
+    conservation: str | None = None
     #: ``L1 › L2 › L3`` off the resolved product — a category lives on
     #: ``MasterProduct`` and nowhere else (Decision #34), so an unresolved line
     #: has none and that is the truth.
