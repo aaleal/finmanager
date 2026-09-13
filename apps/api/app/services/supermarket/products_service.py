@@ -583,7 +583,7 @@ def create_category(
 
 
 def _slug(name: str, parent: Category | None) -> str:
-    from app.seed import slugify
+    from app.services.reference_data import slugify
 
     base = slugify(name)
     return f"{parent.code_en}__{base}" if parent else base

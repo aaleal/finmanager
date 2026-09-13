@@ -67,7 +67,7 @@ Checklist, per enum column (`build_state`/`condition`/`acquisition_source`/…):
    rejects the very rows you're trying to fix. Write the `downgrade()` too,
    even when it's lossy (document what it can't recover, in a one-line
    comment, rather than pretending it round-trips).
-7. Seed data / fixtures (`app/seed/__init__.py`, integration test fixtures)
+7. Seed data / fixtures (`app/demo/__init__.py`, integration test fixtures)
    using a removed value.
 
 Adding a brand-new value (nothing removed) only ever needs steps 1–5 plus a

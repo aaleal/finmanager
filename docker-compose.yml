@@ -12,6 +12,7 @@ x-api-env: &api-env
   SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
   COOKIE_SECURE: ${COOKIE_SECURE:-false}
   STORAGE_ROOT: /var/lib/finmanager/storage
+  DEFAULTS_ROOT: /var/lib/finmanager/defaults
   BRICKSET_API_KEY: ${BRICKSET_API_KEY:-}
 
 services:
@@ -50,6 +51,9 @@ services:
     environment: *api-env
     volumes:
       - storage-data:/var/lib/finmanager/storage
+      # The household's own replaceable files (ADR-0062): read-only, because
+      # loading a default never writes back to the file it loaded.
+      - ./data:/var/lib/finmanager/defaults:ro
     depends_on:
       db:
         condition: service_healthy
@@ -70,6 +74,7 @@ services:
     environment: *api-env
     volumes:
       - storage-data:/var/lib/finmanager/storage
+      - ./data:/var/lib/finmanager/defaults:ro
     depends_on:
       db:
         condition: service_healthy

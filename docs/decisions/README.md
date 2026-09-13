@@ -66,3 +66,4 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0059](0059-a-closed-set-gets-a-check-a-growing-one-gets-a-dictionary.md) | A closed set gets a CHECK, a growing one gets a dictionary |
 | [0060](0060-source-material-is-private-seed-data-is-derived.md) | Source material is private, seed data is derived and hand-editable |
 | [0061](0061-every-default-is-a-button-not-just-a-script.md) | Every default is a button, not just a script |
+| [0062](0062-demo-data-is-packaged-household-data-is-mounted.md) | Demo data is packaged; the household's own data is mounted (supersedes part of 0060, narrows 0027) |

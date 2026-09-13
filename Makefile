@@ -80,7 +80,7 @@ downgrade: ## Roll back one migration
 .PHONY: seed
 seed: ## Load the deterministic Portuguese demo dataset (after the first-run setup)
 	@$(DB_UP)
-	$(RUN_API) python -m app.seed $(ARGS)
+	$(RUN_API) python -m app.demo $(ARGS)
 
 .PHONY: demo
 demo: seed ## Alias for `seed` — every default in one run, for a demo install

@@ -60,14 +60,20 @@ make seed                     # optional: deterministic Portuguese demo data
 ```
 
 The demo dataset is a **developer convenience**, not an installation step. It
-creates no users: it attaches reference data and the LEGO collection to the
-household and entity you just created, and refuses to run before you have. Set
-images ship pre-downloaded in the repo, so seeding never touches the network.
+creates no users: it attaches reference data and a small invented LEGO
+collection to the household and entity you just created, and refuses to run
+before you have. Nothing in it touches the network.
 
-It also loads the household's **eleven real invoices** — four Continente, four
-Pingo Doce, two Lidl and one photographed Piquete *talão* — through the ordinary
-upload path, so each arrives with its stored PDF, the parser profile that read
-it, a visible confidence and a working «Reprocessar»
+Everything *fictional* is committed, in `apps/api/app/demo/data/`. Everything
+that is a household's **own** data — its product catalogue, its taxonomy
+workbook, its real invoices, its real LEGO collection and box art — is mounted
+from the repo's `data/` directory instead, and never committed
+([ADR-0062](docs/decisions/0062-demo-data-is-packaged-household-data-is-mounted.md)).
+See [data/README.md](data/README.md) for the layout; every file there is
+optional, and a missing one simply loads nothing. With the invoices mounted,
+`make seed` also ingests them through the ordinary upload path, so each arrives
+with its stored PDF, the parser profile that read it, a visible confidence and a
+working «Reprocessar»
 ([ADR-0027](docs/decisions/0027-real-invoices-are-seed-data.md)). Alongside them
 it seeds one hand-written receipt carrying an appended Fs article, a prorated
 loyalty discount, a refund and a deposit return together, so the Fs arithmetic on

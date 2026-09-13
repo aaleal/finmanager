@@ -37,10 +37,11 @@ entity-scoped (ADR-0019).
 | Resolver (line -> product) | `.../catalogue.py` (fuzzy, AUTO 0.78 / review 0.70) |
 | Category classifier | `.../classify.py` (`0.65*product + 0.35*section`) |
 | Analytics | `.../prices_service.py` (`category_spend(dimension=…)`, `dietary_spend`) |
-| On-demand defaults (products/invoices) | `apps/api/app/services/supermarket/defaults.py` |
+| On-demand defaults (categories/products/invoices) | `apps/api/app/services/supermarket/defaults.py` |
+| Where the household's own files live | `apps/api/app/core/defaults.py` -> mounted `data/` (ADR-0062) |
 | Routers | `app/api/routers/{products,prices,supermarket}.py` |
 | Frontend | `apps/web/src/features/supermarket/` (`product-attributes.tsx` is the shared field block) |
-| Seed script | `apps/api/app/seed/__init__.py` (`./fm demo` / `./fm seed`) |
+| Demo dataset | `apps/api/app/demo/` (`./fm demo` / `./fm seed`) |
 | Seed builder (workbook -> catalogue) | `dev/build-product-seed.py` |
 
 ## Attributes shipped (Fase 1+2)
@@ -54,22 +55,26 @@ Vocabulary served at `GET /api/master-products/attributes` — registered BEFORE
 ## Defaults are buttons, not just a script (ADR-0061)
 
 Three on-demand loaders, all in `app/services/supermarket/defaults.py`, each
-idempotent, each also called by `make seed` / `./fm demo`:
+idempotent, each also called by `make seed` / `./fm demo`. Every file they read
+lives under the mounted `data/` directory (ADR-0062), never in the package:
 
-- **Categories** — `POST /categories/defaults/load` (ADR-0057, pre-existing).
+- **Categories** — `POST /categories/defaults/load` — `ensure_categories()` for
+  the taxonomy this release ships (ADR-0057), then `CATEGORIES_FILE`
+  (`data/supermarket/categories.xlsx`) through the same additive workbook import
+  the «Importar» button uses (ADR-0056), if one is mounted.
 - **Products** — `POST /master-products/defaults/load` — reads `PRODUCTS_FILE`
-  (`app/data/supermarket-products.pt-PT.xlsx`, optional, gitignored), calls
-  `ensure_categories()` first (otherwise most rows fail category resolution),
-  then the real bulk importer.
+  (`data/supermarket/products.xlsx`, optional), calls `load_default_categories()`
+  first (otherwise most rows fail category resolution), then the real bulk
+  importer.
 - **Invoices** — `POST /supermarket/defaults/load` — ingests `INVOICES_DIR`
-  (`app/seed/data/invoices`, the 11 real *talões*, ADR-0027, publicly tracked)
-  via `create_from_upload`, deduplicated by content hash per entity.
+  (`data/supermarket/invoices`, the 11 real *talões*, ADR-0027, private since
+  ADR-0062) via `create_from_upload`, deduplicated by content hash per entity.
 
 Frontend buttons: empty-state in `ProductsPanel` (products), `ReceiptsTable`'s
 `emptyAction` prop wired in `supermercado.tsx` (invoices) — both gated on "no
 filters applied", mirroring `CategoriesPanel`'s existing pattern.
-`app.seed.INVOICES_DIR` / `PRODUCTS_FILE` are re-exports from `defaults.py`
-(tests import `from app.seed import INVOICES_DIR`, kept working).
+`app/core/defaults.py` is the single manifest naming every mounted file; tests
+reach the *talões* through `tests/corpus.py`, which skips when they are absent.
 `./fm demo` / `make demo` is an alias for `./fm seed` (the full one-shot loader).
 
 Bug found and fixed along the way: `purge_products()` didn't delete

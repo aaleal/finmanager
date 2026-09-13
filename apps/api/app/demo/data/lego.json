@@ -1,0 +1,245 @@
+{
+  "storage": [
+    {
+      "area": "Garagem",
+      "container": "Caixa TV",
+      "description": "Caixa grande junto à televisão antiga",
+      "capacity_pct": 75
+    },
+    {
+      "area": "Garagem",
+      "container": "Caixa A",
+      "description": "Caixa de arrumação empilhável",
+      "capacity_pct": 40
+    },
+    {
+      "area": "Casa",
+      "container": "Armário",
+      "description": "Armário do escritório",
+      "capacity_pct": 90
+    },
+    {
+      "area": "Casa",
+      "container": "Montado",
+      "description": "Sets expostos, já construídos",
+      "capacity_pct": null
+    },
+    {
+      "area": "Casa",
+      "container": "A uso",
+      "description": "Peças soltas, em utilização",
+      "capacity_pct": 100
+    }
+  ],
+  "sets": [
+    {
+      "set_number": "10307",
+      "name": "Torre Eiffel",
+      "theme": "Icons",
+      "subtheme": "Landmarks",
+      "release_date": "2022-11-25",
+      "retirement_date": null,
+      "piece_count": 10001,
+      "minifig_count": 0,
+      "rrp_eur": "629.99",
+      "current_value_eur": "689.00",
+      "value_age_days": 20,
+      "short_description": "Réplica de 149 cm da Torre Eiffel, o maior conjunto LEGO alguma vez lançado.",
+      "copies": [
+        {
+          "acquisition_date": "2023-03-18",
+          "acquisition_cost_eur": "599.99",
+          "acquisition_source": "OTHER_STORE",
+          "storage": [
+            "Garagem",
+            "Caixa TV"
+          ],
+          "build_state": "DISASSEMBLED",
+          "condition": "SEALED"
+        },
+        {
+          "acquisition_date": "2024-11-29",
+          "acquisition_cost_eur": "529.00",
+          "acquisition_source": "SECONDHAND",
+          "storage": [
+            "Casa",
+            "Montado"
+          ],
+          "build_state": "BUILT",
+          "condition": "GOOD",
+          "has_box": false,
+          "notes": "Comprado na Black Friday, montado na sala."
+        }
+      ]
+    },
+    {
+      "set_number": "75192",
+      "name": "Millennium Falcon",
+      "theme": "Star Wars",
+      "subtheme": "Ultimate Collector Series",
+      "release_date": "2017-10-01",
+      "retirement_date": null,
+      "piece_count": 7541,
+      "minifig_count": 10,
+      "rrp_eur": "849.99",
+      "current_value_eur": "920.00",
+      "value_age_days": 250,
+      "short_description": "A versão UCS da nave mais famosa da galáxia.",
+      "copies": [
+        {
+          "acquisition_date": "2019-12-20",
+          "acquisition_cost_eur": "739.90",
+          "acquisition_source": "OTHER_STORE",
+          "storage": [
+            "Casa",
+            "Armário"
+          ],
+          "build_state": "DISASSEMBLED",
+          "condition": "GOOD",
+          "missing_parts": "2x 3001 vermelho, 1x canopy transparente"
+        }
+      ]
+    },
+    {
+      "set_number": "21318",
+      "name": "Casa da Árvore",
+      "theme": "Ideas",
+      "release_date": "2019-08-01",
+      "retirement_date": "2023-12-31",
+      "piece_count": 3036,
+      "minifig_count": 4,
+      "rrp_eur": "219.99",
+      "current_value_eur": "349.00",
+      "value_age_days": 45,
+      "short_description": "Conjunto Ideas com folhagem em plástico de origem vegetal.",
+      "copies": [
+        {
+          "acquisition_date": "2021-06-05",
+          "acquisition_cost_eur": "199.99",
+          "acquisition_source": "OTHER_STORE",
+          "storage": [
+            "Garagem",
+            "Caixa A"
+          ],
+          "build_state": "DISASSEMBLED",
+          "condition": "SEALED"
+        }
+      ]
+    },
+    {
+      "set_number": "42115",
+      "name": "Lamborghini Sián FKP 37",
+      "theme": "Technic",
+      "release_date": "2020-06-01",
+      "retirement_date": "2023-12-31",
+      "piece_count": 3696,
+      "minifig_count": 0,
+      "rrp_eur": "379.99",
+      "current_value_eur": null,
+      "short_description": "Supercarro Technic à escala 1:8 com caixa de 8 velocidades.",
+      "copies": [
+        {
+          "acquisition_date": "2022-12-25",
+          "acquisition_cost_eur": "0.00",
+          "acquisition_source": "GIFT",
+          "storage": [
+            "Casa",
+            "Montado"
+          ],
+          "build_state": "BUILT",
+          "condition": "GOOD",
+          "notes": "Prenda de Natal — sem custo, logo sem ROI."
+        }
+      ]
+    },
+    {
+      "set_number": "10497",
+      "name": "Galaxy Explorer",
+      "theme": "Icons",
+      "subtheme": "90 Anos",
+      "release_date": "2022-08-01",
+      "retirement_date": "2024-12-31",
+      "piece_count": 1254,
+      "minifig_count": 4,
+      "rrp_eur": "99.99",
+      "current_value_eur": "119.00",
+      "value_age_days": 400,
+      "short_description": "Reinterpretação do clássico Classic Space de 1979.",
+      "copies": [
+        {
+          "acquisition_date": "2022-08-01",
+          "acquisition_cost_eur": "94.99",
+          "acquisition_source": "OTHER_STORE",
+          "storage": [
+            "Garagem",
+            "Caixa TV"
+          ],
+          "build_state": "DISASSEMBLED",
+          "condition": "SEALED"
+        },
+        {
+          "acquisition_date": "2022-08-01",
+          "acquisition_cost_eur": "94.99",
+          "acquisition_source": "OTHER_STORE",
+          "ownership_status": "SOLD",
+          "sale_price_eur": "140.00",
+          "sale_date": "2024-05-12",
+          "build_state": "DISASSEMBLED",
+          "condition": "SEALED",
+          "notes": "Vendido no OLX — fora de todos os KPIs de valor."
+        }
+      ]
+    },
+    {
+      "set_number": "76240",
+      "name": "Batmobile Tumbler",
+      "theme": "Icons",
+      "subtheme": "DC",
+      "release_date": "2021-11-01",
+      "retirement_date": "END_OF_NEXT_YEAR",
+      "piece_count": 2049,
+      "minifig_count": 0,
+      "rrp_eur": "229.99",
+      "current_value_eur": "249.00",
+      "value_age_days": 10,
+      "short_description": "Saída de linha já anunciada, mas à venda até ao fim do ano seguinte.",
+      "copies": [
+        {
+          "acquisition_date": "2022-04-02",
+          "acquisition_cost_eur": "205.00",
+          "acquisition_source": "OTHER_STORE",
+          "storage": [
+            "Casa",
+            "Montado"
+          ],
+          "build_state": "BUILT",
+          "condition": "GOOD"
+        }
+      ]
+    },
+    {
+      "set_number": null,
+      "is_custom": true,
+      "name": "Farol de Leça (MOC)",
+      "theme": "MOC",
+      "piece_count": 820,
+      "current_value_eur": null,
+      "short_description": "Construção original do farol da Boa Nova, feita à mão pela Clara.",
+      "copies": [
+        {
+          "acquisition_date": "2024-02-10",
+          "acquisition_cost_eur": "45.00",
+          "acquisition_source": "OTHER",
+          "storage": [
+            "Casa",
+            "A uso"
+          ],
+          "build_state": "BUILT",
+          "condition": "GOOD",
+          "has_box": false,
+          "has_instructions": false
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,14 @@ dev/bootstrap-household.json
 00.prompts/seed/Lego
 00.prompts/seed/supermarket
 
+# ---- The household's own files (ADR-0062) -----------------------------------
+# Mounted at /var/lib/finmanager/defaults, never committed: the catalogue, the
+# taxonomy workbook, the real talões, the LEGO collection and its box art are
+# this household's data, not the product's. `data/README.md` documents the
+# layout an install is expected to fill in.
+/data/*
+!/data/README.md
+
 # ---- Python -----------------------------------------------------------------
 __pycache__/
 *.py[cod]
@@ -35,6 +43,3 @@ storage/
 .DS_Store
 .idea/
 *.swp
-
-# Real household catalogue used by `make seed`; edit locally, never commit.
-apps/api/app/data/supermarket-products.pt-PT.xlsx

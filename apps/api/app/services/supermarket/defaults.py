@@ -14,18 +14,38 @@ from __future__ import annotations
 
 import contextlib
 import uuid
-from pathlib import Path
 
 from sqlalchemy.orm import Session as DbSession
 
+from app.core import defaults as household_defaults
 from app.core.errors import ValidationError
 
-#: The household's own product catalogue. Optional and never committed
-#: (ADR-0060) — dropped in by hand, read only if present. Absent is not an
-#: error: a fresh install or a public demo simply has nothing to load yet.
-PRODUCTS_FILE = Path(__file__).resolve().parents[2] / "data" / "supermarket-products.pt-PT.xlsx"
-#: The eleven real *talões* shipped with the release (ADR-0027).
-INVOICES_DIR = Path(__file__).resolve().parents[2] / "seed" / "data" / "invoices"
+#: Re-exported under their historical names: the *paths* moved out of the package
+#: (ADR-0062), the contract did not.
+PRODUCTS_FILE = household_defaults.SUPERMARKET_PRODUCTS
+CATEGORIES_FILE = household_defaults.SUPERMARKET_CATEGORIES
+INVOICES_DIR = household_defaults.SUPERMARKET_INVOICES
+
+
+def load_default_categories(db: DbSession, *, actor_user_id: uuid.UUID | None) -> int:
+    """The shipped taxonomy, then the household's own workbook on top of it.
+
+    Two sources, one direction: ``app/data``'s JSON is the taxonomy this release
+    ships and every install gets (ADR-0057), while ``CATEGORIES_FILE`` is the
+    household's own edit of it, mounted and swappable (ADR-0062). Both are
+    additive — neither renames, moves nor deletes — so the workbook can only ever
+    *extend* what shipped, and pressing this twice adds nothing twice.
+    """
+    from app.services import reference_data
+    from app.services.supermarket import products_service
+
+    created = reference_data.ensure_categories(db)
+    if CATEGORIES_FILE.exists():
+        report = products_service.import_categories_workbook(
+            db, data=CATEGORIES_FILE.read_bytes(), actor_user_id=actor_user_id
+        )
+        created += report.created
+    return created
 
 
 def load_default_products(db: DbSession, *, actor_user_id: uuid.UUID | None) -> int:
@@ -43,10 +63,9 @@ def load_default_products(db: DbSession, *, actor_user_id: uuid.UUID | None) -> 
     """
     if not PRODUCTS_FILE.exists():
         return 0
-    from app.services import reference_data
     from app.services.supermarket import products_service
 
-    reference_data.ensure_categories(db)
+    load_default_categories(db, actor_user_id=actor_user_id)
     rows = products_service.preview_product_import(db, PRODUCTS_FILE.read_bytes())
     usable = [row for row in rows if not row["errors"] and row["canonical_name"]]
     results = products_service.commit_product_import(db, usable, actor_user_id=actor_user_id)
@@ -89,4 +108,11 @@ def load_default_invoices(
     return ingested
 
 
-__all__ = ["INVOICES_DIR", "PRODUCTS_FILE", "load_default_invoices", "load_default_products"]
+__all__ = [
+    "CATEGORIES_FILE",
+    "INVOICES_DIR",
+    "PRODUCTS_FILE",
+    "load_default_categories",
+    "load_default_invoices",
+    "load_default_products",
+]

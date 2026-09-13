@@ -17,17 +17,20 @@ from __future__ import annotations
 
 import stat
 
-from app.seed import INVOICES_DIR
 from app.services import documents
 from sqlalchemy.orm import Session
+
+#: Any stored file proves the point — this is about the shard's mode bits, not
+#: about what was stored, so it deliberately needs no fixture corpus.
+PDF = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"
 
 
 def test_stored_documents_are_writable_by_both_container_users(db: Session) -> None:
     document = documents.store_bytes(
         db,
-        (INVOICES_DIR / "continente-20260724.pdf").read_bytes(),
+        PDF,
         source="UPLOAD",
-        original_filename="continente-20260724.pdf",
+        original_filename="talao.pdf",
     )
     path = documents.absolute_path(document)
 

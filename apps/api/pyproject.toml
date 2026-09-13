@@ -35,7 +35,7 @@ no_implicit_optional = true
 exclude = "alembic/"
 
 [[tool.mypy.overrides]]
-module = "app.seed.*"
+module = "app.demo.*"
 disallow_untyped_defs = false
 
 [tool.pytest.ini_options]

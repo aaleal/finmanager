@@ -57,7 +57,7 @@ development data.
 
 `apps/api/tests/fixtures/golden/` pins the **extraction** stage, not the parse:
  one committed JSON of word boxes (`engine`, `document_kind`, per-page `lines`)
-per real *talão* under `apps/api/app/seed/data/invoices/` — four Continente,
+per real *talão* under `data/supermarket/invoices/` — four Continente,
 four Pingo Doce, two Lidl PDFs and the one Piquete photograph. With the word
 boxes committed, a parser change shows up as a diff in parsed output alone, and
 an extractor upgrade (a `pdfplumber`/`pytesseract` version bump, say) shows up

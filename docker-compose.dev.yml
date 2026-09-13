@@ -12,6 +12,7 @@ services:
     volumes:
       - ./apps/api:/app
       - storage-data:/var/lib/finmanager/storage
+      - ./data:/var/lib/finmanager/defaults:ro
     ports:
       - "${API_PORT:-8000}:8000"
     command: ["/app/docker-entrypoint.sh", "api-dev"]
@@ -27,6 +28,7 @@ services:
     volumes:
       - ./apps/api:/app
       - storage-data:/var/lib/finmanager/storage
+      - ./data:/var/lib/finmanager/defaults:ro
     command: ["/app/docker-entrypoint.sh", "worker-dev"]
 
   web:

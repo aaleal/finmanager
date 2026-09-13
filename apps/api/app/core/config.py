@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
 
     storage_root: Path = Path("/var/lib/finmanager/storage")
+    #: The household's own replaceable files — product catalogue, category
+    #: workbook, *talões*, LEGO inventory. Bind-mounted from the repo's `./data`
+    #: rather than baked into the image, so replacing one is dropping a file in,
+    #: not a rebuild (ADR-0062). Absent is normal: a fresh clone has none of it.
+    defaults_root: Path = Path("/var/lib/finmanager/defaults")
 
     brickset_api_key: str = ""
 

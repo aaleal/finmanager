@@ -55,7 +55,7 @@ from app.schemas.products import (
     ProductOccurrence,
     ProductSearchResult,
 )
-from app.services import documents, reference_data
+from app.services import documents
 from app.services.supermarket import (
     attributes,
     catalogue,
@@ -567,13 +567,14 @@ def create_category(payload: CategoryCreate, ctx: Writer, db: Db) -> CategorySea
 
 @categories_router.post("/defaults/load", response_model=CategoryDefaultsLoadOut, status_code=201)
 def load_default_categories(ctx: Writer, db: Db) -> CategoryDefaultsLoadOut:
-    """Load the shipped GROCERY taxonomy on demand (ADR-0057).
+    """Load the shipped GROCERY taxonomy on demand (ADR-0057), plus the
+    household's own workbook if one is mounted (ADR-0062).
 
     Not run at boot: a household presses this once the table is empty. Safe to
     press again later — additive only, same idempotent contract as
     ``ensure_categories`` had at boot before this release.
     """
-    created = reference_data.ensure_categories(db)
+    created = supermarket_defaults.load_default_categories(db, actor_user_id=ctx.user.id)
     return CategoryDefaultsLoadOut(created=created)
 
 

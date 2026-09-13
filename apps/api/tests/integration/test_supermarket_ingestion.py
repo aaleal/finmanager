@@ -14,15 +14,16 @@ import pytest
 from app.core.errors import Conflict, ValidationError
 from app.models import AuditLog, Entity, Merchant, ReviewTask, User
 from app.models.supermarket import MerchantParserProfile, SupermarketReceipt
-from app.seed import INVOICES_DIR
 from app.services.reference_data import ensure_merchants, ensure_parser_profiles
 from app.services.supermarket import service as supermarket_service
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-pytestmark = pytest.mark.integration
+from tests.corpus import RECEIPTS, requires_receipts
 
-FIXTURES = INVOICES_DIR
+pytestmark = [pytest.mark.integration, requires_receipts]
+
+FIXTURES = RECEIPTS
 
 
 @pytest.fixture

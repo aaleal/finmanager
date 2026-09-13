@@ -12,14 +12,15 @@ import contextlib
 import uuid
 
 import pytest
-from app.seed import INVOICES_DIR
 from app.services.reference_data import ensure_all
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-pytestmark = pytest.mark.integration
+from tests.corpus import RECEIPTS, requires_receipts
 
-FIXTURES = INVOICES_DIR
+pytestmark = [pytest.mark.integration, requires_receipts]
+
+FIXTURES = RECEIPTS
 
 SETUP = {
     "household_name": "Casa de Teste",

@@ -18,15 +18,16 @@ from typing import Any
 import pytest
 from app.models import Entity, User
 from app.models.supermarket import SupermarketReceiptItem
-from app.seed import INVOICES_DIR
 from app.services.reference_data import ensure_all
 from app.services.supermarket import pipeline
 from app.services.supermarket import service as supermarket_service
 from sqlalchemy.orm import Session
 
-pytestmark = pytest.mark.integration
+from tests.corpus import RECEIPTS, requires_receipts
 
-FIXTURES = INVOICES_DIR
+pytestmark = [pytest.mark.integration, requires_receipts]
+
+FIXTURES = RECEIPTS
 
 
 @pytest.fixture

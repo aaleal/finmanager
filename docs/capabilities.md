@@ -87,12 +87,12 @@ lives here, where it can be corrected when code moves.
 | Exact `release_date` / `retirement_date`, with `is_retired` waiting for the date to pass | `apps/api/app/models/lego.py` | Phase 1 (M9.2) |
 | Full catalog editing from the detail sheet («Editar conjunto» tab) | `apps/web/src/features/lego/detail-sheet.tsx` | Phase 1 (M9.2) |
 | Collapsible two-level storage filter (areas, then containers) | `apps/web/src/features/lego/storage-filter.tsx` | Phase 1 (M9.2) |
-| Real household inventory as seed data (93 sets, 97 copies) | `apps/api/app/seed/data/lego-inventory.json` | Phase 1 (M9.2) |
+| Real household inventory loaded from the mounted defaults (ADR-0062) | `data/lego/inventory.json`, `apps/api/app/demo/__init__.py::inventory_sets` | Phase 1 (M9.2) |
 | Sort on every grid column, incl. derived `copies` and `roi`, ordinal `condition` | `apps/api/app/services/lego_service.py` | Phase 1 (M9.3) |
 | Set image gallery + carousel (box shot plus extra views) | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/set-carousel.tsx` | Phase 1 (M9.3) |
 | Gallery editor on the summary tab — append-only order, a star marks the set's cover, capped at one row with a "+N" overflow tile (ADR-0045) | `apps/web/src/features/lego/detail-sheet.tsx::GalleryEditor` | Phase 1 (M9.4) |
 | Per-copy table image picked from the set's own images, falling back to the set's cover (ADR-0045) | `apps/api/app/services/lego_service.py::set_instance_display_image`, `apps/web/src/features/lego/detail-sheet.tsx::DisplayImagePicker` | Phase 1 (M9.4) |
-| Real Brickset box art downloaded once into the seed | `apps/api/app/seed/__init__.py` | Phase 1 (M9.3) |
+| Real Brickset box art downloaded once, offline, into the mounted defaults | `dev/download-lego-images.py`, `data/lego/images/` | Phase 1 (M9.3) |
 | Set dates read from the set's own `launchDate` / `exitDate`, and the RRP only from the euro store (ADR-0039) | `apps/api/app/services/lego_provider.py` | Phase 1 (M9.4) |
 | Recommended age range and box dimensions (`age_min`/`age_max`, `box_*`), looked up and hand-editable | `apps/api/app/models/lego.py`, `apps/web/src/features/lego/detail-sheet.tsx` | Phase 1 (M9.4) |
 | `POST /lego/models/{id}/brickset` — one press downloads `getAdditionalImages` into the gallery and `getInstructions2` (PT/EN + language-neutral) into `lego_set_instructions`, all stored locally and carried by the backup (ADR-0040). Runs automatically once, from set creation, never again from the sheet (ADR-0044) | `apps/api/app/services/lego_service.py::import_from_brickset`, `apps/api/app/services/lego_backup.py` | Phase 1 (M9.4) |
@@ -141,14 +141,14 @@ lives here, where it can be corrected when code moves.
 | Pack formats as a curated vocabulary — unique weights per product, matched to a line **by value at the gram**, idempotent append (ADR-0030) | `apps/api/app/services/supermarket/products_service.py::sanitize_pack_variants`, `POST /api/master-products/{id}/pack-variants` | M1 fixes (ADR-0030) |
 | Product attributes — marca branca, conservação, corte/apresentação and dietary tags, against a served controlled vocabulary; outside the identity key (ADR-0058) and never required (ADR-0059) | `apps/api/app/services/supermarket/attributes.py`, `GET /api/master-products/attributes`, `apps/web/src/features/supermarket/product-attributes.tsx` | M1 fixes (ADR-0058, ADR-0059) |
 | Despesa cut by any product axis — categoria, marca, marca branca, conservação, corte — plus a separate per-dietary-tag view whose rows overlap by design | `GET /api/supermarket/analytics/{category-spend,dietary-spend}`, `apps/web/src/features/supermarket/spend-panel.tsx` | M1 fixes (ADR-0058) |
-| Product catalogue seeded from a hand-editable workbook, loaded through the same bulk import the UI uses; optional, so a clone without it still seeds | `apps/api/app/seed/__init__.py::seed_products`, `apps/api/app/data/supermarket-products.pt-PT.xlsx` (untracked), built by `dev/build-product-seed.py` | M1 fixes (ADR-0060) |
+| Product catalogue seeded from a hand-editable workbook, loaded through the same bulk import the UI uses; optional, so a clone without it still seeds | `apps/api/app/services/supermarket/defaults.py::load_default_products`, `data/supermarket/products.xlsx` (mounted, untracked), built by `dev/build-product-seed.py` | M1 fixes (ADR-0060, ADR-0062) |
 | Three on-demand defaults — categories, product catalogue, real invoices — each a button in its own empty screen, each idempotent, all backed by `app/services/supermarket/defaults.py` and shared with `make seed`/`./fm demo` | `POST /categories/defaults/load`, `POST /master-products/defaults/load`, `POST /supermarket/defaults/load` | M1 fixes (ADR-0057, ADR-0061) |
 | Manual alias entry beside the learned ones — same call the review pane makes on a correction | `POST /api/product-aliases/learn`, `apps/web/src/features/supermarket/products-panel.tsx::AddAliasForm` | M1 fixes |
 | Hand-added invoice lines and hand-removed ones, with an editable `line_no` that orders the grid | `POST /api/supermarket/{id}/items` (`is_fs=false`), `DELETE /api/supermarket/{id}/items/{item_id}` | M1 fixes |
 | Confidence shown as its two signals (leitura / produto) with the formula behind it | `apps/web/src/features/supermarket/{review-pane,why-popover}.tsx` | M1 fixes |
 | Perfis de leitura — parser-profile administration | `apps/web/src/features/supermarket/parser-profiles-panel.tsx` | Phase 3 (M1a) |
 | Golden extraction fixtures — committed word boxes for all eleven real *talões* | `apps/api/tests/fixtures/golden/` | Phase 3 (M1a) |
-| The eleven real *talões* as seed data, ingested through the upload path so each has a `Document` and stays reprocessable | `apps/api/app/seed/data/invoices/`, `apps/api/app/seed/__init__.py::seed_supermarket_invoices` | M1 fixes (ADR-0027) |
+| The eleven real *talões*, ingested through the upload path so each has a `Document` and stays reprocessable; mounted and private since ADR-0062 | `data/supermarket/invoices/`, `apps/api/app/services/supermarket/defaults.py::load_default_invoices` | M1 fixes (ADR-0027) |
 | `MasterProduct` / `ProductAlias` — canonical product identity and learned merchant vocabulary | `apps/api/app/models/products.py` | Phase 3 (M1b) |
 | Product resolution and the alias learning loop — alias-exact → fuzzy ≥ 0.78 (review band 0.70–0.78), `learn()` correction loop, `CatalogueResolver` registered as the pipeline's `ProductResolver` | `apps/api/app/services/supermarket/catalogue.py` | Phase 3 (M1b) |
 | Local category classifier — `VocabularyClassifier` over the pt-PT L3 vocabulary, fed by description and `merchant_section`; `register_classifier()` seam for a remote one | `apps/api/app/services/supermarket/classify.py` | Phase 3 (M1b) |
@@ -174,7 +174,7 @@ lives here, where it can be corrected when code moves.
 | Price-history, spend and loyalty endpoints, plus CSV export of a price series | `apps/api/app/api/routers/prices.py` | Phase 3 (M1c) |
 | Price-evolution, spend and loyalty UI panels («Preços», «Despesa», «Fidelização» tabs) | `apps/web/src/features/supermarket/{price-evolution-panel,spend-panel,loyalty-panel}.tsx` | Phase 3 (M1c) |
 | Receipt link panel and `fs` tri-state filter in the review pane | `apps/web/src/features/supermarket/link-panel.tsx`, `apps/web/src/features/supermarket/review-pane.tsx` | Phase 3 (M1c) |
-| Demo supermarket receipt in the seed — `seed_supermarket()`, one reconciling receipt carrying an appended Fs article, a prorated loyalty discount, a refund and a deposit return together | `apps/api/app/seed/__init__.py` | Phase 3 (M1c) |
+| Demo supermarket receipt — `seed_supermarket()`, one reconciling receipt carrying an appended Fs article, a prorated loyalty discount, a refund and a deposit return together | `apps/api/app/demo/__init__.py`, `apps/api/app/demo/data/supermarket.json` | Phase 3 (M1c) |
 | Legacy importer now records a price observation for every imported group (2,386 observations from the real 2025 sheet) | `apps/api/app/services/supermarket/legacy_import.py` | Phase 3 (M1b) |
 
 ## Household administration (M7)

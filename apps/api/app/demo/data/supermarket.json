@@ -1,0 +1,72 @@
+{
+  "receipt": {
+    "merchant": "Continente",
+    "purchased_at": "2026-08-12T18:30:00",
+    "loyalty_scheme": "Cartão Continente",
+    "loyalty_card_masked": "XXXXXXXX3394X",
+    "loyalty_discount_eur": "0.50",
+    "loyalty_accrued_eur": "0.42",
+    "lines": [
+      {
+        "description": "LEITE UHT GORD MIMOSA 1L",
+        "section": "Laticinios",
+        "pvp": "0.99",
+        "promo": "0.00",
+        "iva": "A",
+        "weight": "1.0000",
+        "quantity": "1"
+      },
+      {
+        "description": "ARROZ AGULHA SELECIONADO 1KG",
+        "section": "Bens Essenciais",
+        "pvp": "1.39",
+        "promo": "0.10",
+        "iva": "A",
+        "weight": "1.0000",
+        "quantity": "1"
+      },
+      {
+        "description": "BANANA",
+        "section": "Frutas e Legumes",
+        "pvp": "1.28",
+        "promo": "0.00",
+        "iva": "A",
+        "weight": "0.8600",
+        "quantity": "0.86",
+        "unit": "KG",
+        "bulk": true
+      },
+      {
+        "description": "AGUA S/GAS 50CL",
+        "section": "Soft Drinks",
+        "pvp": "0.19",
+        "promo": "0.00",
+        "iva": "B",
+        "weight": "0.5000",
+        "quantity": "1"
+      },
+      {
+        "description": "VALOR DE DEPOSITO UN",
+        "section": "Taras e Valor de Deposito",
+        "pvp": "0.10",
+        "promo": "0.00",
+        "iva": "NS",
+        "flag": "DEPOSIT_RETURN",
+        "quantity": "1"
+      },
+      {
+        "description": "DEVOLUCAO IOGURTE NATURAL",
+        "section": "Laticinios",
+        "pvp": "-0.74",
+        "promo": "0.00",
+        "iva": "A",
+        "flag": "REFUND",
+        "quantity": "-2"
+      }
+    ],
+    "fs_article": {
+      "description": "Bolo de aniversário oferecido pela vizinha",
+      "value": "7.50"
+    }
+  }
+}

@@ -25,7 +25,8 @@
     { "label": "Perna", "synonyms": ["pernas", "coxa", "coxas"] },
     { "label": "Peito", "synonyms": ["peitos", "peito inteiro"] },
     { "label": "Moído", "synonyms": ["moída", "em pó", "pó"] },
-    { "label": "Granel", "synonyms": ["a granel", "avulso", "avulsa"] }
+    { "label": "Granel", "synonyms": ["a granel", "avulso", "avulsa"] },
+    { "label": "Pacote", "synonyms": ["embalagem", "em pacote", "pacotinho"] }
   ],
   "dietary": [
     { "label": "Bio", "synonyms": ["biológico", "biologico", "biológica", "organico", "orgânico"] },

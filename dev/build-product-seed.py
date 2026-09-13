@@ -23,8 +23,11 @@ are ignored by it, so the extra evidence columns cost nothing.
     podman cp dev/build-product-seed.py finmanager_api_1:/tmp/build.py
     podman exec -e PYTHONPATH=/app finmanager_api_1 \
         python /tmp/build.py /tmp/gc.xlsx /tmp/cats.xlsx /tmp/produtos-seed.xlsx
+    podman cp finmanager_api_1:/tmp/produtos-seed.xlsx data/supermarket/products.xlsx
 
-Nothing here touches the database.
+The last line is the point: `data/supermarket/products.xlsx` is what the
+«Carregar produtos por defeito» button reads (ADR-0062). Nothing here touches
+the database.
 """
 
 from __future__ import annotations

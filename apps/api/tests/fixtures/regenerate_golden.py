@@ -12,10 +12,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.seed import INVOICES_DIR
 from app.services.supermarket import extraction
 
-FIXTURES = INVOICES_DIR
+from tests.corpus import RECEIPTS
+
+FIXTURES = RECEIPTS
 GOLDEN = Path(__file__).parent / "golden"
 
 MIME_TYPES = {".pdf": "application/pdf", ".jpeg": "image/jpeg", ".jpg": "image/jpeg"}
