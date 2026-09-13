@@ -4,7 +4,7 @@
 *.pem
 dev/bootstrap-household.json
 00.prompts/seed/Lego/*
-00.prompts/seed/Lego/supermarket
+00.prompts/seed/supermarket/*
 
 # ---- Python -----------------------------------------------------------------
 __pycache__/

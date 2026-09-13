@@ -2,15 +2,15 @@
   "meta": {
     "artifact": "Canonical supermarket category taxonomy (seed data)",
     "locale": "pt-PT",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "note_en": "Data (display names) is authored in Portuguese (pt-PT). Code, schema columns and enum identifiers remain English. The build agent imports this file to seed the Category tree (L1 -> L2 -> L3). This supersedes any earlier taxonomy draft.",
     "levels": {
       "L1": "Macro group / departamento (e.g. 'Aperitivos').",
       "L2": "Subcategoria (e.g. 'Batatas Fritas').",
       "L3": "Genero de produto NORMALIZADO, agnostico de marca/tamanho/SKU (e.g. 'Batata Frita Ondulada'). NAO e o produto comprado; e a categoria que agrupa todas as marcas do mesmo genero para comparar EUR/kg."
-    }
+    },
+    "source": "categorias-20260909.xlsx, sheet «Categorias»"
   },
-
   "conventions": {
     "l3_is_a_category_not_a_product": "Decisao de desenho: o nivel 3 permanece como uma CATEGORIA (genero de produto normalizado), nao como o produto em si. A marca + variante + embalagem pertencem a MasterProduct, que referencia (L1,L2,L3). Exemplo: 'Batata Frita Continente' NAO e um L3 -> e um MasterProduct com L3='Batata Frita Lisa' e brand='Continente'. Isto mantem o L3 util (comparar EUR/kg entre marcas do mesmo genero) sem perder granularidade (marca/SKU vivem no MasterProduct).",
     "brand_as_l2_exception": "Onde o agregado familiar quer analitica premium por marca (Gelados, Pastilhas), aceita-se marca-como-L2 de forma deliberada. Nesses ramos: L2=marca, L3=linha/sabor, MasterProduct=SKU exato. Marcar esses nos L2 com brand_axis=true.",
@@ -18,7 +18,6 @@
     "empty_l3": "Arrays L3 vazios sao nos L2 validos (placeholders) sem produtos-genero semeados ainda; o L3 e opcional.",
     "storage": "Guardar cada categoria com um code/slug estavel em ingles (identificador de codigo) e display_name em pt-PT (este ficheiro fornece o display_name)."
   },
-
   "supermercados": [
     "Continente",
     "Pingo Doce",
@@ -30,271 +29,727 @@
     "Fruta Chinês",
     "Piquete da Fruta"
   ],
-
   "context_flags": {
     "note": "Flags de contexto ao nivel do item/talao (tags), distintas da flag de exclusao Fs.",
-    "values": ["Culinária", "Férias", "Outros", "Social"]
+    "values": [
+      "Culinária",
+      "Férias",
+      "Outros",
+      "Social"
+    ]
   },
-
   "exclusion_flag": {
     "code": "F",
     "alias": "Fs",
     "meaning_en": "Item excluded from receipt total_cents; summed into fs_total_cents / fs_item_count."
   },
-
   "categories": {
-    "Aperitivos": {
-      "Frutos Secos": ["Amendoim", "Amêndoa", "Amêndoa Laminada", "Amêndoa Palitada", "Avelã", "Caju", "Noz", "Pistácio"],
-      "Batatas Fritas": ["Batata Frita Azeite", "Batata Frita Camponesa", "Batata Frita Congelada", "Batata Frita Forno", "Batata Frita Gourmet", "Batata Frita Light", "Batata Frita Lisa", "Batata Frita Ondulada", "Batata Frita Palha", "Batata Frita Premium", "Nachos"],
-      "Hummus & Guacamole": ["Hummus", "Guacamole"],
-      "Outros Aperitivos": ["Crepes Chineses", "Tremoços"]
-    },
-
-    "Bebidas": {
-      "Água": ["Água"],
-      "Álcool": ["Cerveja", "Cerveja Preta", "Cidra", "Gin & Água Tónica", "Vinho"],
-      "Chás": ["Chá Verde"],
-      "Gelo": ["Gelo"],
-      "Sumos": ["B!", "Cola Marca Branca", "Coca-Cola", "Compal", "Ice Tea", "Pepsi", "Outros Sumos"]
-    },
-
-    "Bolachas": {
-      "Bolachas Doces": ["Biscoito Amendoim", "Bolacha Belga", "Bolachas Aveia", "Bolachas Digestivas", "Bolachas Maria", "Bolachas Maria Chocolate", "Bolachas Pequeno-Almoço", "Línguas de Gato", "Nut Choc", "Oreos", "Palitos La Reine", "Shortcake Chocolate", "Tubitos", "Outras Bolachas"],
-      "Bolachas Fit": ["Água e Sal", "Bolachas Pequeno-Almoço Fit", "Marinheiras", "Tortilhas Arroz", "Tortilhas Milho"]
-    },
-
-    "Bricolage & DIY": {
-      "Ferramentas": [],
-      "Material": []
-    },
-
-    "Brinquedos": {
-      "Prendas": [],
-      "Jogos de Tabuleiro": [],
-      "Legos": [],
-      "Livros": [],
-      "Outros": []
-    },
-
-    "Casa & Limpeza": {
-      "Diversos Casa": ["Guardanapos", "Luvas", "Panos Multiusos", "Papel Alumínio", "Papel Vegetal", "Película Aderente", "Perfume Casa", "Rolo de Cozinha", "Sacos do Lixo", "Sacos para Sandes"],
-      "Limpeza Casa": ["Detergente Chão Geral", "Detergente Chão Madeira", "Esfregonas"],
-      "Limpeza Casa de Banho": ["Desodorizante Sanita"],
-      "Limpeza Loiça": ["Abrilhantador", "Detergente Loiça", "Esfregões", "Pastilhas Máquina", "Sal Máquina"],
-      "Limpeza Roupa": ["Amaciador Roupa", "Detergente Roupa"]
-    },
-
-    "Cereais & Pequeno-Almoço": {
-      "Aveia": ["Aveia", "Aveia Instantânea"],
-      "Barritas": ["Barras de Cereais"],
-      "Cereais Doce": ["Cereais Recheio Chocolate", "Chocapic", "Nestum", "Outros Cereais Doce"],
-      "Cereais Fit": ["Cereais Aveia Crunchy", "Cereais Bran", "Cereais Farelo", "Cereais Linha", "Cereais Weetabix", "Outros Cereais Fit"],
-      "Granola & Muesli": ["Granola Mel", "Granola Sem Açúcar", "Muesli Caramelo", "Muesli Chocolate", "Muesli Crocante", "Muesli Forno", "Muesli Frutos Secos Sem Açúcar", "Puff Trigo"],
-      "Sementes": ["Chia", "Linhaça", "Sésamo"]
-    },
-
-    "Charcutaria": {
-      "Enchidos": ["Alheira", "Chouriço", "Chouriço Peru", "Farinheira", "Linguiça", "Paio", "Salsichas Frango", "Salsichas Porco"],
-      "Presunto": [],
-      "Fiambre": ["Fiambre Cubos", "Fiambre Frango"],
-      "Queijo": ["Outro Queijo", "Queijo Bola", "Queijo Camembert", "Queijo de Faca", "Queijo Fatiado", "Queijo Ilha", "Queijo Ralado", "Queijo São Jorge"]
-    },
-
-    "Chocolates & Outros": {
-      "Chocolates": ["Amêndoas de Chocolate", "Bombons", "Ferrero Rocher", "Guylian", "Kinder", "M&Ms", "Merci", "Milka", "Ovo de Chocolate", "Tablete Lidl", "Outros Chocolates"],
-      "Gomas & Outros": ["Chupa-Chupas", "Gomas", "Rebuçados"],
-      "Sobremesas": ["Gelatina Doce", "Gelatina Mousse", "Gelatina Zero", "Petit Gâteau", "Pudim Zero", "Outras Sobremesas"]
-    },
-
-    "Enlatados": {
-      "Atum Lata": ["Atum Filete", "Atum Posta", "Atum Tenório"],
-      "Milho": ["Milho"],
-      "Salsichas": [],
-      "Feijão": ["Feijão Branco", "Feijão Encarnado", "Feijão Frade", "Feijão Manteiga", "Feijão Preto", "Feijão Vermelho"],
-      "Grão": ["Grão"],
-      "Cogumelos": ["Cogumelos Laminados"]
-    },
-
-    "Escritório & Escola": {
-      "Material": [],
-      "Escola": []
-    },
-
-    "Fruta & Legumes": {
-      "Fruta": ["Abacate", "Abacaxi", "Ameixa", "Amoras", "Ananás", "Banana", "Castanha", "Cerejas", "Clementina", "Dióspiro", "Framboesa", "Frutos Vermelhos", "Kiwi", "Laranja", "Maçã Fuji", "Maçã Gala", "Maçã Golden", "Maçã Reineta", "Maçã Royal", "Manga", "Melancia", "Melão", "Mirtilos", "Morangos", "Nectarina", "Papaia", "Pera", "Pêssego", "Pêssego Paraguaio", "Tangerina", "Uvas"],
-      "Legumes": ["Abóbora", "Acelgas", "Agrião", "Alface Frisada", "Alface Iceberg", "Alho Seco", "Alho-Francês", "Batata", "Batata aos Cubos", "Batata-Doce", "Beringela", "Beterraba", "Brócolos", "Cebola", "Cenoura", "Chuchu", "Coentros", "Cogumelos Brancos", "Cogumelos Castanhos", "Cogumelos Pleurotus", "Cogumelos Portobelo", "Cogumelos Shiitake", "Couve Chinesa", "Couve de Bruxelas", "Couve Lombarda", "Couve Roxa", "Couve-Coração", "Couve-Flor", "Courgette", "Ervilhas", "Espinafres", "Feijão-Verde", "Gengibre", "Grelos", "Limão", "Mistura Chinesa", "Pimentos", "Rebentos de Soja", "Tomate", "Tomate Cherry"],
-      "Outros Fruta & Legumes": ["Outros Fruta e Legumes"]
-    },
-
-    "Gelados": {
-      "Aldi": ["Funky Americans", "Pot Gourmand Salted Caramel", "Pot Gourmand Vanille Noix de Macadamia", "Pot Vanille Saveur Caramel Brownie"],
-      "Auchan": ["Coco"],
-      "Ben & Jerry": ["Brownie Party", "Cheesecake", "Chew Chew", "Chocolate Sundae Vermont", "Cone Together", "Dairy Free Caramel Brownie"],
-      "Carte d'Or": ["Blueberry Cheesecake", "Café", "Cheesecake", "Chocolate & Avelã", "Chocolate Brownie", "Cookie Chocolate", "Lemon Pie", "Noz", "Noz Pecan", "Salted Caramel", "Salted Caramel Cheesecake", "Tiramisù", "Outros"],
-      "Continente": ["Baunilha", "Pastel de Nata Seleção", "Requeijão e Abóbora Seleção", "Viennetta Cappuccino"],
-      "Cornetto": [],
-      "Fini": [],
-      "Gelateli": ["Café", "Choco Crisps", "Dark Chocolate", "Nocciolato", "Noz", "Viennetta Cappuccino"],
-      "Häagen-Dazs": ["Brownie Macchiato", "Peanut"],
-      "Jersey": [],
-      "Lidl": ["Americano", "Café", "Chocolate Branco", "Chocolate Negro", "Nozes", "Pint Baunilha Macadâmia", "Pint Brownie", "Pint Caramelo Salgado", "Proteína Caramelo", "Proteína Chocolate", "Remoinho Nozes", "Remoinho Tiramisù", "Tiramisù", "Outros"],
-      "Magnum": ["Double Caramel", "Magnum", "Magnum Bombons", "Pint Double Salted Caramel", "Pint White Choc & Cookies", "Pint White Chocolate", "Pistácio"],
-      "Mercadona": ["Cappuccino", "Cone Chocolate", "Cone Morango", "Super Nata"],
-      "O Gelado": [],
-      "Oh My Mooh": [],
-      "Ola": ["Cornetto Morango", "Mini Double Caramel"],
-      "Pingo Doce": ["Café", "Cheesecake", "Liégeois", "Pint Banana Chocolate", "Pint Brownie", "Pint Cheesecake", "Pint Speculoos", "Proteína", "Viennetta Cappuccino"],
-      "Pink Albatroz": [],
-      "Prozis": ["Il Gelato Avelã Italiana", "Il Gelato Café Arábica", "Il Gelato Sicilian Pistachio"],
-      "Quinta dos Açores": [],
-      "Swee": []
-    },
-
-    "Ginásio": {
-      "Barras Proteicas": ["Barra de Cereais Caramelo Salgado", "Barras Proteína Aldi", "Barras Proteína Chocolate e Cookie Dough", "Barras Proteína Lidl", "Barras Proteína Oat & Whey", "Barras Proteína Prozis", "Protein Filled Cookie"],
-      "Creatina": ["Creatina"],
-      "Manteiga Frutos Secos": ["Manteiga Amendoim em Pó Prozis", "Manteiga Amendoim MyProtein", "Manteiga Amendoim Prozis", "Manteiga Caju"],
-      "Proteína Whey": ["Proteína MyProtein", "Proteína Pack Amostras MyProtein"],
-      "Outros Ginásio": ["Bolo de Caneca", "Mistura para Panquecas", "Protein Spread", "Toppings"]
-    },
-
-    "Laticínios": {
-      "Iogurtes Colher": ["Iogurte Colher Grego", "Iogurte Colher Pack", "Iogurte Colher Proteína", "Iogurte Colher Proteína Lidl", "Iogurte Colher Proteína Quark Lidl", "Iogurte Colher Skyr", "Iogurte Gelatina", "Iogurte Natural Aldi 500g", "Iogurtes Colher Bio Lidl", "Queijo Quark 0%", "Queijo Quark 20%"],
-      "Iogurtes Líquidos": ["Compal Essencial", "Iogurte Líquido Pack", "Iogurte Líquido Proteína", "Iogurte Líquido Skyr"],
-      "Leite": ["Leite Chocolate", "Leite Gordo", "Leite Magro", "Leite Meio-Gordo", "Leite Pastagem", "Leite Proteico Individual Mimosa", "Leite Proteico Mimosa"],
-      "Manteiga": ["Becel Magra", "Becel Pro-Activ", "Manteiga com/sem Sal"],
-      "Mousse Proteína": ["Mousse Proteína Lidl"],
-      "Natas": ["Natas Frescas", "Natas UHT"],
-      "Ovos": ["Claras de Ovo", "Ovos", "Ovos Bio"],
-      "Pudim Proteína": ["Pudim Ehrmann", "Pudim Lindahl", "Pudim Proteína Aldi", "Pudim Proteína CNT", "Pudim Proteína Double Lidl", "Pudim Proteína Lidl", "Pudim Proteína Mercadona", "Pudim Proteína PD"],
-      "Queijo Fresco": ["Burrata", "Cottage", "Mozzarela Fresca", "Queijo Fresco", "Queijo Fresco de Barrar", "Queijo Mascarpone", "Queijo Philadelphia", "Ricotta"]
-    },
-
-    "Mercearia": {
-      "Arroz": ["Arroz Agulha", "Arroz Basmati", "Arroz Carolino", "Arroz Integral", "Arroz Risotto", "Arroz Uruguai"],
-      "Azeite": ["Azeite"],
-      "Café": ["Café Cápsulas", "Café em Pó", "Outras Cápsulas"],
-      "Culinária": ["Açúcar", "Aroma de Baunilha", "Bicarbonato de Sódio", "Cacau em Pó", "Chocolate Culinária 70%", "Chocolate Culinária 85%", "Chocolate Culinária Branco", "Coco Ralado", "Creme de Coco", "Farinha All Purpose", "Farinha Amido", "Farinha Culinária", "Farinha Pão", "Farinha Pizza", "Farinhas e Fermentos", "Fermento de Padeiro", "Fermento para Bolos", "Gelatina Culinária", "Leite Condensado", "Outro Chocolate Culinária", "Polpa de Maracujá"],
-      "Especiarias": ["Alho em Pó", "Canela", "Pimenta Cayenne"],
-      "Creme de Barrar": [],
-      "Leite de Coco": ["Leite de Coco"],
-      "Maionese": ["Maionese"],
-      "Massa": ["Bulgur", "Canelones", "Cuscuz", "Esparguete", "Esparguete Alfarroba", "Espirais", "Farfalle", "Fusilli", "Gnocchi", "Laços", "Lasanha", "Linguini", "Lírios", "Maccheroni", "Massas Rana", "Tagliatelle", "Tortellini Lidl"],
-      "Massa Fresca": ["Massa Filo", "Massa Folhada", "Massa Lasanha", "Massa Pizza", "Massa Quebrada"],
-      "Mel e Compotas": [],
-      "Molhos & Temperos": ["Massa de Pimentão", "Molho de Caril", "Molho de Crepe Chinês", "Molho de Soja", "Pesto"],
-      "Óleo": ["Óleo", "Óleo de Coco"],
-      "Polpa de Tomate": ["Polpa de Tomate", "Polpa de Tomate Cebola e Alho", "Polpa de Tomate Manjericão e Oregãos", "Tomate Pelado", "Tomate Triturado"],
-      "Quinoa e Semelhantes": [],
-      "Sal": ["Sal de Mesa", "Sal Grosso"],
-      "Tapioca": [],
-      "Vinagre": ["Vinagre Balsâmico", "Vinagre de Sidra"],
-      "Vinho de Culinária": ["Vinho de Culinária"]
-    },
-
-    "Diversos": {
-      "Diversos Casa": ["Diversos Casa"],
-      "Diversos Outros": ["Diversos Outros", "Diversos Roupa"]
-    },
-
-    "N/A": {
-      "N/A": ["N/A"]
-    },
-
-    "Não Reportado": {
-      "Não Reportado": ["Não Reportado"]
-    },
-
-    "Padaria": {
-      "Croissants & Outros": ["Baguete Recheio Alho", "Baguete Recheio Ervas", "Baguete Tomate e Manjericão", "Bolos", "Croissant", "Croissant Chocolate", "Pão com Chouriço", "Pão de Alho"],
-      "Pão": ["Baguetes e Cacetes", "Bijou", "Pão 8 Cereais", "Pão Abóbora e Nozes", "Pão Braviera", "Pão Broa de Milho", "Pão Carcaça", "Pão Centeio", "Pão Costa Ferreira", "Pão de Água", "Pão Massa-Mãe", "Pão Mistura", "Pão Rio Maior", "Pão Rústico", "Pão Rustik", "Pão Seco", "Pão Sementes", "Pão Trigo Avó", "Outros Pães"],
-      "Tortilhas": ["Tortilhas Integrais", "Tortilhas Normais"],
-      "Tostas": ["Palitos", "Tostas Finas", "Tostas Lidl", "Tostas PD"]
-    },
-
-    "Pastilhas": {
-      "Pastilhas Continente": ["Morango", "Spearmint"],
-      "Pastilhas Orbit": ["Orbit"],
-      "Pastilhas Pingo Doce": ["Frutos Vermelhos", "Morango", "Spearmint"],
-      "Pastilhas Trident": ["60min Spearmint", "Max Spearmint", "Monster Lollipop", "Spearmint", "Watermelon"],
-      "Pastilhas Outros": ["Outros"]
-    },
-
-    "Peixaria": {
-      "Atum": ["Atum", "Ventresca de Atum"],
-      "Bacalhau": ["Bacalhau Desfiado", "Bacalhau Lombo", "Bacalhau Posta Tradicional"],
-      "Carapau": ["Carapau"],
-      "Cherne": ["Cherne"],
-      "Corvina": ["Corvina"],
-      "Dentão": ["Dentão"],
-      "Dourada": ["Dourada"],
-      "Espadarte": [],
-      "Filetes": ["Filetes Pangasius", "Filetes Peixe-Gato", "Filetes Pescada"],
-      "Linguado": [],
-      "Lulas": [],
-      "Marisco": ["Camarão Miolo", "Camarão Tigre", "Gambão"],
-      "Paloco": ["Paloco"],
-      "Pargo": ["Pargo"],
-      "Peixe-Espada": ["Peixe-Espada"],
-      "Pescada": ["Medalhões Continente", "Medalhões Lidl", "Medalhões Pescanova", "Mimos Pescanova"],
-      "Red Fish": ["Red Fish"],
-      "Robalo": ["Robalo"],
-      "Salmão": ["Lombo de Salmão", "Posta de Salmão"],
-      "Solha": ["Solha"],
-      "Tamboril": []
-    },
-
-    "Puericultura": {
-      "Alimentação": ["Bolsa de Fruta", "Cereais / Papas", "Fórmula"],
-      "Acessórios": [],
-      "Fraldas": ["Fraldas"],
-      "Brinquedos": [],
-      "Resguardos": [],
-      "Compressas": [],
-      "Toalhitas": [],
-      "Cremes e Banho": []
-    },
-
-    "Refeições": {
-      "Acompanhamentos": ["Batata Frita", "Batatas Gratinadas"],
-      "Entradas": ["Croquetes, Empanadas e Outros", "Folhados", "Lasanha"],
-      "Refeições": ["Croquetes", "Douradinhos", "Filetes", "Filetes Iglo", "Frango Assado", "Lasanha", "Nuggets", "Pastéis de Bacalhau", "Pastéis de Bacalhau com Queijo Serra", "Pizza", "Rissóis", "Outras Refeições"]
-    },
-
-    "Saúde & Higiene": {
-      "Banho Amaciador": ["Amaciador Herbal", "Amaciador Lidl"],
-      "Banho Champô": ["Champô Herbal", "Champô Lidl"],
-      "Banho Gel": ["Axe", "Gel de Banho Dove", "Gel de Banho Lidl", "Outros Gel de Banho"],
-      "Creme Corpo": ["Creme Corpo", "Creme Nivea Suavizante", "Protetor Solar Nivea", "Outros Cremes"],
-      "Creme Mãos": ["Creme Mãos"],
-      "Creme Rosto": ["Contorno Olhos Anti-Rugas", "Creme Rosto Lidl", "Gel Limpeza Suave/Esfoliante"],
-      "Dentes": ["Fio Dental", "Pasta de Dentes Aquafresh", "Pasta de Dentes Colgate", "Outros Dentes"],
-      "Desodorizante": ["Desodorizante Roll-On Homem", "Desodorizante Roll-On Mulher", "Desodorizante Spray"],
-      "Higiene Outros": ["Água Micelar", "Batom Labello", "Batom PD", "Discos Desmaquilhantes", "Pensos Higiénicos", "Sabonete Líquido", "Toalhitas"],
-      "Lenços": ["Lenços Faciais Renova", "Pacote de Lenços"],
-      "Papel Higiénico": ["Papel Higiénico PD", "Renova", "Scottex"],
-      "Saúde & Farmácia": ["Álcool Etílico", "Autoteste Covid", "Pensos", "Soro Fisiológico", "Outros Saúde & Farmácia"],
-      "Utensílios": []
-    },
-
-    "Talho": {
-      "Frango/Peru": ["Frango Bifes/Peito", "Frango Bifes/Peito Campo", "Frango Cubos", "Frango Estrogonofe", "Frango Lombinhos", "Frango Perninhas", "Peru Bifes", "Peru Cubos", "Peru Estrogonofe", "Peru Lombinho", "Peru Perninha"],
-      "Porco": ["Bifes Lombo de Porco", "Carne Picada", "Costeleta Lombo de Porco", "Entrecosto", "Lombinhos de Porco", "Lombo de Porco Inteiro", "Salsichas Frescas"],
-      "Vaca": ["Almôndegas", "Almôndegas Angus", "Bife Alcatra", "Bife Alcatra Angus", "Bife Pá/Acém", "Bife Redondo", "Bife Vazia", "Carne Picada", "Carne Picada Angus", "Entrecôte", "Hambúrguer", "Hambúrguer Angus", "Jardineira", "Lombo de Vaca", "Maminha", "Naco", "Picanha", "T-Bone"],
-      "Borrego": [],
-      "Pato": []
-    },
-
     "Vegetariano": {
-      "Bebidas": [],
-      "Iogurte": [],
-      "Refeição": ["Chouriço Vegan", "Hambúrguer Vegan", "Lasanha Vegan"],
-      "Seitan": ["Seitan Continente", "Seitan Vegie"],
-      "Soja": ["Soja Texturizada"],
-      "Tofu": ["Tofu Bio Fumado Lidl", "Tofu Bio Natural Continente", "Tofu Bio Natural Lidl"]
+      "Substitutos de carne": [
+        "Tofu",
+        "Tempeh",
+        "Seitan",
+        "Hambúrguer vegetal",
+        "Salsicha vegetal",
+        "Almôndega vegetal",
+        "Atum vegetal"
+      ],
+      "Substitutos de lacticínios": [
+        "Queijo vegetal",
+        "Iogurte vegetal",
+        "Natas vegetais",
+        "Manteiga vegetal"
+      ],
+      "Bebidas vegetais": [
+        "Bebida de soja",
+        "Bebida de aveia",
+        "Bebida de amêndoa",
+        "Bebida de coco"
+      ],
+      "Refeições e preparados vegetarianos": [
+        "Falafel",
+        "Lasanha vegetariana",
+        "Salada vegetariana pronta",
+        "Wrap/sandes vegetariana"
+      ]
+    },
+    "Animais": {
+      "Cão": [
+        "Alimentação",
+        "Higiene e Acessórios"
+      ],
+      "Gato": [
+        "Alimentação",
+        "Higiene e Acessórios"
+      ],
+      "Outros Animais": [
+        "Alimentação",
+        "Higiene e Acessórios"
+      ]
+    },
+    "Aperitivos": {
+      "Batatas Fritas & Snacks": [
+        "Batata Frita",
+        "Nachos",
+        "Pipocas",
+        "Snacks salgados"
+      ],
+      "Dips & Molhos": [
+        "Guacamole",
+        "Húmus",
+        "Molhos Frios"
+      ],
+      "Frutos Secos & Sementes": [
+        "Amêndoa",
+        "Amendoim",
+        "Avelã",
+        "Caju",
+        "Noz",
+        "Pistácio",
+        "Sementes",
+        "Mistos"
+      ],
+      "Petiscos Frios": [
+        "Azeitona",
+        "Tremoço",
+        "Pickles"
+      ]
+    },
+    "Bazar & Utilidades": {
+      "Carro": [
+        "Acessórios Auto",
+        "Fluidos & Químicos",
+        "Limpeza & Cuidados Auto"
+      ],
+      "Casa & Têxtil": [
+        "Arrumação & Organização",
+        "Iluminação & Velas",
+        "Têxtil de Lar"
+      ],
+      "Cozinha & Mesa": [
+        "Louça & Serviço",
+        "Recipientes & conservação",
+        "Utensílios & Preparação"
+      ],
+      "Eletrónica": [
+        "Cabos & Conetividade",
+        "Pequenos Eletrodomésticos",
+        "Pilhas & baterias"
+      ],
+      "Sazonal & Festas": [
+        "Artigos de Festa",
+        "Embrulhos e Presentes",
+        "Época Festiva"
+      ]
+    },
+    "Bebidas": {
+      "Águas & Gelo": [
+        "Água Com Gás",
+        "Água Sem Gás",
+        "Águas Aromatizadas",
+        "Gelo Alimentar"
+      ],
+      "Chás Frios & Infusões": [
+        "Ice Tea",
+        "Kombuchas & Infusões Frias"
+      ],
+      "Energéticas & Desportivas": [
+        "Bebidas Energéticas",
+        "Bebidas Isotónicas & Hidratação"
+      ],
+      "Refrigerantes": [
+        "Águas Tónicas & Mixers",
+        "Refrigerantes com Gás",
+        "Refrigerantes de Cola",
+        "Refrigerantes Sem Gás"
+      ],
+      "Sumos & Néctares": [
+        "Néctares & Bebidas de Fruta",
+        "Sumos 100% & Espremidos"
+      ]
+    },
+    "Bolachas & Biscoitos": {
+      "Bolachas Doces": [
+        "Sortido Húngaro",
+        "Biscoitos Manteiga",
+        "Biscoito de Canela",
+        "Línguas de Veado",
+        "Bolacha Maria",
+        "Bolacha Torrada",
+        "Bolacha sanduíche de chocolate",
+        "Bolacha Coberta de Chocolate",
+        "Cookie",
+        "Wafer"
+      ],
+      "Salgadas & Aperitivo": [
+        "Bolacha Água e Sal",
+        "Cracker Salgado"
+      ],
+      "Saudáveis & Cereais": [
+        "Bolachas Integrais & Fibras",
+        "Bolacha de Pequeno-Almoço",
+        "Bolacha Marinheira",
+        "Tortilha de Arroz",
+        "Tortilha de Milho"
+      ]
+    },
+    "Bricolage & DIY": {
+      "Canalização": [
+        "Torneiras, Chuveiros & Acessórios",
+        "Tubagens, Vedantes & Descargas"
+      ],
+      "Colas, Fitas & Vedação": [
+        "Colas & Silicones"
+      ],
+      "Colas, Fitas & Vedantes": [
+        "Fitas Adesivas Técnicas"
+      ],
+      "Eletricidade": [
+        "Iluminação Técnica & Aparelhagem",
+        "Material Elétrico",
+        "Cabos"
+      ],
+      "Ferramentas": [
+        "Ferramentas Elétricas & Acessórios",
+        "Ferramentas Manuais"
+      ],
+      "Fixação & Ferragens": [
+        "Parafusos, Buchas & Pregos"
+      ],
+      "Jardinagem": [
+        "Ferramentas de Jardim",
+        "Sementes",
+        "Rega & Cuidados",
+        "Substratos",
+        "Nutrição e Adubo",
+        "Vasos, Pratos & Suportes"
+      ],
+      "Pintura & Acabamentos": [
+        "Acessórios de Pintura & Lixas",
+        "Tintas & Esmaltes"
+      ]
+    },
+    "Brinquedos & Hobbies": {
+      "Construção & Modelação": [
+        "Blocos de construção",
+        "Plasticina & Criatividade Lúdica"
+      ],
+      "Figuras & Faz-de-Conta": [
+        "Bonecos & Figuras de Ação",
+        "Cozinhas & Imitação de Papéis"
+      ],
+      "Jogos & Puzzles": [
+        "Jogos de Tabuleiro & Cartas",
+        "Puzzles & Quebra-Cabeças"
+      ],
+      "Primeira Infância & Bebé": [
+        "Brinquedos Didáticos & Encaixe",
+        "Peluches"
+      ],
+      "Veículos & Ar Livre": [
+        "Carrinhos & Pistas",
+        "Desporto & Brincadeiras de Rua"
+      ]
+    },
+    "Café, Chá & Solúveis": {
+      "Café": [
+        "Café em Cápsulas",
+        "Café em Grão & Moído",
+        "Café Solúvel"
+      ],
+      "Chás & Infusões": [
+        "Chás & Tisanas em Saquetas"
+      ],
+      "Solúveis & Bebidas Quentes": [
+        "Achocolatados",
+        "Cereais"
+      ]
+    },
+    "Cereais & Pequeno-Almoço": {
+      "Aveia": [
+        "Aveia"
+      ],
+      "Barras de Cereais": [
+        "Barras de Cereais"
+      ],
+      "Cereais": [
+        "Cereais Doces",
+        "Flocos Tradicionais & Integrais"
+      ],
+      "Farinhas & Papas": [
+        "Papas de Cereais Solúveis"
+      ],
+      "Granolas & Muesli": [
+        "Granolas",
+        "Muesli"
+      ],
+      "Sementes": [
+        "Sementes Alimentares"
+      ]
+    },
+    "Charcutaria & Queijos": {
+      "Charcutaria & Frios": [
+        "Fiambres",
+        "Fumados & Salames",
+        "Presuntos"
+      ],
+      "Enchidos & Tradicionais": [
+        "Enchidos"
+      ],
+      "Queijos de Corte & Sandes": [
+        "Queijo Flamengo & Prato",
+        "Queijos Culinários",
+        "Queijos Curados & Especiais",
+        "Queijos Fundidos & para Barrar"
+      ],
+      "Salsicharia": [
+        "Salsichas"
+      ]
+    },
+    "Chocolates": {
+      "Bombons & Presentes": [
+        "Caixas de Bombons & Sortidos"
+      ],
+      "Snacks & Porções Individuais": [
+        "Barras & Snacks de Chocolate",
+        "Drageias & Pequenos Formatos"
+      ],
+      "Tabletes": [
+        "Tabletes com Inclusões",
+        "Tabletes Simples"
+      ]
+    },
+    "Doces & Guloseimas": {
+      "Confeitaria Tradicional & Época": [
+        "Amêndoa Confeitada",
+        "Doces de Época"
+      ],
+      "Gomas": [
+        "Goma/Espuma"
+      ],
+      "Pastilhas Elásticas": [
+        "Pastilha Elástica"
+      ],
+      "Rebuçados & Chupa-Chupas": [
+        "Chupa-Chupa",
+        "Rebuçado",
+        "Caramelo"
+      ]
+    },
+    "Escola & Escritório": {
+      "Consumíveis": [
+        "Tinteiros & Toners"
+      ],
+      "Escrita": [
+        "Canetas & Esferográficas",
+        "Lápis & Lapiseiras"
+      ],
+      "Organização & Arquivo": [
+        "Marcadores & Corretores",
+        "Pastas & Dossiês"
+      ],
+      "Papelaria": [
+        "Cadernos & Blocos",
+        "Papel & Resmas"
+      ],
+      "Transporte & Estojos": [
+        "Estojos",
+        "Mochilas"
+      ]
+    },
+    "Fruta & Legumes": {
+      "Ervas Aromáticas": [
+        "Salsa",
+        "Coentros",
+        "Manjericão",
+        "Hortelã",
+        "Alecrim",
+        "Cebolinho"
+      ],
+      "Fruta": [
+        "Laranja",
+        "Limão",
+        "Tangerina",
+        "Maçã",
+        "Pêra",
+        "Pêssego",
+        "Banana",
+        "Ananás",
+        "Manga",
+        "Kiwi",
+        "Abacate",
+        "Morango",
+        "Framboesa",
+        "Mirtilo",
+        "Melão",
+        "Melancia",
+        "Uva"
+      ],
+      "Legumes & Hortaliças": [
+        "Cogumelo Paris",
+        "Cogumelo Portobello",
+        "Couve-flor",
+        "Brócolos",
+        "Couve Portuguesa",
+        "Alface",
+        "Espinafre",
+        "Rúcula",
+        "Tomate",
+        "Pepino",
+        "Pimento",
+        "Abóbora",
+        "Batata",
+        "Cenoura",
+        "Cebola",
+        "Alho"
+      ],
+      "Preparados": [
+        "Salada Pronta a Comer",
+        "Legumes Cortados para Cozinhar"
+      ]
+    },
+    "Garrafeira": {
+      "Cervejas & Sidras": [
+        "Cervejas Especiais & Artesanais",
+        "Cervejas Tradicionais",
+        "Sidras & Hard Seltzers"
+      ],
+      "Espirituosas & Destilados": [
+        "Aguardentes, Brandies & Cognac",
+        "Gin",
+        "Vodka & Rum",
+        "Whisky"
+      ],
+      "Espumantes & Champanhes": [
+        "Champanhe, Cava & Prosecco",
+        "Espumantes Nacionais"
+      ],
+      "Licores & Aperitivos": [
+        "Aperitivos, Vermutes & Bitters",
+        "Licores Tradicionais & Cremosos"
+      ],
+      "Vinhos de Mesa": [
+        "Vinho Branco",
+        "Vinho Tinto",
+        "Vinho Verde & Rosé"
+      ],
+      "Vinhos Especiais & Fortificados": [
+        "Madeira, Moscatel & Generosos",
+        "Vinho do Porto"
+      ]
+    },
+    "Gelados": {
+      "Caixas, Copos & Sobremesas": [
+        "Caixas Familiares",
+        "Copos & Pints",
+        "Tartes & Sobremesas Geladas"
+      ],
+      "Gelados Individuais & Multipacks": [
+        "Cones",
+        "Gelados de Pauzinho & Fruta",
+        "Minis",
+        "Sanduíches"
+      ]
+    },
+    "Higiene & Beleza": {
+      "Banho & Duche": [
+        "Champô",
+        "Amaciador",
+        "Géis de Banho & Sabonetes"
+      ],
+      "Barbear & Depilação": [
+        "Lâminas & Aparelhos",
+        "Preparações & Pós-Depilatórios"
+      ],
+      "Cabelo": [
+        "Coloração",
+        "Tratamento & Finalização"
+      ],
+      "Cuidados de Corpo": [
+        "Desodorizantes",
+        "Hidratação",
+        "Tratamento"
+      ],
+      "Bem Estar Sexual": [
+        "Lubrificante",
+        "Preservativos"
+      ],
+      "Higiene Íntima": [
+        "Pensos & Tampões"
+      ],
+      "Higiene Oral": [
+        "Elixires & Complementos",
+        "Escovas",
+        "Fio Dentário",
+        "Pastas de Dentes"
+      ],
+      "Papel & Celulose": [
+        "Lenços Faciais & de Bolso",
+        "Papel Higiénico",
+        "Toalhitas Humidas"
+      ],
+      "Proteção Solar": [
+        "Solares"
+      ],
+      "Rosto & Cosmética": [
+        "Hidratação & Tratamento de Rosto",
+        "Limpeza Facial",
+        "Maquilhagem"
+      ]
+    },
+    "Laticínios & Ovos": {
+      "Iogurtes": [
+        "Iogurtes Líquidos",
+        "Iogurtes Sólidos & Cremosos",
+        "Skyr e Quark",
+        "Sobremesas Lácteas"
+      ],
+      "Leite & Bebidas Lácteas": [
+        "Bebidas Lácteas & Achocolatados",
+        "Leite de Vaca"
+      ],
+      "Manteigas & Gorduras Lácteas": [
+        "Creme Vegetal",
+        "Manteiga"
+      ],
+      "Natas": [
+        "Natas Culinárias",
+        "Natas para Bater",
+        "Natas Frescas"
+      ],
+      "Ovos & Claras": [
+        "Gema Pasteurizada",
+        "Claras Pasteurizadas",
+        "Ovos Frescos"
+      ],
+      "Queijos Frescos": [
+        "Queijos Frescos",
+        "Requeijão",
+        "Feta",
+        "Mozzarella Fresca"
+      ]
+    },
+    "Limpeza & Manutenção": {
+      "Loiça": [
+        "Lavagem de Loiça à Mão",
+        "Máquina de Lavar Loiça"
+      ],
+      "Superfícies & Casa": [
+        "Cozinha & Desengordurantes",
+        "Pavimentos & Multiusos",
+        "WC & Desinfeção"
+      ],
+      "Tratamento de Roupa": [
+        "Amaciadores & Aditivos",
+        "Detergentes de Roupa"
+      ],
+      "Utensílios & Descartáveis": [
+        "Esponjas, Panos & Limpeza",
+        "Sacos de Lixo",
+        "Conservação"
+      ]
+    },
+    "Mercearia": {
+      "Acompanhamentos": [
+        "Arroz",
+        "Cereais",
+        "Leguminosas",
+        "Massas"
+      ],
+      "Conservas": [
+        "Atum",
+        "Milho",
+        "Cogumelos"
+      ],
+      "Farinhas & Pastelaria": [
+        "Açúcar & Adoçantes",
+        "Farinhas",
+        "Fermentos"
+      ],
+      "Massas Frescas": [
+        "Massas Frescas"
+      ],
+      "Tempero & Condimentos": [
+        "Azeite",
+        "Óleo",
+        "Vinagre",
+        "Molhos & Caldos",
+        "Sal & Especiarias",
+        "Tomate & Polpas"
+      ]
+    },
+    "Outros": {
+      "Outros": [
+        "Outros"
+      ]
+    },
+    "Padaria": {
+      "Pão Embalado & de Forma": [
+        "Pães Especiais & Sanduíche",
+        "Pão de Forma Tradicional"
+      ],
+      "Pão Fresco & Tradicional": [
+        "Pães Grandes, Broas & Formatos",
+        "Pães Individuais & Pequenos"
+      ],
+      "Tostas, Gressinos & Secos": [
+        "Snacks de Pão & Gressinos",
+        "Tostas & Pão Tostado"
+      ]
+    },
+    "Pastelaria": {
+      "Bolos Familiares & Festivos": [
+        "Bolos de Celebração",
+        "Bolos de Partilha & Tartes"
+      ],
+      "Pastelaria Fresca Individual": [
+        "Croissants & Massas Lêvedas",
+        "Pastelaria Tradicional"
+      ],
+      "Pastelaria Seca & Embalada": [
+        "Biscoitos & Bolos Secos",
+        "Queques & Madalenas"
+      ]
+    },
+    "Peixaria & Marisco": {
+      "Bacalhau & Afins": [
+        "Bacalhau Salgado Seco & Demolhado",
+        "Paloco & Outros Gadídeos"
+      ],
+      "Grandes Pelágicos & Tubarão": [
+        "Espadarte",
+        "Tintureira"
+      ],
+      "Marisco & Bivalves": [
+        "Bivalves & Conchas",
+        "Camarão & Gambas",
+        "Crustáceos",
+        "Sapateira"
+      ],
+      "Moluscos & Cefalópodes": [
+        "Polvo",
+        "Lula",
+        "Choco"
+      ],
+      "Peixe Branco & Magro": [
+        "Peixe-Espada",
+        "Peixe-Gato",
+        "Pangasius",
+        "Corvina",
+        "Pargo",
+        "Dentão",
+        "Red Fish",
+        "Cherne",
+        "Tamboril",
+        "Sargo",
+        "Garoupa",
+        "Pescada",
+        "Dourada"
+      ],
+      "Peixe Plano": [
+        "Linguado",
+        "Solha",
+        "Pregado"
+      ],
+      "Peixe Gordo": [
+        "Salmão",
+        "Atum",
+        "Truta",
+        "Sardinha",
+        "Carapau"
+      ],
+      "Preparados": [
+        "Preparados de Marisco & Delícias"
+      ]
+    },
+    "Puericultura": {
+      "Acessórios & Alimentação": [
+        "Biberões, Tetinas & Copos",
+        "Chupetas & Mordedores",
+        "Utensílios & Pequeno Equipamento"
+      ],
+      "Alimentação Infantil": [
+        "Boiões & Saquetas de Fruta",
+        "Leites Infantis",
+        "Papas & Cereais",
+        "Snacks & Bolachas de Bebé"
+      ],
+      "Banho & Higiene de Bebé": [
+        "Gel de Banho & Champô",
+        "Hidratação & Cuidados Corporais",
+        "Higiene Diária & Cuidados"
+      ],
+      "Fraldas & Muda de Fralda": [
+        "Cremes de Muda & Barreira",
+        "Fraldas de Água & Especiais",
+        "Fraldas Diárias",
+        "Toalhitas Húmidas"
+      ]
+    },
+    "Refeições Prontas": {
+      "Acompanhamentos Prontos": [
+        "Batatas Pré-Fritas & Especialidades"
+      ],
+      "Panados & Preparações de Refeição": [
+        "Douradinhos",
+        "Panados Peixe",
+        "Nuggets de Carne",
+        "Panados Carne"
+      ],
+      "Pizzas & Quiches": [
+        "Pizzas",
+        "Quiches & Tartes Salgadas"
+      ],
+      "Pratos Prontos de Forno & Tacho": [
+        "Lasanhas & Massas",
+        "Pratos Tradicionais Portugueses"
+      ],
+      "Salgados Tradicionais & Petiscos": [
+        "Folhados & Empadas",
+        "Rissóis, Croquetes & Pastéis"
+      ],
+      "Sopas & Cremes": [
+        "Sopas Frescas de Dose"
+      ],
+      "Take-Away & Churrasqueira": [
+        "Assados & Grelhados"
+      ]
+    },
+    "Talho": {
+      "Bovino": [
+        "Cortes Tradicionais & com Osso",
+        "Peças Nobres & Bifes",
+        "Picados & Hambúrgueres"
+      ],
+      "Coelho & Caça": [
+        "Coelho & Caça"
+      ],
+      "Frango": [
+        "Peças & Cortes",
+        "Picados & Hambúrgueres"
+      ],
+      "Outras Aves": [
+        "Pato, Codorniz & Outros"
+      ],
+      "Ovino & Caprino": [
+        "Borrego & Cabrito"
+      ],
+      "Peru": [
+        "Peças & Cortes",
+        "Picados & Hambúrgueres"
+      ],
+      "Preparados de Talho": [
+        "Espetadas & Outros Preparados",
+        "Picados Mistos & Almôndegas",
+        "Salsicharia Fresca"
+      ],
+      "Suíno": [
+        "Bifes, Febras & Secretos",
+        "Peças & Entrecosto",
+        "Picados & Hambúrgueres"
+      ]
     }
   },
-
   "review_candidates": [
     "L3 = genero de produto, nao marca/SKU: entradas com marca embutida (ex.: 'Batata Frita Continente', 'Óleo Fula', 'Azeite Galo', 'Nut Choc CNT') foram normalizadas para o genero; a marca deve migrar para MasterProduct.brand.",
     "Gelados e Pastilhas mantêm marca-como-L2 (analitica premium deliberada). Recomenda-se marcar esses nos L2 com brand_axis=true no seeder.",
