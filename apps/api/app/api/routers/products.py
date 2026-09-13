@@ -23,6 +23,7 @@ from app.models.products import MasterProduct, ProductAlias
 from app.models.supermarket import SupermarketReceipt, SupermarketReceiptItem
 from app.schemas.common import Ok, Page
 from app.schemas.products import (
+    AttributeOption,
     BulkProductImportCommitIn,
     BulkProductImportPreviewOut,
     BulkProductImportRow,
@@ -49,11 +50,18 @@ from app.schemas.products import (
     MergeRequest,
     PackVariantAdd,
     ProductAliasOut,
+    ProductAttributeVocabularyOut,
     ProductOccurrence,
     ProductSearchResult,
 )
 from app.services import documents, reference_data
-from app.services.supermarket import catalogue, legacy_import, prices_service, products_service
+from app.services.supermarket import (
+    attributes,
+    catalogue,
+    legacy_import,
+    prices_service,
+    products_service,
+)
 from app.services.supermarket import service as supermarket
 from app.services.supermarket.normalize import normalize_description
 
@@ -115,6 +123,11 @@ def list_products(
     category_id: uuid.UUID | None = None,
     category_status: str | None = None,
     sold_by_weight: bool | None = None,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: Annotated[list[str] | None, Query()] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> Page[MasterProductOut]:
@@ -128,6 +141,14 @@ def list_products(
         stmt = stmt.where(MasterProduct.category_status == category_status)
     if sold_by_weight is not None:
         stmt = stmt.where(MasterProduct.sold_by_weight.is_(sold_by_weight))
+    stmt = products_service.apply_attribute_filters(
+        stmt,
+        is_own_brand=is_own_brand,
+        brand=brand,
+        conservation=conservation,
+        presentation=presentation,
+        dietary=dietary,
+    )
 
     total = int(db.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
     rows = db.scalars(
@@ -197,6 +218,18 @@ def list_merge_candidates(ctx: CurrentAuth, db: Db) -> list[MergeCandidate]:
         )
         for candidate in products_service.merge_candidates(db)
     ]
+
+
+@products_router.get("/attributes", response_model=ProductAttributeVocabularyOut)
+def product_attribute_vocabulary(ctx: CurrentAuth) -> ProductAttributeVocabularyOut:
+    """Registered above ``/{product_id}``: a static segment declared after a bare
+    ``/{id}`` route is swallowed by it and fails as a 422 (see ADR-0055's note)."""
+    return ProductAttributeVocabularyOut(
+        **{
+            axis: [AttributeOption(**option) for option in options]
+            for axis, options in attributes.vocabulary().items()
+        }
+    )
 
 
 # --- Bulk import (curated product log) -----------------------------------------

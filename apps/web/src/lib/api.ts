@@ -38,10 +38,12 @@ export function onUnauthorized(listener: () => void) {
 const BASE = '/api';
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+type QueryValue = string | number | boolean | null | undefined;
+
 type RequestOptions = {
   method?: string;
   body?: unknown;
-  query?: Record<string, string | number | boolean | null | undefined>;
+  query?: Record<string, QueryValue | QueryValue[]>;
   formData?: FormData;
   signal?: AbortSignal;
 };
@@ -51,8 +53,12 @@ function buildUrl(path: string, query?: RequestOptions['query']) {
   if (!query) return url;
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value === undefined || value === null || value === '') continue;
-    params.set(key, String(value));
+    // A repeated key, not a comma-joined one: that is the only shape FastAPI
+    // reads back as a list.
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item === undefined || item === null || item === '') continue;
+      params.append(key, String(item));
+    }
   }
   const qs = params.toString();
   return qs ? `${url}?${qs}` : url;

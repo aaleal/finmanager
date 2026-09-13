@@ -62,3 +62,5 @@ One short file per non-obvious decision, append-only. The module specification s
 | [0055](0055-the-supermarket-module-stops-calling-itself-receipts.md) | The supermarket module stops calling itself "receipts" |
 | [0056](0056-category-import-is-additive-only.md) | Category import is additive-only, and it round-trips through the export |
 | [0057](0057-the-grocery-taxonomy-loads-on-demand-not-at-boot.md) | The grocery taxonomy loads on demand, not at boot (supersedes part of 0029) |
+| [0058](0058-a-cut-is-an-axis-of-the-product-not-a-second-identity.md) | A cut is an axis of the product, not a second identity |
+| [0059](0059-a-closed-set-gets-a-check-a-growing-one-gets-a-dictionary.md) | A closed set gets a CHECK, a growing one gets a dictionary |

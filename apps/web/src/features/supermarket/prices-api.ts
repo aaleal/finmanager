@@ -38,13 +38,45 @@ export function useShrinkflation(fs: FsFilter = 'all') {
   });
 }
 
-export function useCategorySpend(params: { level?: number; fs?: FsFilter }) {
+export type SpendDimension = 'category' | 'brand' | 'own_brand' | 'conservation' | 'presentation';
+
+export type SpendFilters = {
+  level?: number;
+  dimension?: SpendDimension;
+  fs?: FsFilter;
+  is_own_brand?: boolean;
+  brand?: string;
+  conservation?: string;
+  presentation?: string;
+  dietary?: string[];
+};
+
+export function useCategorySpend(params: SpendFilters) {
   const scope = useScope();
   return useQuery({
     queryKey: ['prices', 'category-spend', scope, params],
     queryFn: () =>
       api.get<CategorySpend[]>('/supermarket/analytics/category-spend', {
         level: params.level ?? 1,
+        dimension: params.dimension ?? 'category',
+        fs: params.fs ?? 'all',
+        is_own_brand: params.is_own_brand,
+        brand: params.brand,
+        conservation: params.conservation,
+        presentation: params.presentation,
+        dietary: params.dietary,
+      }),
+  });
+}
+
+/** Its own endpoint because the rows deliberately do not sum to total spend: a
+ * product carrying two tags is counted under both. */
+export function useDietarySpend(params: { fs?: FsFilter } = {}) {
+  const scope = useScope();
+  return useQuery({
+    queryKey: ['prices', 'dietary-spend', scope, params],
+    queryFn: () =>
+      api.get<CategorySpend[]>('/supermarket/analytics/dietary-spend', {
         fs: params.fs ?? 'all',
       }),
   });

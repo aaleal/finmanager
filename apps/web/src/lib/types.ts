@@ -74,6 +74,9 @@ export type ReceiptStatus = ReceiptSummary['status'];
 
 // --- Product catalogue and the GROCERY taxonomy (M1b) ------------------------
 export type MasterProduct = Schemas['MasterProductOut'];
+export type ProductAttributeVocabulary = Schemas['ProductAttributeVocabularyOut'];
+export type AttributeOption = Schemas['AttributeOption'];
+export type Conservation = NonNullable<MasterProduct['conservation']>;
 export type ProductSearchResult = Schemas['ProductSearchResult'];
 export type ProductAlias = Schemas['ProductAliasOut'];
 export type ProductOccurrence = Schemas['ProductOccurrence'];

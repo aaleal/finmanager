@@ -22,7 +22,7 @@ import {
 import { eur, num } from '@/lib/format';
 import type { FsFilter } from '@/lib/types';
 import { FS_FILTER_OPTIONS } from './constants';
-import { useCategorySpend } from './prices-api';
+import { useCategorySpend, useDietarySpend, type SpendDimension } from './prices-api';
 
 const SLICE_COLORS = [
   'hsl(var(--primary))',
@@ -39,6 +39,19 @@ const LEVEL_OPTIONS = [
   { value: '3', label: 'Nível 3' },
 ];
 
+/** `dietary` is deliberately not a `SpendDimension`: tags overlap, so its rows do
+ * not partition spend and it comes from its own endpoint. */
+const DIETARY = 'dietary';
+
+const DIMENSION_OPTIONS = [
+  { value: 'category', label: 'Categoria' },
+  { value: 'brand', label: 'Marca' },
+  { value: 'own_brand', label: 'Marca branca' },
+  { value: 'conservation', label: 'Conservação' },
+  { value: 'presentation', label: 'Corte / apresentação' },
+  { value: DIETARY, label: 'Atributo dietético' },
+];
+
 function SpendTooltip({ active, payload }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
@@ -52,10 +65,20 @@ function SpendTooltip({ active, payload }: TooltipProps<number, string>) {
 
 export function SpendPanel() {
   const [level, setLevel] = React.useState('1');
+  const [dimension, setDimension] = React.useState<string>('category');
   const [fs, setFs] = React.useState<FsFilter>('all');
 
-  const spend = useCategorySpend({ level: Number(level), fs });
+  const byDietary = dimension === DIETARY;
+  const categorySpend = useCategorySpend({
+    level: Number(level),
+    dimension: byDietary ? 'category' : (dimension as SpendDimension),
+    fs,
+  });
+  const dietarySpend = useDietarySpend({ fs });
+  const spend = byDietary ? dietarySpend : categorySpend;
   const rows = spend.data ?? [];
+  const dimensionLabel =
+    DIMENSION_OPTIONS.find((option) => option.value === dimension)?.label ?? 'Categoria';
 
   const chartData = rows.map((row) => ({
     name: row.display_name_pt,
@@ -65,18 +88,32 @@ export function SpendPanel() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={level} onValueChange={setLevel}>
-          <SelectTrigger className="w-32">
+        <Select value={dimension} onValueChange={setDimension}>
+          <SelectTrigger className="w-52" aria-label="Eixo">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {LEVEL_OPTIONS.map((option) => (
+            {DIMENSION_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {dimension === 'category' ? (
+          <Select value={level} onValueChange={setLevel}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LEVEL_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
         <Select value={fs} onValueChange={(value) => setFs(value as FsFilter)}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -94,17 +131,20 @@ export function SpendPanel() {
       <p className="text-xs text-muted-foreground">
         "Pago" é o que saiu da carteira; "nocional" é o que os artigos valiam — são iguais em todas
         as linhas que não são Fs.
+        {byDietary
+          ? ' Por atributo dietético as linhas não somam o total: um produto Bio e vegan conta nas duas.'
+          : ''}
       </p>
 
       {spend.isLoading ? (
         <Skeleton className="h-72 rounded-xl" />
       ) : rows.length === 0 ? (
-        <EmptyState icon={PieChartIcon} title="Sem despesa registada para este nível." />
+        <EmptyState icon={PieChartIcon} title="Sem despesa registada para este eixo." />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Despesa por categoria</CardTitle>
+              <CardTitle>Despesa por {dimensionLabel.toLowerCase()}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={320}>
@@ -135,7 +175,7 @@ export function SpendPanel() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Categoria</TableHead>
+                    <TableHead>{dimensionLabel}</TableHead>
                     <TableHead>Pago</TableHead>
                     <TableHead>Nocional</TableHead>
                     <TableHead>Artigos</TableHead>

@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "version": 1,
+    "locale": "pt-PT",
+    "note": "Vocabulário controlado dos atributos de produto. Acrescentar um valor é editar este ficheiro — não há migração, porque `presentation` e `dietary` não têm CHECK na base de dados. `conservation` é a excepção: o seu CHECK vive no schema e um valor novo aqui exige também uma migração."
+  },
+  "conservation": [
+    { "code": "AMBIENTE", "label": "Ambiente", "synonyms": ["temperatura ambiente", "seco", "mercearia"] },
+    { "code": "REFRIGERADO", "label": "Refrigerado", "synonyms": ["fresco", "frio", "frescos"] },
+    { "code": "CONGELADO", "label": "Congelado", "synonyms": ["ultracongelado", "gelado profundo"] }
+  ],
+  "presentation": [
+    { "label": "Inteiro", "synonyms": ["inteira", "inteiros", "inteiras", "peça inteira"] },
+    { "label": "Laminado", "synonyms": ["laminada", "laminados", "laminadas", "em lâminas", "lamelas"] },
+    { "label": "Palitado", "synonyms": ["palitada", "palitos", "em palitos", "julienne"] },
+    { "label": "Ralado", "synonyms": ["ralada", "ralados", "raladas"] },
+    { "label": "Fatiado", "synonyms": ["fatiada", "fatias", "em fatias", "às fatias"] },
+    { "label": "Picado", "synonyms": ["picada", "picados", "carne picada"] },
+    { "label": "Em cubos", "synonyms": ["cubos", "aos cubos", "em dados", "cubinhos"] },
+    { "label": "Em tiras", "synonyms": ["tiras", "às tiras", "tirinhas"] },
+    { "label": "Bife", "synonyms": ["bifes", "bifinhos", "em bifes"] },
+    { "label": "Posta", "synonyms": ["postas", "em postas"] },
+    { "label": "Filete", "synonyms": ["filetes", "filetado", "lombinho de peixe"] },
+    { "label": "Lombo", "synonyms": ["lombos", "lombinho"] },
+    { "label": "Perna", "synonyms": ["pernas", "coxa", "coxas"] },
+    { "label": "Peito", "synonyms": ["peitos", "peito inteiro"] },
+    { "label": "Moído", "synonyms": ["moída", "em pó", "pó"] },
+    { "label": "Granel", "synonyms": ["a granel", "avulso", "avulsa"] }
+  ],
+  "dietary": [
+    { "label": "Bio", "synonyms": ["biológico", "biologico", "biológica", "organico", "orgânico"] },
+    { "label": "Vegan", "synonyms": ["vegano", "vegana", "100% vegetal"] },
+    { "label": "Vegetariano", "synonyms": ["vegetariana", "veggie"] },
+    { "label": "Sem glúten", "synonyms": ["sem gluten", "s/ gluten", "gluten free", "isento de gluten"] },
+    { "label": "Sem lactose", "synonyms": ["s/ lactose", "lactose free", "isento de lactose"] },
+    { "label": "Sem açúcar", "synonyms": ["sem acucar", "s/ acucar", "zero acucar", "0% acucar"] },
+    { "label": "Alto teor proteico", "synonyms": ["alto teor de proteina", "rico em proteina", "proteico", "high protein"] },
+    { "label": "Integral", "synonyms": ["integrais", "cereais integrais"] },
+    { "label": "Light", "synonyms": ["magro", "magra", "leve", "reduzido em gordura"] },
+    { "label": "Sem álcool", "synonyms": ["sem alcool", "s/ alcool", "0% alcool", "0.0"] },
+    { "label": "Baixo teor de sal", "synonyms": ["pouco sal", "sem sal", "reduzido em sal"] }
+  ]
+}

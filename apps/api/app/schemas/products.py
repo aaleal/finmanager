@@ -45,6 +45,7 @@ class MasterProductOut(ApiModel):
     id: uuid.UUID
     canonical_name: str
     brand: str | None
+    is_own_brand: bool
     category_id: uuid.UUID | None
     category_l1_id: uuid.UUID | None
     category_l2_id: uuid.UUID | None
@@ -53,6 +54,8 @@ class MasterProductOut(ApiModel):
     category_confidence: Decimal | None
     pack_variants: list[Any]
     sold_by_weight: bool
+    conservation: str | None
+    presentation: str | None
     dietary_attributes: list[Any]
     allergen_list: list[Any]
     seasonal_flags: list[Any]
@@ -69,9 +72,12 @@ class MasterProductOut(ApiModel):
 class MasterProductCreate(BaseModel):
     canonical_name: str = Field(min_length=1, max_length=250)
     brand: str | None = Field(default=None, max_length=120)
+    is_own_brand: bool = False
     category_id: uuid.UUID | None = None
     sold_by_weight: bool = False
     pack_variants: list[PackVariant] = Field(default_factory=list)
+    conservation: str | None = None
+    presentation: str | None = None
     dietary_attributes: list[str] = Field(default_factory=list)
     allergen_list: list[str] = Field(default_factory=list)
     seasonal_flags: list[str] = Field(default_factory=list)
@@ -82,9 +88,12 @@ class MasterProductCreate(BaseModel):
 class MasterProductUpdate(BaseModel):
     canonical_name: str | None = Field(default=None, max_length=250)
     brand: str | None = Field(default=None, max_length=120)
+    is_own_brand: bool | None = None
     category_id: uuid.UUID | None = None
     sold_by_weight: bool | None = None
     pack_variants: list[PackVariant] | None = None
+    conservation: str | None = None
+    presentation: str | None = None
     dietary_attributes: list[str] | None = None
     allergen_list: list[str] | None = None
     seasonal_flags: list[str] | None = None
@@ -103,6 +112,25 @@ class ProductSearchResult(BaseModel):
     sold_by_weight: bool
     score: float
     last_known_price: LastKnownPrice | None = None
+
+
+class AttributeOption(BaseModel):
+    """One accepted spelling of an attribute: what is stored, and how it reads."""
+
+    value: str
+    label: str
+
+
+class ProductAttributeVocabularyOut(BaseModel):
+    """The controlled vocabulary the pickers offer and the API enforces.
+
+    Served rather than hard-coded in the client so the dictionary has exactly one
+    home: adding a cut is an edit to the JSON, not a release on both sides.
+    """
+
+    conservation: list[AttributeOption]
+    presentation: list[AttributeOption]
+    dietary: list[AttributeOption]
 
 
 class ProductAliasOut(ApiModel):
@@ -282,6 +310,10 @@ class BulkProductImportRow(BaseModel):
     category_id: uuid.UUID | None = None
     sold_by_weight: bool = False
     pack_weights_kg: list[Decimal] = Field(default_factory=list)
+    is_own_brand: bool = False
+    conservation: str | None = None
+    presentation: str | None = None
+    dietary_attributes: list[str] = Field(default_factory=list)
     #: Set when a product with this exact name+brand already exists — the
     #: commit skips it rather than raising a duplicate-name error.
     existing_product_id: uuid.UUID | None = None

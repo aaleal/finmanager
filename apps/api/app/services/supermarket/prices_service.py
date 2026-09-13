@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Literal
 
-from sqlalchemy import Select, case, func, select
+from sqlalchemy import Select, case, func, null, select, true
 from sqlalchemy.orm import Session as DbSession
 
 from app.core.money import ZERO
@@ -24,9 +24,21 @@ from app.models.core import Merchant
 from app.models.prices import ProductPriceHistory
 from app.models.products import MasterProduct
 from app.models.supermarket import SupermarketReceipt, SupermarketReceiptItem
-from app.services.supermarket import arithmetic
+from app.services.supermarket import arithmetic, attributes, products_service
 
 FsFilter = Literal["all", "only", "exclude"]
+#: Axes the spend aggregate can be cut along. Each one partitions spend exactly
+#: once — dietary tags do not, so they get their own function.
+SpendDimension = Literal["category", "brand", "own_brand", "conservation", "presentation"]
+
+#: A product nobody has annotated yet is a real answer, not a gap to hide
+#: (ADR-0035's rule, applied to attributes).
+UNSET_LABELS: dict[str, str] = {
+    "brand": "Sem marca",
+    "own_brand": "Produto por resolver",
+    "conservation": "Conservação por indicar",
+    "presentation": "Corte por indicar",
+}
 
 SHRINKFLATION_WINDOW_DAYS = 365
 SHRINKFLATION_MIN_OBSERVATIONS = 3
@@ -315,11 +327,24 @@ def category_spend(
     *,
     entity_ids: list[uuid.UUID],
     level: int = 1,
+    dimension: SpendDimension = "category",
     fs: FsFilter = "all",
     date_from: dt.date | None = None,
     date_to: dt.date | None = None,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    """Spend by category, over both measures. One indexed join through the product."""
+    """Spend by one axis of the product, over both measures.
+
+    ``category`` is the original axis and keeps its ``category_id``; the others
+    are product attributes and report ``None`` there, so one response shape
+    serves every dimension and no client has to learn a second one. The point of
+    the extra axes is that «€/kg da amêndoa» stops silently averaging laminada
+    with palitada (ADR-0058).
+    """
     from app.models.core import Category
 
     column = {
@@ -340,8 +365,32 @@ def category_spend(
             else_=SupermarketReceiptItem.paid_price_eur,
         )
     )
+
+    if dimension == "category":
+        label: Any = Category.display_name_pt
+    else:
+        label = {
+            "brand": MasterProduct.brand,
+            # Three-way on purpose: a line that never resolved to a product has
+            # no answer here, and calling it a manufacturer's brand would invent
+            # one. It falls through to the unset label instead.
+            "own_brand": case(
+                (MasterProduct.is_own_brand.is_(True), "Marca branca"),
+                (MasterProduct.is_own_brand.is_(False), "Marca de fabricante"),
+                else_=null(),
+            ),
+            "conservation": MasterProduct.conservation,
+            "presentation": MasterProduct.presentation,
+        }[dimension]
+
     stmt = (
-        select(column, Category.display_name_pt, paid, notional, func.count())
+        select(
+            column if dimension == "category" else null(),
+            label,
+            paid,
+            notional,
+            func.count(),
+        )
         .join(SupermarketReceipt, SupermarketReceipt.id == SupermarketReceiptItem.receipt_id)
         # Outer, deliberately: a line that has not resolved to a product yet still
         # cost money, and dropping it would silently under-report spend.
@@ -353,7 +402,82 @@ def category_spend(
             SupermarketReceipt.is_deleted.is_(False),
             SupermarketReceipt.status != "VOID",
         )
-        .group_by(column, Category.display_name_pt)
+        .group_by(*((column, Category.display_name_pt) if dimension == "category" else (label,)))
+        .order_by(paid.desc())
+    )
+    stmt = _apply_fs(stmt, SupermarketReceiptItem.is_fs, fs)
+    stmt = products_service.apply_attribute_filters(
+        stmt,
+        is_own_brand=is_own_brand,
+        brand=brand,
+        conservation=conservation,
+        presentation=presentation,
+        dietary=dietary,
+    )
+    if date_from:
+        stmt = stmt.where(SupermarketReceipt.purchase_date >= date_from)
+    if date_to:
+        stmt = stmt.where(SupermarketReceipt.purchase_date <= date_to)
+
+    fallback = "Sem categoria" if dimension == "category" else UNSET_LABELS[dimension]
+    return [
+        {
+            "category_id": row[0],
+            "display_name_pt": attributes.label_for(dimension, row[1]) or fallback,
+            "paid_eur": row[2] or ZERO,
+            "notional_eur": row[3] or ZERO,
+            "item_count": row[4],
+        }
+        for row in db.execute(stmt).all()
+    ]
+
+
+def dietary_spend(
+    db: DbSession,
+    *,
+    entity_ids: list[uuid.UUID],
+    fs: FsFilter = "all",
+    date_from: dt.date | None = None,
+    date_to: dt.date | None = None,
+) -> list[dict[str, Any]]:
+    """Spend per dietary tag, one row per tag.
+
+    Its own function rather than a ``dimension`` of ``category_spend``: a product
+    carries *several* tags, so the rows deliberately **do not** sum to the total
+    — a Bio *and* vegan yoghurt is counted under both. Folding that into a view
+    whose other axes partition spend would make the difference invisible.
+    """
+    # `render_derived` is what emits the `AS alias(tag)` column list; without it
+    # Postgres never learns the name the GROUP BY refers to.
+    tags = (
+        func.jsonb_array_elements_text(MasterProduct.dietary_attributes)
+        .table_valued("tag")
+        .render_derived()
+    )
+    tag = tags.c.tag
+    paid = func.sum(SupermarketReceiptItem.paid_price_eur)
+    notional = func.sum(
+        case(
+            (
+                SupermarketReceiptItem.is_fs,
+                SupermarketReceiptItem.unit_price_pvp_eur * SupermarketReceiptItem.quantity,
+            ),
+            else_=SupermarketReceiptItem.paid_price_eur,
+        )
+    )
+    stmt = (
+        select(null(), tag, paid, notional, func.count())
+        .select_from(SupermarketReceiptItem)
+        .join(SupermarketReceipt, SupermarketReceipt.id == SupermarketReceiptItem.receipt_id)
+        .join(MasterProduct, MasterProduct.id == SupermarketReceiptItem.master_product_id)
+        .join(tags, true())
+        .where(
+            SupermarketReceiptItem.entity_id.in_(entity_ids),
+            SupermarketReceiptItem.is_deleted.is_(False),
+            SupermarketReceipt.is_deleted.is_(False),
+            SupermarketReceipt.status != "VOID",
+        )
+        .group_by(tag)
         .order_by(paid.desc())
     )
     stmt = _apply_fs(stmt, SupermarketReceiptItem.is_fs, fs)
@@ -364,8 +488,8 @@ def category_spend(
 
     return [
         {
-            "category_id": row[0],
-            "display_name_pt": row[1] or "Sem categoria",
+            "category_id": None,
+            "display_name_pt": row[1],
             "paid_eur": row[2] or ZERO,
             "notional_eur": row[3] or ZERO,
             "item_count": row[4],

@@ -155,16 +155,53 @@ def category_spend(
     ctx: CurrentAuth,
     db: Db,
     level: Annotated[int, Query(ge=1, le=3)] = 1,
+    dimension: prices_service.SpendDimension = "category",
     fs: FsFilter = "all",
     date_from: dt.date | None = None,
     date_to: dt.date | None = None,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: Annotated[list[str] | None, Query()] = None,
 ) -> list[CategorySpendOut]:
+    """``level`` only means anything for the ``category`` dimension; the product
+    attributes have no levels."""
     return [
         CategorySpendOut(**row)
         for row in prices_service.category_spend(
             db,
             entity_ids=_scope(db, ctx),
             level=level,
+            dimension=dimension,
+            fs=fs,
+            date_from=date_from,
+            date_to=date_to,
+            is_own_brand=is_own_brand,
+            brand=brand,
+            conservation=conservation,
+            presentation=presentation,
+            dietary=dietary,
+        )
+    ]
+
+
+@router.get("/dietary-spend", response_model=list[CategorySpendOut])
+def dietary_spend(
+    ctx: CurrentAuth,
+    db: Db,
+    fs: FsFilter = "all",
+    date_from: dt.date | None = None,
+    date_to: dt.date | None = None,
+) -> list[CategorySpendOut]:
+    """One row per dietary tag. **These rows do not sum to total spend** — a
+    product carrying two tags is counted under both, which is the question being
+    asked ("quanto do que comprei era Bio?"), not a double-count to fix."""
+    return [
+        CategorySpendOut(**row)
+        for row in prices_service.dietary_spend(
+            db,
+            entity_ids=_scope(db, ctx),
             fs=fs,
             date_from=date_from,
             date_to=date_to,

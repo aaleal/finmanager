@@ -532,7 +532,8 @@ function DeleteAllDialog({
   const l3 = nodes.filter((node) => node.level === 3).length;
   const productCount = nodes.reduce((sum, node) => sum + node.product_count, 0);
 
-  return (<>
+  return (
+    <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent size="sm">
           <DialogHeader>

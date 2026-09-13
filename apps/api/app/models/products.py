@@ -38,6 +38,9 @@ from app.models.base import Base, SoftDeleteMixin, TimestampMixin, uuid_pk
 from app.models.core import _check
 
 CATEGORY_STATUSES = ("AUTO", "VALIDATED", "MANUAL")
+#: How the article is kept. Genuinely closed — a fourth kind would be a new
+#: physical state, not a new word, so a CHECK is the right guard here.
+CONSERVATION_KINDS = ("AMBIENTE", "REFRIGERADO", "CONGELADO")
 
 
 class MasterProduct(Base, TimestampMixin, SoftDeleteMixin):
@@ -53,7 +56,19 @@ class MasterProduct(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "master_products"
     __table_args__ = (
         _check("category_status", CATEGORY_STATUSES, "category_status"),
+        CheckConstraint(
+            "conservation IS NULL OR conservation IN "
+            f"({', '.join(repr(v) for v in CONSERVATION_KINDS)})",
+            name="conservation",
+        ),
         Index("ix_master_products_canonical_name", "canonical_name"),
+        # Dietary tags are a filter dimension, and JSONB containment without a
+        # GIN index is a sequential scan of the whole catalogue.
+        Index(
+            "ix_master_products_dietary_attributes",
+            "dietary_attributes",
+            postgresql_using="gin",
+        ),
         # Category spend joins through the product, which is a small table.
         Index(
             "ix_master_products_category_l1_id_l2_id_l3_id",
@@ -78,6 +93,12 @@ class MasterProduct(Base, TimestampMixin, SoftDeleteMixin):
     id: Mapped[uuid.UUID] = uuid_pk()
     canonical_name: Mapped[str] = mapped_column(String(250), nullable=False)
     brand: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    #: Marked by hand once per product, not derived from ``brand``: the retailer's
+    #: own-brand markers are deliberately stripped before matching
+    #: (``normalize._NOISE_WORDS``), so the name that survives cannot tell us this.
+    is_own_brand: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     #: The **deepest assigned** category and the only authoritative one. Nullable
     #: because the household's own taxonomy leaves L3 blank on roughly half its
@@ -110,6 +131,16 @@ class MasterProduct(Base, TimestampMixin, SoftDeleteMixin):
     sold_by_weight: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+
+    #: Physical state and shape of what was bought. Neither is part of the
+    #: product's identity (ADR-0015/0030 keep that at name + brand) — they are
+    #: axes a €/kg series can be decomposed along, so laminada and palitada stop
+    #: being averaged into one misleading curve.
+    conservation: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    #: No CHECK on purpose: the household meets a new cut far more often than a
+    #: new conservation state, and a CHECK would make each one a migration. The
+    #: vocabulary is enforced in the service layer against a JSON dictionary.
+    presentation: Mapped[str | None] = mapped_column(String(60), nullable=True)
 
     dietary_attributes: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     allergen_list: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
@@ -153,4 +184,4 @@ class ProductAlias(Base, TimestampMixin):
     last_used_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-__all__ = ["CATEGORY_STATUSES", "MasterProduct", "ProductAlias"]
+__all__ = ["CATEGORY_STATUSES", "CONSERVATION_KINDS", "MasterProduct", "ProductAlias"]

@@ -24,9 +24,12 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { CategoryPicker } from './category-picker';
+import { AttributeBadges } from './product-attributes';
 import { useBulkProductImportCommit, useBulkProductImportPreview } from './catalogue-api';
 
 type Row = BulkProductImportRow;
+
+const ATTRIBUTE_ERROR_FIELDS = ['conservation', 'presentation', 'dietary_attributes'] as const;
 
 /** The spreadsheet's row 1 is always the header — `row_number` counts from
  * there, but showing that verbatim makes the first data row look like "Linha
@@ -171,7 +174,8 @@ export function BulkImportDialog({
                     : 'Arraste um Excel (.xlsx), ou clique para escolher'}
                 </span>
                 <span className="text-xs">
-                  Nome, Marca, Categoria (ou Cat1/Cat2/Cat3), Vendido a peso, Formatos (kg)…
+                  Nome, Marca, Categoria (ou Cat1/Cat2/Cat3), Vendido a peso, Formatos (kg), Marca
+                  branca, Conservação, Corte, Tags…
                 </span>
               </button>
             </>
@@ -202,6 +206,7 @@ export function BulkImportDialog({
                       <TableHead>Categoria</TableHead>
                       <TableHead className="text-center">A peso</TableHead>
                       <TableHead>Formatos</TableHead>
+                      <TableHead>Atributos</TableHead>
                       <TableHead>Estado</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -270,6 +275,21 @@ export function BulkImportDialog({
                             {row.errors?.pack_weights ? (
                               <p className="text-xs text-destructive">{row.errors.pack_weights}</p>
                             ) : null}
+                          </TableCell>
+                          <TableCell className="min-w-40">
+                            <AttributeBadges
+                              isOwnBrand={row.is_own_brand}
+                              conservation={row.conservation}
+                              presentation={row.presentation}
+                              dietary={row.dietary_attributes}
+                            />
+                            {ATTRIBUTE_ERROR_FIELDS.map((field) =>
+                              row.errors?.[field] ? (
+                                <p key={field} className="text-xs text-destructive">
+                                  {row.errors[field]}
+                                </p>
+                              ) : null,
+                            )}
                           </TableCell>
                           <TableCell>
                             {row.existing_product_id ? (

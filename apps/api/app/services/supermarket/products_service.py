@@ -35,7 +35,7 @@ from app.core.errors import AppError, Conflict, NotFound, ValidationError
 from app.models.core import Category, Merchant
 from app.models.products import MasterProduct, ProductAlias
 from app.models.supermarket import SupermarketReceiptItem
-from app.services.supermarket import catalogue, classify
+from app.services.supermarket import attributes, catalogue, classify
 from app.services.supermarket.normalize import normalize_description
 
 GROCERY = "GROCERY"
@@ -181,6 +181,47 @@ def add_pack_variant(
 
 # --- Products -----------------------------------------------------------------
 
+#: The attribute fields a patch may carry, and the funnel each one passes through
+#: on the way in — the same one `create_product` uses, so a value can never enter
+#: by the back door in a spelling the dictionary would have rejected.
+_ATTRIBUTE_SANITIZERS: dict[str, Any] = {
+    "conservation": attributes.sanitize_conservation,
+    "presentation": attributes.sanitize_presentation,
+    "dietary_attributes": attributes.sanitize_dietary,
+}
+
+
+def apply_attribute_filters(
+    stmt: Any,
+    *,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: Iterable[str] | None = None,
+) -> Any:
+    """Narrow any statement that already has ``MasterProduct`` in scope.
+
+    Shared by the catalogue list, the line list and the spend aggregate so the
+    three never drift on what «Bio e congelado» means. Dietary tags are ``AND``:
+    asking for two tags asks for products carrying both.
+    """
+    if is_own_brand is not None:
+        stmt = stmt.where(MasterProduct.is_own_brand.is_(is_own_brand))
+    if brand:
+        stmt = stmt.where(func.lower(MasterProduct.brand) == brand.strip().lower())
+    if conservation:
+        stmt = stmt.where(
+            MasterProduct.conservation == attributes.sanitize_conservation(conservation)
+        )
+    if presentation:
+        stmt = stmt.where(
+            MasterProduct.presentation == attributes.sanitize_presentation(presentation)
+        )
+    for tag in attributes.sanitize_dietary(list(dietary or [])):
+        stmt = stmt.where(MasterProduct.dietary_attributes.contains([tag]))
+    return stmt
+
 
 def get_product(db: DbSession, product_id: uuid.UUID) -> MasterProduct:
     product = db.get(MasterProduct, product_id)
@@ -199,6 +240,10 @@ def create_product(
     category_confidence: Decimal | None = None,
     sold_by_weight: bool = False,
     pack_variants: list[Any] | None = None,
+    is_own_brand: bool = False,
+    conservation: Any = None,
+    presentation: Any = None,
+    dietary_attributes: Any = None,
     actor_user_id: uuid.UUID | None = None,
     **extra: Any,
 ) -> MasterProduct:
@@ -223,6 +268,10 @@ def create_product(
         category_confidence=category_confidence,
         sold_by_weight=sold_by_weight,
         pack_variants=sanitize_pack_variants(pack_variants),
+        is_own_brand=is_own_brand,
+        conservation=attributes.sanitize_conservation(conservation),
+        presentation=attributes.sanitize_presentation(presentation),
+        dietary_attributes=attributes.sanitize_dietary(dietary_attributes),
         **extra,
     )
     _apply_category(db, product, category_id)
@@ -252,6 +301,9 @@ def update_product(
         # A human touched it, so it is no longer a machine's guess.
         product.category_status = changes.pop("category_status", "MANUAL")
         product.category_confidence = None
+    for field, sanitize in _ATTRIBUTE_SANITIZERS.items():
+        if field in changes:
+            changes[field] = sanitize(changes[field])
     for field, value in changes.items():
         setattr(product, field, value)
     db.flush()
@@ -995,6 +1047,10 @@ _PRODUCT_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "category_l3": ("cat3", "categoria 3", "categoria l3"),
     "sold_by_weight": ("vendido a peso", "a peso", "venda a peso"),
     "pack_weights": ("formatos", "formatos kg", "pesos", "pesos kg"),
+    "is_own_brand": ("marca branca", "marca propria", "marca do distribuidor"),
+    "conservation": ("conservacao", "estado", "estado de conservacao"),
+    "presentation": ("corte", "apresentacao", "corte apresentacao"),
+    "dietary_attributes": ("tags", "dietetico", "tags nutricionais", "atributos dieteticos"),
 }
 
 _TRUTHY_TOKENS = {"sim", "true", "1", "x", "yes"}
@@ -1129,6 +1185,26 @@ def _resolve_bulk_row(db: DbSession, raw: dict[str, Any]) -> dict[str, Any]:
         if existing is not None:
             existing_id = existing.id
 
+    # An unknown spelling is reported against its own column and leaves the rest
+    # of the row importable — the same per-field contract the category path has.
+    conservation: str | None = None
+    presentation: str | None = None
+    dietary: list[str] = []
+    try:
+        conservation = attributes.sanitize_conservation(raw.get("conservation"))
+    except ValidationError as exc:
+        errors["conservation"] = str(exc)
+    try:
+        presentation = attributes.sanitize_presentation(raw.get("presentation"))
+    except ValidationError as exc:
+        errors["presentation"] = str(exc)
+    try:
+        tags_raw = raw.get("dietary_attributes")
+        tokens = [t.strip() for t in re.split(r"[,;]", str(tags_raw or "")) if t.strip()]
+        dietary = attributes.sanitize_dietary(tokens)
+    except ValidationError as exc:
+        errors["dietary_attributes"] = str(exc)
+
     return {
         "row_number": raw["_row"],
         "canonical_name": name or None,
@@ -1137,6 +1213,10 @@ def _resolve_bulk_row(db: DbSession, raw: dict[str, Any]) -> dict[str, Any]:
         "category_id": category.id if category else None,
         "sold_by_weight": _parse_bool(raw.get("sold_by_weight")),
         "pack_weights_kg": pack_weights,
+        "is_own_brand": _parse_bool(raw.get("is_own_brand")),
+        "conservation": conservation,
+        "presentation": presentation,
+        "dietary_attributes": dietary,
         "existing_product_id": existing_id,
         "errors": errors,
     }
@@ -1183,6 +1263,10 @@ def commit_product_import(
                 category_id=row.get("category_id"),
                 sold_by_weight=bool(row.get("sold_by_weight")),
                 pack_variants=pack_variants,
+                is_own_brand=bool(row.get("is_own_brand")),
+                conservation=row.get("conservation"),
+                presentation=row.get("presentation"),
+                dietary_attributes=row.get("dietary_attributes"),
                 actor_user_id=actor_user_id,
             )
             db.commit()

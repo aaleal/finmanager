@@ -13,6 +13,11 @@ import {
 import { Field, Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/primitives';
 import { CategoryPicker } from './category-picker';
+import {
+  ProductAttributeFields,
+  emptyAttributes,
+  type ProductAttributes,
+} from './product-attributes';
 import { useCreateProduct } from './catalogue-api';
 
 /**
@@ -38,6 +43,7 @@ export function ProductCreateDialog({
   const [brand, setBrand] = React.useState('');
   const [category, setCategory] = React.useState<CategoryResult | null>(null);
   const [soldByWeight, setSoldByWeight] = React.useState(false);
+  const [attributes, setAttributes] = React.useState<ProductAttributes>(emptyAttributes);
 
   React.useEffect(() => {
     if (open) {
@@ -45,6 +51,7 @@ export function ProductCreateDialog({
       setBrand('');
       setCategory(null);
       setSoldByWeight(false);
+      setAttributes(emptyAttributes());
     }
   }, [open, initialName]);
 
@@ -57,6 +64,7 @@ export function ProductCreateDialog({
       brand: brand.trim() || null,
       category_id: category?.id ?? null,
       sold_by_weight: soldByWeight,
+      ...attributes,
     });
     onOpenChange(false);
     onCreated?.(product);
@@ -92,6 +100,7 @@ export function ProductCreateDialog({
             </div>
             <Switch checked={soldByWeight} onCheckedChange={setSoldByWeight} />
           </div>
+          <ProductAttributeFields value={attributes} onChange={setAttributes} />
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

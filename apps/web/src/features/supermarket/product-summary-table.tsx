@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
 import { EM_DASH, date, eur, num, quantity, weightCompact } from '@/lib/format';
+import { AttributeBadges } from './product-attributes';
 
 /**
  * The same purchases as the detail view, grouped by product.
@@ -77,6 +78,13 @@ export function ProductSummaryTable({
                 <span className="block truncate text-xs text-muted-foreground">
                   {row.brand ?? EM_DASH}
                 </span>
+                <AttributeBadges
+                  className="mt-1"
+                  isOwnBrand={row.is_own_brand}
+                  conservation={row.conservation}
+                  presentation={row.presentation}
+                  dietary={row.dietary_attributes}
+                />
               </TableCell>
               <TableCell
                 className="max-w-[14rem] truncate text-xs"

@@ -79,9 +79,13 @@ class ProductDisplay(NamedTuple):
 
     canonical_name: str
     brand: str | None
+    is_own_brand: bool
     category_path: str | None
     category_status: str
     sold_by_weight: bool
+    conservation: str | None
+    presentation: str | None
+    dietary_attributes: tuple[str, ...]
     pack_weights: frozenset[Decimal]
 
 
@@ -120,9 +124,13 @@ def _product_display(db: DbSession, ids: set[uuid.UUID]) -> dict[uuid.UUID, Prod
         display[product.id] = ProductDisplay(
             canonical_name=product.canonical_name,
             brand=product.brand,
+            is_own_brand=product.is_own_brand,
             category_path=paths.get(category_id) if category_id is not None else None,
             category_status=product.category_status,
             sold_by_weight=product.sold_by_weight,
+            conservation=product.conservation,
+            presentation=product.presentation,
+            dietary_attributes=tuple(str(tag) for tag in product.dietary_attributes),
             pack_weights=frozenset(products_service.pack_weights(product)),
         )
     return display
@@ -541,6 +549,11 @@ def _item_scope(
     fs: FsFilter,
     product_flag: str | None,
     master_product_id: uuid.UUID | None = None,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: list[str] | None = None,
 ) -> Any:
     """The filters both article views share, so the two can never disagree."""
     stmt = (
@@ -553,6 +566,23 @@ def _item_scope(
             SupermarketReceipt.status != "VOID",
         )
     )
+    # Inner join only when an attribute is actually being filtered on: an
+    # unresolved line still cost money and must not vanish from the default view.
+    if any(
+        value not in (None, [], "")
+        for value in (is_own_brand, brand, conservation, presentation, dietary)
+    ):
+        stmt = stmt.join(
+            MasterProduct, MasterProduct.id == SupermarketReceiptItem.master_product_id
+        )
+        stmt = products_service.apply_attribute_filters(
+            stmt,
+            is_own_brand=is_own_brand,
+            brand=brand,
+            conservation=conservation,
+            presentation=presentation,
+            dietary=dietary,
+        )
     if search:
         stmt = stmt.where(SupermarketReceiptItem.description_norm.ilike(f"%{search.upper()}%"))
     if merchant_id:
@@ -581,6 +611,11 @@ def list_items(
     fs: FsFilter = "all",
     product_flag: str | None = None,
     master_product_id: uuid.UUID | None = None,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: Annotated[list[str] | None, Query()] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> Page[ReceiptItemOut]:
@@ -594,6 +629,11 @@ def list_items(
         fs=fs,
         product_flag=product_flag,
         master_product_id=master_product_id,
+        is_own_brand=is_own_brand,
+        brand=brand,
+        conservation=conservation,
+        presentation=presentation,
+        dietary=dietary,
     )
 
     total = int(db.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
@@ -637,6 +677,11 @@ def summarise_items(
     date_to: dt.date | None = None,
     fs: FsFilter = "all",
     product_flag: str | None = None,
+    is_own_brand: bool | None = None,
+    brand: str | None = None,
+    conservation: str | None = None,
+    presentation: str | None = None,
+    dietary: Annotated[list[str] | None, Query()] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> Page[ProductSummary]:
@@ -650,6 +695,11 @@ def summarise_items(
         date_to=date_to,
         fs=fs,
         product_flag=product_flag,
+        is_own_brand=is_own_brand,
+        brand=brand,
+        conservation=conservation,
+        presentation=presentation,
+        dietary=dietary,
     ).subquery()
 
     weight = func.coalesce(scope.c.weight_observed_kg, scope.c.weight_listed_kg)
@@ -694,8 +744,12 @@ def summarise_items(
                 master_product_id=row.master_product_id,
                 canonical_name=display.canonical_name if display else "—",
                 brand=display.brand if display else None,
+                is_own_brand=bool(display and display.is_own_brand),
                 category_path=display.category_path if display else None,
                 sold_by_weight=bool(display and display.sold_by_weight),
+                conservation=display.conservation if display else None,
+                presentation=display.presentation if display else None,
+                dietary_attributes=list(display.dietary_attributes) if display else [],
                 line_count=row.line_count,
                 receipt_count=row.receipt_count,
                 total_quantity=row.total_quantity or Decimal("0"),

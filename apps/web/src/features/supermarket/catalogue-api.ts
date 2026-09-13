@@ -18,6 +18,7 @@ import type {
   Ok,
   Page,
   ProductAlias,
+  ProductAttributeVocabulary,
   ProductOccurrence,
   ProductSearchResult,
 } from '@/lib/types';
@@ -26,6 +27,11 @@ export type ProductFilters = {
   search?: string;
   category_id?: string;
   category_status?: string;
+  is_own_brand?: boolean;
+  brand?: string;
+  conservation?: string;
+  presentation?: string;
+  dietary?: string[];
   page?: string;
   page_size?: string;
 };
@@ -53,10 +59,25 @@ export function useProducts(filters: ProductFilters) {
         search: filters.search,
         category_id: filters.category_id,
         category_status: filters.category_status,
+        is_own_brand: filters.is_own_brand,
+        brand: filters.brand,
+        conservation: filters.conservation,
+        presentation: filters.presentation,
+        dietary: filters.dietary,
         page: filters.page ?? '1',
         page_size: filters.page_size ?? '50',
       }),
     placeholderData: (previous) => previous,
+  });
+}
+
+/** The controlled vocabulary the API enforces. Served, not hard-coded here, so
+ * adding a cut is an edit to one JSON file rather than a release on both sides. */
+export function useProductAttributes() {
+  return useQuery({
+    queryKey: ['products', 'attributes'],
+    queryFn: () => api.get<ProductAttributeVocabulary>('/master-products/attributes'),
+    staleTime: Infinity,
   });
 }
 

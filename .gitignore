@@ -3,6 +3,8 @@
 .env.local
 *.pem
 dev/bootstrap-household.json
+00.prompts/seed/Lego/*
+00.prompts/seed/Lego/supermarket
 
 # ---- Python -----------------------------------------------------------------
 __pycache__/

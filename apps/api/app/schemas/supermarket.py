@@ -81,8 +81,12 @@ class ProductSummary(BaseModel):
     master_product_id: uuid.UUID
     canonical_name: str
     brand: str | None
+    is_own_brand: bool = False
     category_path: str | None
     sold_by_weight: bool
+    conservation: str | None = None
+    presentation: str | None = None
+    dietary_attributes: list[str] = Field(default_factory=list)
     line_count: int
     receipt_count: int
     total_quantity: Decimal

@@ -48,6 +48,12 @@ import { date, EM_DASH, eur, num, packLabel, percent } from '@/lib/format';
 import { useDebounced } from '@/lib/filters';
 import { useSession } from '@/features/auth/session';
 import { CategoryPicker } from './category-picker';
+import {
+  AttributeBadges,
+  DietaryPicker,
+  ProductAttributeFields,
+  type ProductAttributes,
+} from './product-attributes';
 import { ProductCreateDialog } from './product-create-dialog';
 import { BulkImportDialog } from './bulk-import-dialog';
 import {
@@ -60,6 +66,7 @@ import {
   useProductAliases,
   useProductOccurrences,
   useProducts,
+  useProductAttributes,
   useUpdateProduct,
   useValidateProductCategory,
 } from './catalogue-api';
@@ -328,6 +335,12 @@ function ProductDetailsTab({
   const [brand, setBrand] = React.useState(product.brand ?? '');
   const [category, setCategory] = React.useState<CategoryResult | null>(null);
   const [soldByWeight, setSoldByWeight] = React.useState(product.sold_by_weight);
+  const [attributes, setAttributes] = React.useState<ProductAttributes>(() => ({
+    is_own_brand: product.is_own_brand,
+    conservation: product.conservation,
+    presentation: product.presentation,
+    dietary_attributes: (product.dietary_attributes ?? []) as string[],
+  }));
   const [packRows, setPackRows] = React.useState<VariantRow[]>(() =>
     ((product.pack_variants as PackVariant[]) ?? []).map(variantToRow),
   );
@@ -337,6 +350,12 @@ function ProductDetailsTab({
     setBrand(product.brand ?? '');
     setCategory(null);
     setSoldByWeight(product.sold_by_weight);
+    setAttributes({
+      is_own_brand: product.is_own_brand,
+      conservation: product.conservation,
+      presentation: product.presentation,
+      dietary_attributes: (product.dietary_attributes ?? []) as string[],
+    });
     setPackRows(((product.pack_variants as PackVariant[]) ?? []).map(variantToRow));
   }, [product]);
 
@@ -370,6 +389,7 @@ function ProductDetailsTab({
         </div>
         <Switch checked={soldByWeight} onCheckedChange={setSoldByWeight} disabled={!canWrite} />
       </div>
+      <ProductAttributeFields value={attributes} onChange={setAttributes} disabled={!canWrite} />
       <Field
         label="Formatos de embalagem"
         hint="Os pesos oficiais deste produto. O que a fatura trouxer é comparado com esta lista."
@@ -403,6 +423,7 @@ function ProductDetailsTab({
                   category_id: category ? category.id : product.category_id,
                   sold_by_weight: soldByWeight,
                   pack_variants: rowsToVariants(packRows),
+                  ...attributes,
                 },
               })
             }
@@ -664,6 +685,10 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
   const debouncedSearch = useDebounced(searchDraft, 350);
   const [categoryStatus, setCategoryStatus] = React.useState(ALL);
   const [category, setCategory] = React.useState<CategoryResult | null>(null);
+  const [ownBrand, setOwnBrand] = React.useState(ALL);
+  const [conservation, setConservation] = React.useState(ALL);
+  const [presentation, setPresentation] = React.useState(ALL);
+  const [dietary, setDietary] = React.useState<string[]>([]);
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(50);
   const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
@@ -671,18 +696,26 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
   const [bulkImportOpen, setBulkImportOpen] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
 
-  React.useEffect(() => setPage(1), [debouncedSearch, categoryStatus, category]);
+  React.useEffect(
+    () => setPage(1),
+    [debouncedSearch, categoryStatus, category, ownBrand, conservation, presentation, dietary],
+  );
 
   const products = useProducts({
     search: debouncedSearch || undefined,
     category_status: categoryStatus === ALL ? undefined : categoryStatus,
     category_id: category?.id,
+    is_own_brand: ownBrand === ALL ? undefined : ownBrand === 'yes',
+    conservation: conservation === ALL ? undefined : conservation,
+    presentation: presentation === ALL ? undefined : presentation,
+    dietary: dietary.length ? dietary : undefined,
     page: String(page),
     page_size: String(pageSize),
   });
 
   const validateCategory = useValidateProductCategory();
   const deleteProduct = useDeleteProduct();
+  const vocabulary = useProductAttributes();
 
   const total = products.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -704,7 +737,7 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
 
       <MergeCandidatesSection />
 
-      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-3">
+      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -731,6 +764,47 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
           onSelect={setCategory}
           allowClear
           placeholder="Filtrar por categoria…"
+        />
+        <Select value={ownBrand} onValueChange={setOwnBrand}>
+          <SelectTrigger aria-label="Marca branca">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Marca: todas</SelectItem>
+            <SelectItem value="yes">Só marca branca</SelectItem>
+            <SelectItem value="no">Só marca de fabricante</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={conservation} onValueChange={setConservation}>
+          <SelectTrigger aria-label="Conservação">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Conservação: todas</SelectItem>
+            {(vocabulary.data?.conservation ?? []).map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={presentation} onValueChange={setPresentation}>
+          <SelectTrigger aria-label="Corte">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Corte: todos</SelectItem>
+            {(vocabulary.data?.presentation ?? []).map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <DietaryPicker
+          value={dietary}
+          options={vocabulary.data?.dietary ?? []}
+          onChange={setDietary}
         />
       </div>
 
@@ -769,7 +843,16 @@ export function ProductsPanel({ onOpenReceipt }: { onOpenReceipt: (receiptId: st
                     className="group/row cursor-pointer"
                     onClick={() => setSelectedProductId(product.id)}
                   >
-                    <TableCell className="font-medium">{product.canonical_name}</TableCell>
+                    <TableCell className="font-medium">
+                      <span className="block">{product.canonical_name}</span>
+                      <AttributeBadges
+                        className="mt-1"
+                        isOwnBrand={product.is_own_brand}
+                        conservation={product.conservation}
+                        presentation={product.presentation}
+                        dietary={(product.dietary_attributes ?? []) as string[]}
+                      />
+                    </TableCell>
                     <TableCell>{product.brand ?? EM_DASH}</TableCell>
                     <TableCell
                       className="max-w-[12rem] truncate"
